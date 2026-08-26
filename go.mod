@@ -8,6 +8,7 @@ require (
 	github.com/AfterShip/clickhouse-sql-parser v0.5.7-0.20260821111739-8ee6ab233f70
 	github.com/ClickHouse/clickhouse-go/v2 v2.47.0
 	github.com/google/uuid v1.6.0
+	github.com/shopspring/decimal v1.4.0
 	go.yaml.in/yaml/v3 v3.0.4
 	golang.org/x/text v0.31.0
 )
@@ -23,7 +24,6 @@ require (
 	github.com/paulmach/orb v0.13.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.27 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
-	github.com/shopspring/decimal v1.4.0 // indirect
 	go.opentelemetry.io/otel v1.44.0 // indirect
 	go.opentelemetry.io/otel/trace v1.44.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20231108232855-2478ac86f678 // indirect

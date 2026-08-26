@@ -24,6 +24,20 @@ func TestExplicitTemporalParamGoShapeControlsTopNullableGuard(t *testing.T) {
 			t.Fatalf("pointer parameter has no %q:\n%s", want, pointer)
 		}
 	}
+	for _, testCase := range []struct {
+		name       string
+		unix       int64
+		nanosecond int64
+	}{
+		{name: "DateTime64 exact maximum", unix: chgenDateTime64MaxUnix, nanosecond: chgenDateTime64MaxNanosecond},
+		{name: "DateTime64(9) exact maximum", unix: chgenDateTime64NanoMaxUnix, nanosecond: chgenDateTime64NanoMaxNanosecond},
+	} {
+		got := time.Unix(testCase.unix, testCase.nanosecond).UTC().Format(time.RFC3339Nano)
+		const want = "2262-04-11T23:47:16.854775807Z"
+		if got != want {
+			t.Errorf("%s = %s, want %s", testCase.name, got, want)
+		}
+	}
 }
 
 func TestUnsupportedExplicitTemporalParamTypeKeepsHistoricNullablePlan(t *testing.T) {
@@ -180,6 +194,79 @@ func TestTemporalBoundsAreTheMeasuredValues(t *testing.T) {
 		if got != testCase.expected {
 			t.Errorf("%s = %s, measured %s", testCase.name, got, testCase.expected)
 		}
+	}
+}
+
+// TestGeneratedDateTime64GuardUsesTheExactNanosecondBoundary runs the helper
+// from generated source. The driver converts every DateTime64 value through
+// int64 nanoseconds. The last safe instant is therefore the exact MaxInt64
+// nanosecond, not the whole final second.
+func TestGeneratedDateTime64GuardUsesTheExactNanosecondBoundary(t *testing.T) {
+	source := generateTemporalTestOutput(t, `-- name: InsertEvent :exec
+INSERT INTO events (dt3, dt9, dts, dtm)
+VALUES (chgen.arg('Dt3'), chgen.arg('Dt9'), chgen.arg('Dts'), chgen.arg('Dtm'))`)
+	for _, want := range []string{
+		"for _, chgenV0 := range arg.Dts",
+		`chgenGuardDateTime64(chgenV0, "Dts")`,
+		"for chgenK0, chgenV0 := range arg.Dtm",
+		`chgenGuardDateTime64(chgenV0, "Dtm")`,
+	} {
+		if !strings.Contains(source, want) {
+			t.Fatalf("generated container path does not use the exact shared guard %q:\n%s", want, source)
+		}
+	}
+	moduleRoot := moduleRootPath()
+	buildDir, err := os.MkdirTemp(moduleRoot, ".temporal-boundary-build-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(buildDir) })
+	if err := os.WriteFile(filepath.Join(buildDir, "queries.go"), []byte(source), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	const boundaryTest = `package querygen
+
+import (
+	"testing"
+	"time"
+)
+
+func TestExactDateTime64Boundary(t *testing.T) {
+	maximum := time.Unix(9223372036, 854775807).UTC()
+	minimum := time.Unix(-2208988800, 0).UTC()
+	for _, guard := range []struct {
+		name string
+		call func(time.Time, string) error
+	}{
+		{name: "DateTime64", call: chgenGuardDateTime64},
+		{name: "DateTime64(9)", call: chgenGuardDateTime64Nano},
+	} {
+		if err := guard.call(maximum, "Maximum"); err != nil {
+			t.Errorf("%s rejected the exact maximum: %v", guard.name, err)
+		}
+		if err := guard.call(maximum.Add(time.Nanosecond), "AboveMaximum"); err == nil {
+			t.Errorf("%s accepted one nanosecond above the maximum", guard.name)
+		}
+		if err := guard.call(minimum, "Minimum"); err != nil {
+			t.Errorf("%s rejected the exact minimum: %v", guard.name, err)
+		}
+		if err := guard.call(minimum.Add(-time.Nanosecond), "BelowMinimum"); err == nil {
+			t.Errorf("%s accepted one nanosecond below the minimum", guard.name)
+		}
+	}
+}
+`
+	if err := os.WriteFile(filepath.Join(buildDir, "boundary_test.go"), []byte(boundaryTest), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	relative, err := filepath.Rel(moduleRoot, buildDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	command := exec.Command("go", "test", "./"+filepath.ToSlash(relative), "-run", "^TestExactDateTime64Boundary$", "-count=1")
+	command.Dir = moduleRoot
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("generated DateTime64 boundary test failed: %v\n%s", err, output)
 	}
 }
 
@@ -358,10 +445,15 @@ SELECT rowid AS rowid, dt3 AS dt3, dts AS dts, dtm AS dtm, seen AS seen FROM eve
 		"for chgenK0, chgenV0 := range row.Dtm",
 		"if row.Seen != nil",
 		`chgenCheckScannedTime((*row.Seen), "Seen")`,
+		"2262-04-11T23:47:16.854775807Z",
+		"chgenReadableMaxNanosecond = int64(854775807)",
 	} {
 		if !strings.Contains(text, want) {
 			t.Errorf("generated output missing %q:\n%s", want, text)
 		}
+	}
+	if strings.Contains(text, "after 2262-04-11 23:47:16 UTC") {
+		t.Errorf("generated scan check uses the stale whole-second boundary:\n%s", text)
 	}
 	one := generateTemporalTestOutput(t, `-- name: ReadOne :one
 SELECT dt3 AS dt3 FROM events LIMIT 1`)
@@ -403,14 +495,17 @@ SELECT rowid AS rowid FROM events WHERE dt3 >= chgen.arg('Since')`)
 func TestGeneratedGuardConstantsCarryMeasuredNumbers(t *testing.T) {
 	text := generateTemporalTestOutput(t, `-- name: InsertEvent :exec
 INSERT INTO events (rowid, dt3) VALUES (chgen.arg('Rowid'), chgen.arg('Dt3'))`)
+	normalized := strings.Join(strings.Fields(text), " ")
 	for _, want := range []string{
-		"chgenDateMaxUnix           = int64(5662310399)",
-		"chgenDate32MinUnix         = int64(-2208988800)",
-		"chgenDateTimeMaxUnix       = int64(4294967295)",
-		"chgenDateTime64MaxUnix     = int64(9223372036)",
+		"chgenDateMaxUnix = int64(5662310399)",
+		"chgenDate32MinUnix = int64(-2208988800)",
+		"chgenDateTimeMaxUnix = int64(4294967295)",
+		"chgenDateTime64MaxUnix = int64(9223372036)",
+		"chgenDateTime64MaxNanosecond = int64(854775807)",
 		"chgenDateTime64NanoMaxUnix = int64(9223372036)",
+		"chgenDateTime64NanoMaxNanosecond = int64(854775807)",
 	} {
-		if !strings.Contains(text, want) {
+		if !strings.Contains(normalized, want) {
 			t.Errorf("generated output missing the measured constant %q:\n%s", want, text)
 		}
 	}

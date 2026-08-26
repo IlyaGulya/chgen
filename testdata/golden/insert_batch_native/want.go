@@ -62,16 +62,18 @@ func New(conn driver.Conn) *Queries {
 // the native batch path. Both calls returned nil. The project rule is: never
 // silently wrong, thus an unrepresentable value becomes an explicit error.
 const (
-	chgenDateMinUnix           = int64(0)
-	chgenDateMaxUnix           = int64(5662310399)
-	chgenDate32MinUnix         = int64(-2208988800)
-	chgenDate32MaxUnix         = int64(10413791999)
-	chgenDateTimeMinUnix       = int64(0)
-	chgenDateTimeMaxUnix       = int64(4294967295)
-	chgenDateTime64MinUnix     = int64(-2208988800)
-	chgenDateTime64MaxUnix     = int64(9223372036)
-	chgenDateTime64NanoMinUnix = int64(-2208988800)
-	chgenDateTime64NanoMaxUnix = int64(9223372036)
+	chgenDateMinUnix                 = int64(0)
+	chgenDateMaxUnix                 = int64(5662310399)
+	chgenDate32MinUnix               = int64(-2208988800)
+	chgenDate32MaxUnix               = int64(10413791999)
+	chgenDateTimeMinUnix             = int64(0)
+	chgenDateTimeMaxUnix             = int64(4294967295)
+	chgenDateTime64MinUnix           = int64(-2208988800)
+	chgenDateTime64MaxUnix           = int64(9223372036)
+	chgenDateTime64MaxNanosecond     = int64(854775807)
+	chgenDateTime64NanoMinUnix       = int64(-2208988800)
+	chgenDateTime64NanoMaxUnix       = int64(9223372036)
+	chgenDateTime64NanoMaxNanosecond = int64(854775807)
 )
 
 func chgenGuardRange(value time.Time, label, typeName string, minUnix, maxUnix int64) error {
@@ -84,6 +86,22 @@ func chgenGuardRange(value time.Time, label, typeName string, minUnix, maxUnix i
 			value.UTC().Format(time.RFC3339Nano),
 			time.Unix(minUnix, 0).UTC().Format(time.RFC3339),
 			time.Unix(maxUnix, 0).UTC().Format(time.RFC3339),
+		)
+	}
+	return nil
+}
+
+func chgenGuardDateTime64Range(value time.Time, label, typeName string, minUnix, maxUnix, maxNanosecond int64) error {
+	seconds := value.Unix()
+	nanosecond := int64(value.Nanosecond())
+	if seconds < minUnix || seconds > maxUnix || (seconds == maxUnix && nanosecond > maxNanosecond) {
+		return fmt.Errorf(
+			"%s: %s cannot hold %s; the representable range is %s to %s",
+			label,
+			typeName,
+			value.UTC().Format(time.RFC3339Nano),
+			time.Unix(minUnix, 0).UTC().Format(time.RFC3339),
+			time.Unix(maxUnix, maxNanosecond).UTC().Format(time.RFC3339Nano),
 		)
 	}
 	return nil
@@ -107,13 +125,13 @@ func chgenGuardDateTime(value time.Time, label string) error {
 // 1900-01-01 00:00:00.291 with err = nil (measured, v2.47.0). Guarding at the
 // column limit would pass exactly the values that corrupt.
 func chgenGuardDateTime64(value time.Time, label string) error {
-	return chgenGuardRange(value, label, "DateTime64 through clickhouse-go", chgenDateTime64MinUnix, chgenDateTime64MaxUnix)
+	return chgenGuardDateTime64Range(value, label, "DateTime64 through clickhouse-go", chgenDateTime64MinUnix, chgenDateTime64MaxUnix, chgenDateTime64MaxNanosecond)
 }
 
 // chgenGuardDateTime64Nano is precision 9, where the server itself raises
 // DECIMAL_OVERFLOW past the same nanosecond limit.
 func chgenGuardDateTime64Nano(value time.Time, label string) error {
-	return chgenGuardRange(value, label, "DateTime64(9)", chgenDateTime64NanoMinUnix, chgenDateTime64NanoMaxUnix)
+	return chgenGuardDateTime64Range(value, label, "DateTime64(9)", chgenDateTime64NanoMinUnix, chgenDateTime64NanoMaxUnix, chgenDateTime64NanoMaxNanosecond)
 }
 
 // InsertAuditRowParams contains the positional arguments for InsertAuditRow.

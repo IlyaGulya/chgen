@@ -85,18 +85,21 @@ func Generate(packageName string, queries []Query) ([]byte, error) {
 			return false
 		}(),
 
-		TemporalDateMin:           chgenDateMinUnix,
-		TemporalDateMax:           chgenDateMaxUnix,
-		TemporalDate32Min:         chgenDate32MinUnix,
-		TemporalDate32Max:         chgenDate32MaxUnix,
-		TemporalDateTimeMin:       chgenDateTimeMinUnix,
-		TemporalDateTimeMax:       chgenDateTimeMaxUnix,
-		TemporalDateTime64Min:     chgenDateTime64MinUnix,
-		TemporalDateTime64Max:     chgenDateTime64MaxUnix,
-		TemporalDateTime64NanoMin: chgenDateTime64NanoMinUnix,
-		TemporalDateTime64NanoMax: chgenDateTime64NanoMaxUnix,
-		TemporalReadableMin:       chgenReadableMinUnix,
-		TemporalReadableMax:       chgenReadableMaxUnix,
+		TemporalDateMin:                     chgenDateMinUnix,
+		TemporalDateMax:                     chgenDateMaxUnix,
+		TemporalDate32Min:                   chgenDate32MinUnix,
+		TemporalDate32Max:                   chgenDate32MaxUnix,
+		TemporalDateTimeMin:                 chgenDateTimeMinUnix,
+		TemporalDateTimeMax:                 chgenDateTimeMaxUnix,
+		TemporalDateTime64Min:               chgenDateTime64MinUnix,
+		TemporalDateTime64Max:               chgenDateTime64MaxUnix,
+		TemporalDateTime64MaxNanosecond:     chgenDateTime64MaxNanosecond,
+		TemporalDateTime64NanoMin:           chgenDateTime64NanoMinUnix,
+		TemporalDateTime64NanoMax:           chgenDateTime64NanoMaxUnix,
+		TemporalDateTime64NanoMaxNanosecond: chgenDateTime64NanoMaxNanosecond,
+		TemporalReadableMin:                 chgenReadableMinUnix,
+		TemporalReadableMax:                 chgenReadableMaxUnix,
+		TemporalReadableMaxNanosecond:       chgenReadableMaxNanosecond,
 	}
 
 	var raw bytes.Buffer
@@ -158,18 +161,21 @@ type templateData struct {
 	NeedsTemporalGuards    bool
 	NeedsTemporalScanCheck bool
 
-	TemporalDateMin           int64
-	TemporalDateMax           int64
-	TemporalDate32Min         int64
-	TemporalDate32Max         int64
-	TemporalDateTimeMin       int64
-	TemporalDateTimeMax       int64
-	TemporalDateTime64Min     int64
-	TemporalDateTime64Max     int64
-	TemporalDateTime64NanoMin int64
-	TemporalDateTime64NanoMax int64
-	TemporalReadableMin       int64
-	TemporalReadableMax       int64
+	TemporalDateMin                     int64
+	TemporalDateMax                     int64
+	TemporalDate32Min                   int64
+	TemporalDate32Max                   int64
+	TemporalDateTimeMin                 int64
+	TemporalDateTimeMax                 int64
+	TemporalDateTime64Min               int64
+	TemporalDateTime64Max               int64
+	TemporalDateTime64MaxNanosecond     int64
+	TemporalDateTime64NanoMin           int64
+	TemporalDateTime64NanoMax           int64
+	TemporalDateTime64NanoMaxNanosecond int64
+	TemporalReadableMin                 int64
+	TemporalReadableMax                 int64
+	TemporalReadableMaxNanosecond       int64
 }
 
 func collectExternalTableTypes(queries []Query) ([]ExternalParam, error) {
@@ -484,8 +490,10 @@ const (
 	chgenDateTimeMaxUnix = int64({{.TemporalDateTimeMax}})
 	chgenDateTime64MinUnix = int64({{.TemporalDateTime64Min}})
 	chgenDateTime64MaxUnix = int64({{.TemporalDateTime64Max}})
+	chgenDateTime64MaxNanosecond = int64({{.TemporalDateTime64MaxNanosecond}})
 	chgenDateTime64NanoMinUnix = int64({{.TemporalDateTime64NanoMin}})
 	chgenDateTime64NanoMaxUnix = int64({{.TemporalDateTime64NanoMax}})
+	chgenDateTime64NanoMaxNanosecond = int64({{.TemporalDateTime64NanoMaxNanosecond}})
 )
 
 func chgenGuardRange(value time.Time, label, typeName string, minUnix, maxUnix int64) error {
@@ -498,6 +506,22 @@ func chgenGuardRange(value time.Time, label, typeName string, minUnix, maxUnix i
 			value.UTC().Format(time.RFC3339Nano),
 			time.Unix(minUnix, 0).UTC().Format(time.RFC3339),
 			time.Unix(maxUnix, 0).UTC().Format(time.RFC3339),
+		)
+	}
+	return nil
+}
+
+func chgenGuardDateTime64Range(value time.Time, label, typeName string, minUnix, maxUnix, maxNanosecond int64) error {
+	seconds := value.Unix()
+	nanosecond := int64(value.Nanosecond())
+	if seconds < minUnix || seconds > maxUnix || (seconds == maxUnix && nanosecond > maxNanosecond) {
+		return fmt.Errorf(
+			"%s: %s cannot hold %s; the representable range is %s to %s",
+			label,
+			typeName,
+			value.UTC().Format(time.RFC3339Nano),
+			time.Unix(minUnix, 0).UTC().Format(time.RFC3339),
+			time.Unix(maxUnix, maxNanosecond).UTC().Format(time.RFC3339Nano),
 		)
 	}
 	return nil
@@ -521,25 +545,25 @@ func chgenGuardDateTime(value time.Time, label string) error {
 // 1900-01-01 00:00:00.291 with err = nil (measured, v2.47.0). Guarding at the
 // column limit would pass exactly the values that corrupt.
 func chgenGuardDateTime64(value time.Time, label string) error {
-	return chgenGuardRange(value, label, "DateTime64 through clickhouse-go", chgenDateTime64MinUnix, chgenDateTime64MaxUnix)
+	return chgenGuardDateTime64Range(value, label, "DateTime64 through clickhouse-go", chgenDateTime64MinUnix, chgenDateTime64MaxUnix, chgenDateTime64MaxNanosecond)
 }
 
 // chgenGuardDateTime64Nano is precision 9, where the server itself raises
 // DECIMAL_OVERFLOW past the same nanosecond limit.
 func chgenGuardDateTime64Nano(value time.Time, label string) error {
-	return chgenGuardRange(value, label, "DateTime64(9)", chgenDateTime64NanoMinUnix, chgenDateTime64NanoMaxUnix)
+	return chgenGuardDateTime64Range(value, label, "DateTime64(9)", chgenDateTime64NanoMinUnix, chgenDateTime64NanoMaxUnix, chgenDateTime64NanoMaxNanosecond)
 }
 {{- end}}
 {{- if .NeedsTemporalScanCheck}}
 
 // chgenCheckScannedTime rejects a DateTime64 that the driver could not carry.
-// clickhouse-go converts every DateTime64 through int64 nanoseconds, so a
-// stored instant after 2262-04-11 23:47:16 UTC wraps into an unrelated time
-// with no error. Measured: a stored 2299-12-31 arrives as 1715-06-12.
+// clickhouse-go converts every DateTime64 through int64 nanoseconds. A stored
+// instant after 2262-04-11T23:47:16.854775807Z can arrive as an unrelated
+// earlier time with no error. Measured: a stored 2299-12-31 arrives as
+// 1715-06-12.
 //
-// The wrap cannot be reversed here, because the arriving value alone does not
-// say how many times it wrapped. The cell is therefore reported as an error
-// instead of a plausible but wrong instant.
+// The arriving value does not identify the original instant. This check can
+// only refuse the invalid scan. It cannot repair the value.
 func chgenCheckScannedTime(value time.Time, label string) error {
 	if value.Unix() < chgenReadableMinUnix {
 		return fmt.Errorf(
@@ -547,7 +571,7 @@ func chgenCheckScannedTime(value time.Time, label string) error {
 			label,
 			value.UTC().Format(time.RFC3339Nano),
 			time.Unix(chgenReadableMinUnix, 0).UTC().Format(time.RFC3339),
-			time.Unix(chgenReadableMaxUnix, 0).UTC().Format(time.RFC3339),
+			time.Unix(chgenReadableMaxUnix, chgenReadableMaxNanosecond).UTC().Format(time.RFC3339Nano),
 		)
 	}
 	return nil
@@ -556,6 +580,7 @@ func chgenCheckScannedTime(value time.Time, label string) error {
 const (
 	chgenReadableMinUnix = int64({{.TemporalReadableMin}})
 	chgenReadableMaxUnix = int64({{.TemporalReadableMax}})
+	chgenReadableMaxNanosecond = int64({{.TemporalReadableMaxNanosecond}})
 )
 {{- end}}
 

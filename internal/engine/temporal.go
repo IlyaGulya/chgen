@@ -56,8 +56,9 @@ const (
 	// stored 2106-02-07 06:28:15; both returned nil. The write limit is thus
 	// the nanosecond ceiling, not the column calendar. A guard set to the
 	// wider calendar range would pass exactly the values that corrupt.
-	chgenDateTime64MinUnix int64 = -2208988800 // 1900-01-01 00:00:00 UTC
-	chgenDateTime64MaxUnix int64 = 9223372036  // 2262-04-11 23:47:16 UTC
+	chgenDateTime64MinUnix       int64 = -2208988800 // 1900-01-01 00:00:00 UTC
+	chgenDateTime64MaxUnix       int64 = 9223372036  // 2262-04-11 23:47:16 UTC
+	chgenDateTime64MaxNanosecond int64 = 854775807   // final fraction of the signed 64-bit nanosecond range
 
 	// chgenDateTime64ColumnMaxUnix is the limit that the SERVER accepts for
 	// precision 0 through 8. It is kept as a named value because it is what
@@ -68,26 +69,30 @@ const (
 	// DateTime64(9) counts nanoseconds in a signed 64-bit integer, so its
 	// range is much narrower than the other precisions. Measured:
 	// toDateTime64('2262-04-11 23:47:17', 9) raises DECIMAL_OVERFLOW
-	// (code 407), and 2262-04-11 23:47:16 is accepted. The lower end
+	// (code 407), and 2262-04-11 23:47:16.854775807 is accepted. The lower end
 	// saturates to 1900-01-01 exactly as the other precisions do, because
 	// the column calendar, not the nanosecond count, is the binding limit
 	// there.
-	chgenDateTime64NanoMinUnix int64 = -2208988800 // 1900-01-01 00:00:00 UTC
-	chgenDateTime64NanoMaxUnix int64 = 9223372036  // 2262-04-11 23:47:16 UTC
+	chgenDateTime64NanoMinUnix       int64 = -2208988800 // 1900-01-01 00:00:00 UTC
+	chgenDateTime64NanoMaxUnix       int64 = 9223372036  // 2262-04-11 23:47:16 UTC
+	chgenDateTime64NanoMaxNanosecond int64 = 854775807   // final fraction of the signed 64-bit nanosecond range
 )
 
-// chgenReadableMaxUnix is the largest instant that a scanned DateTime64 can
-// report without ambiguity. clickhouse-go converts every DateTime64 through
-// int64 nanoseconds, so a stored value past 2262-04-11 23:47:16 wraps.
-// Measured: a stored 2299-12-31 arrives in Go as 1715-06-12 with err = nil.
-const chgenReadableMaxUnix int64 = 9223372036
+// chgenReadableMaxUnix and chgenReadableMaxNanosecond form the largest instant
+// that the driver can report without a signed 64-bit nanosecond wrap. A stored
+// value after 2262-04-11T23:47:16.854775807Z can arrive as an unrelated earlier
+// time with no error. Measured: a stored 2299-12-31 arrives as 1715-06-12.
+const (
+	chgenReadableMaxUnix       int64 = chgenDateTime64MaxUnix
+	chgenReadableMaxNanosecond int64 = chgenDateTime64MaxNanosecond
+)
 
 // chgenReadableMinUnix is the detector for that wrap. No DateTime64 column can
 // hold an instant before 1900-01-01, so a scanned value before that limit
 // cannot be a stored value: it is the int64 nanosecond count of a stored
-// instant beyond 2262-04-11 read back as a signed integer. Measured: a stored
-// 2299-12-31 arrives as 1715-06-12, and a stored 2262-04-11 23:47:16 arrives
-// unchanged. The detector is therefore exact for the DateTime64 calendar.
+// instant after 2262-04-11T23:47:16.854775807Z read back as a signed integer.
+// The original instant cannot be recovered from the wrapped value. The check
+// can only refuse the invalid scan. It cannot repair it.
 const chgenReadableMinUnix int64 = chgenDateTime64MinUnix
 
 // temporalKind names one temporal guard family. The zero value means the type
@@ -294,10 +299,10 @@ func chgenGuardStatements(shape temporalShape, expr, label string, depth int, in
 }
 
 // chgenScanCheckStatements renders the read-side statements for one scanned
-// value. The driver converts DateTime64 through int64 nanoseconds, so a
-// stored value past 2262-04-11 arrives wrapped with no error. The check
-// cannot repair the value, because the wrap is not reversible without knowing
-// the stored instant, so it reports the unreadable cell as an explicit error.
+// value. The driver converts DateTime64 through int64 nanoseconds. A stored
+// value after 2262-04-11T23:47:16.854775807Z can arrive wrapped with no error.
+// The check cannot recover the original instant from that value. It reports
+// the unreadable cell as an explicit error.
 func chgenScanCheckStatements(shape temporalShape, expr, label string, depth int, indent string, errReturn func(string) string) []string {
 	if !shapeNeedsScanCheck(shape) {
 		return nil

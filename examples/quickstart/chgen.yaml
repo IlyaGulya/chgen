@@ -1,0 +1,6 @@
+version: 1
+packages:
+  - name: gen
+    output: internal/gen/queries.sql.go
+    schema: schema.sql
+    queries: queries.sql
