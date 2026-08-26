@@ -1,0 +1,14 @@
+# Example chgen configuration.
+#
+# Relative paths resolve against the directory of this file. Run
+#   go run ./cmd/chgen -f examples/chgen.yaml
+# from the repository root.
+version: 1
+packages:
+  - name: examplequeries
+    output: internal/examplequeries/queries.sql.go
+    queries: queries.sql
+    schema:
+      - schema.sql
+      - migrations          # directory: ordered *.sql, *.down.sql ignored
+      - external_tables.sql # marked external row schemas

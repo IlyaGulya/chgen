@@ -1,0 +1,184 @@
+{
+  "version": 1,
+  "server": {
+    "version": "25.8.29.51",
+    "server_run": 0,
+    "server_uptime_s": 0
+  },
+  "catalog_names": [
+    "array_bare",
+    "array_concat_mismatch",
+    "array_concat_same",
+    "array_eq_mismatch",
+    "date_bare",
+    "datetime64_bare",
+    "datetime_sub",
+    "decimal_add",
+    "decimal_float_add_refused",
+    "decimal_ge_decimal",
+    "decimal_ge_enum",
+    "decimal_int_add",
+    "enum_add_int_refused",
+    "enum_bare",
+    "fixedstring_bare",
+    "float_div",
+    "int_mixed_sign_add",
+    "int_str_add_refused",
+    "int_unsigned_add",
+    "int_widen_add",
+    "ip4_add_int",
+    "ip4_bare",
+    "lowcard_bare",
+    "lowcard_concat",
+    "nullable_prop_add",
+    "nullable_prop_eq",
+    "string_concat",
+    "tostartofinterval_datetime",
+    "uuid_bare",
+    "uuid_eq_string_refused",
+    "v24_8_cityhash64_array",
+    "v24_8_cityhash64_array_nullable",
+    "v24_8_cityhash64_saf_array_array_nullable",
+    "v24_8_cityhash64_saf_array_nullable",
+    "v24_8_greatest_decimal",
+    "v24_8_greatest_safn_i32",
+    "v24_8_greatest_safn_u64",
+    "v24_8_least_decimal",
+    "v24_8_least_safn_i32",
+    "v24_8_least_safn_u64",
+    "v24_8_trim_fixedstring",
+    "v24_8_trimleft_fixedstring",
+    "v24_8_trimright_fixedstring"
+  ],
+  "cells": {
+    "array_bare": {
+      "type_name": "Array(Int32)"
+    },
+    "array_concat_mismatch": {
+      "error_code": 386
+    },
+    "array_concat_same": {
+      "type_name": "Array(Int32)"
+    },
+    "array_eq_mismatch": {
+      "error_code": 43
+    },
+    "date_bare": {
+      "type_name": "Date"
+    },
+    "datetime64_bare": {
+      "type_name": "DateTime64(3)"
+    },
+    "datetime_sub": {
+      "type_name": "Decimal(18, 3)"
+    },
+    "decimal_add": {
+      "type_name": "Decimal(18, 4)"
+    },
+    "decimal_float_add_refused": {
+      "type_name": "Float64"
+    },
+    "decimal_ge_decimal": {
+      "type_name": "UInt8"
+    },
+    "decimal_ge_enum": {
+      "error_code": 43
+    },
+    "decimal_int_add": {
+      "type_name": "Decimal(18, 4)"
+    },
+    "enum_add_int_refused": {
+      "error_code": 43
+    },
+    "enum_bare": {
+      "type_name": "Enum8('a' = 1, 'b' = 2)"
+    },
+    "fixedstring_bare": {
+      "type_name": "FixedString(4)"
+    },
+    "float_div": {
+      "type_name": "Float64"
+    },
+    "int_mixed_sign_add": {
+      "type_name": "Int64"
+    },
+    "int_str_add_refused": {
+      "error_code": 43
+    },
+    "int_unsigned_add": {
+      "type_name": "UInt64"
+    },
+    "int_widen_add": {
+      "type_name": "Int64"
+    },
+    "ip4_add_int": {
+      "type_name": "UInt64"
+    },
+    "ip4_bare": {
+      "type_name": "IPv4"
+    },
+    "lowcard_bare": {
+      "type_name": "LowCardinality(String)"
+    },
+    "lowcard_concat": {
+      "type_name": "String"
+    },
+    "nullable_prop_add": {
+      "type_name": "Nullable(Int64)"
+    },
+    "nullable_prop_eq": {
+      "type_name": "Nullable(UInt8)"
+    },
+    "string_concat": {
+      "type_name": "String"
+    },
+    "tostartofinterval_datetime": {
+      "type_name": "DateTime"
+    },
+    "uuid_bare": {
+      "type_name": "UUID"
+    },
+    "uuid_eq_string_refused": {
+      "error_code": 386
+    },
+    "v24_8_cityhash64_array": {
+      "type_name": "UInt64"
+    },
+    "v24_8_cityhash64_array_nullable": {
+      "type_name": "UInt64"
+    },
+    "v24_8_cityhash64_saf_array_array_nullable": {
+      "type_name": "UInt64"
+    },
+    "v24_8_cityhash64_saf_array_nullable": {
+      "type_name": "UInt64"
+    },
+    "v24_8_greatest_decimal": {
+      "type_name": "Decimal(18, 4)"
+    },
+    "v24_8_greatest_safn_i32": {
+      "type_name": "SimpleAggregateFunction(anyLast, Nullable(Int32))"
+    },
+    "v24_8_greatest_safn_u64": {
+      "type_name": "SimpleAggregateFunction(anyLast, Nullable(UInt64))"
+    },
+    "v24_8_least_decimal": {
+      "type_name": "Decimal(18, 4)"
+    },
+    "v24_8_least_safn_i32": {
+      "type_name": "SimpleAggregateFunction(anyLast, Nullable(Int32))"
+    },
+    "v24_8_least_safn_u64": {
+      "type_name": "SimpleAggregateFunction(anyLast, Nullable(UInt64))"
+    },
+    "v24_8_trim_fixedstring": {
+      "type_name": "String"
+    },
+    "v24_8_trimleft_fixedstring": {
+      "type_name": "String"
+    },
+    "v24_8_trimright_fixedstring": {
+      "type_name": "String"
+    }
+  }
+}

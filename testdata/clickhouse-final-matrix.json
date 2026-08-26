@@ -1,0 +1,387 @@
+{
+  "version": 1,
+  "clickhouse_version": "25.8.29.51",
+  "fixture": "final-v1",
+  "cells": [
+    {
+      "id": "from/direct",
+      "role": "from",
+      "query": "SELECT id, value FROM final_rows FINAL ORDER BY id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "id",
+          "type": "UInt64"
+        },
+        {
+          "name": "value",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_final_replacing"
+    },
+    {
+      "id": "from/alias-as",
+      "role": "from",
+      "query": "SELECT r.id, r.value FROM final_rows AS r FINAL ORDER BY r.id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "id",
+          "type": "UInt64"
+        },
+        {
+          "name": "value",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "from/alias-bare",
+      "role": "from",
+      "query": "SELECT r.id AS id FROM final_rows r FINAL ORDER BY r.id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "id",
+          "type": "UInt64"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "from/where",
+      "role": "from",
+      "query": "SELECT value FROM final_rows FINAL WHERE id = 1",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "value",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "position/alias-after-final",
+      "role": "position",
+      "query": "SELECT r.id AS id FROM final_rows FINAL AS r",
+      "chgen": "refuse",
+      "chgen_error": "parse SQL",
+      "analysis": "refuse",
+      "analysis_code": 62,
+      "execution": "refuse",
+      "execution_code": 62
+    },
+    {
+      "id": "engine/replacing",
+      "role": "engine",
+      "query": "SELECT value FROM final_rows FINAL ORDER BY id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "value",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "engine/summing",
+      "role": "engine",
+      "query": "SELECT value FROM final_summing FINAL ORDER BY id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "value",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_final_summing"
+    },
+    {
+      "id": "engine/aggregating",
+      "role": "engine",
+      "query": "SELECT id FROM final_aggregating FINAL ORDER BY id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "id",
+          "type": "UInt64"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "engine/collapsing",
+      "role": "engine",
+      "query": "SELECT value FROM final_collapsing FINAL ORDER BY id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "value",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_final_collapsing"
+    },
+    {
+      "id": "engine/versioned-collapsing",
+      "role": "engine",
+      "query": "SELECT value FROM final_versioned FINAL ORDER BY id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "value",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "engine/plain-merge-tree",
+      "role": "engine",
+      "query": "SELECT value FROM final_plain FINAL",
+      "chgen": "refuse",
+      "chgen_error": "engine MergeTree",
+      "analysis": "refuse",
+      "analysis_code": 181,
+      "execution": "refuse",
+      "execution_code": 181
+    },
+    {
+      "id": "engine/memory",
+      "role": "engine",
+      "query": "SELECT value FROM final_memory FINAL",
+      "chgen": "refuse",
+      "chgen_error": "engine Memory",
+      "analysis": "refuse",
+      "analysis_code": 181,
+      "execution": "refuse",
+      "execution_code": 181
+    },
+    {
+      "id": "engine/log",
+      "role": "engine",
+      "query": "SELECT value FROM final_log FINAL",
+      "chgen": "refuse",
+      "chgen_error": "engine Log",
+      "analysis": "refuse",
+      "analysis_code": 181,
+      "execution": "refuse",
+      "execution_code": 181
+    },
+    {
+      "id": "join/left-final",
+      "role": "join",
+      "query": "SELECT r.id AS id, p.value AS peer_value FROM final_rows AS r FINAL INNER JOIN final_plain AS p ON r.id = p.id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "id",
+          "type": "UInt64"
+        },
+        {
+          "name": "peer_value",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "join/both-final",
+      "role": "join",
+      "query": "SELECT r.id AS id, o.value AS other_value FROM final_rows AS r FINAL INNER JOIN final_other AS o FINAL ON r.id = o.id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "id",
+          "type": "UInt64"
+        },
+        {
+          "name": "other_value",
+          "type": "Int16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_final_join"
+    },
+    {
+      "id": "join/comma-first-final",
+      "role": "join",
+      "query": "SELECT r.id AS left_id, p.id AS right_id FROM final_rows AS r FINAL, final_plain AS p",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "left_id",
+          "type": "UInt64"
+        },
+        {
+          "name": "right_id",
+          "type": "UInt64"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "join/plain-final",
+      "role": "join",
+      "query": "SELECT r.id AS left_id, p.id AS right_id FROM final_rows AS r FINAL, final_plain AS p FINAL",
+      "chgen": "refuse",
+      "chgen_error": "engine MergeTree",
+      "analysis": "refuse",
+      "analysis_code": 181,
+      "execution": "refuse",
+      "execution_code": 181
+    },
+    {
+      "id": "scope/derived-inner",
+      "role": "scope",
+      "query": "SELECT d.value FROM (SELECT value FROM final_rows FINAL) AS d",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "value",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "scope/derived-modifier",
+      "role": "scope",
+      "query": "SELECT d.value FROM (SELECT value FROM final_rows) AS d FINAL",
+      "chgen": "refuse",
+      "chgen_error": "derived table",
+      "analysis": "refuse",
+      "analysis_code": 1,
+      "execution": "refuse",
+      "execution_code": 1
+    },
+    {
+      "id": "scope/cte-inner",
+      "role": "scope",
+      "query": "WITH q AS (SELECT value FROM final_rows FINAL) SELECT value FROM q",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "value",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_final_cte"
+    },
+    {
+      "id": "scope/cte-modifier",
+      "role": "scope",
+      "query": "WITH q AS (SELECT value FROM final_rows) SELECT value FROM q FINAL",
+      "chgen": "refuse",
+      "chgen_error": "has no engine",
+      "analysis": "refuse",
+      "analysis_code": 1,
+      "execution": "refuse",
+      "execution_code": 1
+    },
+    {
+      "id": "scope/set-branch",
+      "role": "scope",
+      "query": "SELECT value FROM final_rows FINAL UNION ALL SELECT value FROM final_memory ORDER BY value",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "value",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_final_set"
+    },
+    {
+      "id": "scope/set-invalid-engine",
+      "role": "scope",
+      "query": "SELECT value FROM final_rows FINAL UNION ALL SELECT value FROM final_memory FINAL",
+      "chgen": "refuse",
+      "chgen_error": "engine Memory",
+      "analysis": "refuse",
+      "analysis_code": 181,
+      "execution": "refuse",
+      "execution_code": 181
+    },
+    {
+      "id": "subquery/scalar",
+      "role": "subquery",
+      "query": "SELECT (SELECT max(value) FROM final_rows FINAL) AS value",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "value",
+          "type": "Nullable(Int32)"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "subquery/in",
+      "role": "subquery",
+      "query": "SELECT id IN (SELECT id FROM final_rows FINAL) AS value FROM final_plain",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "value",
+          "type": "UInt8"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "subquery/exists",
+      "role": "subquery",
+      "query": "SELECT EXISTS(SELECT id FROM final_rows FINAL WHERE value \u003e 0) AS value",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "value",
+          "type": "UInt8"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "scope/derived-set",
+      "role": "scope",
+      "query": "SELECT d.value FROM (SELECT value FROM final_rows FINAL UNION ALL SELECT toInt32(7) AS value) AS d ORDER BY value",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "value",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+line 3: query ReadWholeTuple: result PairValue (pair_value): ClickHouse type Tuple(Int32, String) has no Go mapping; this measured refusal keeps named and unnamed Tuple shapes separate, and a Tuple with a wide integer can return nil without an error

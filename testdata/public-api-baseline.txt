@@ -1,0 +1,83 @@
+# This file pins the complete public API shape.
+const CommandExec Command = "exec"
+const CommandMany Command = "many"
+const CommandOne Command = "one"
+const MeasuredCHVersion = "25.8.29.51"
+field CHType.LiteralParams []string
+field CHType.Name string
+field CHType.ParamNames []string
+field CHType.Params []CHType
+field Column.Insertable bool
+field Column.Name string
+field Column.Type CHType
+field Config.Packages []PackageConfig
+field Config.Path string
+field Config.Version int
+field ExternalColumn.ClickHouseType string
+field ExternalColumn.GoName string
+field ExternalColumn.GoType string
+field ExternalColumn.SQLName string
+field ExternalParam.Columns []ExternalColumn
+field ExternalParam.GoName string
+field ExternalParam.RowType string
+field ExternalParam.SchemaName string
+field ExternalParam.WireName string
+field InputEntry.Entry string
+field InputEntry.Path string
+field PackageConfig.Name string
+field PackageConfig.Output string
+field PackageConfig.Queries []InputEntry
+field PackageConfig.Schema []InputEntry
+field Param.CHType CHType
+field Param.GoName string
+field Param.GoType string
+field Query.Command Command
+field Query.ExternalParams []ExternalParam
+field Query.File string
+field Query.Line int
+field Query.Name string
+field Query.NamedParamNames []string
+field Query.ParamIndexes []int
+field Query.Params []Param
+field Query.ResultCapacity string
+field Query.Results []Result
+field Query.SQL string
+field Result.CHType CHType
+field Result.GoName string
+field Result.GoType string
+field Result.SQLName string
+field Schema.Tables map[string]Table
+field SchemaCatalogs.External *Schema
+field SchemaCatalogs.Physical *Schema
+field Table.ColumnOrder []string
+field Table.Columns map[string]Column
+field Table.Engine *TableEngine
+field Table.File string
+field Table.Line int
+field Table.Name string
+field TableEngine.Name string
+field TableEngine.OrderBy []string
+field TableEngine.Params []string
+func Generate(packageName string, queries []Query) ([]byte, error)
+func InferExpressionType(ddl, tableName, expression string) (CHType, error)
+func InferQueryResultType(ddl, statement string) (CHType, error)
+func LoadConfig(path string) (*Config, error)
+func ParseQueryFiles(paths []string, catalogs *SchemaCatalogs) ([]Query, error)
+func ParseSchemaCatalogs(paths []string) (*SchemaCatalogs, error)
+func Run(configPath string) error
+method CHType.String() string
+type CHType struct
+type Column struct
+type Command string
+type Config struct
+type ExternalColumn struct
+type ExternalParam struct
+type InputEntry struct
+type PackageConfig struct
+type Param struct
+type Query struct
+type Result struct
+type Schema struct
+type SchemaCatalogs struct
+type Table struct
+type TableEngine struct

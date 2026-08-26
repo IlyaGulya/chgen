@@ -1,0 +1,253 @@
+{
+  "version": 1,
+  "clickhouse_version": "25.8.29.51",
+  "cells": [
+    {
+      "id": "frame-groups",
+      "axis": "frame",
+      "sql": "sum(i32) OVER (ORDER BY i32 GROUPS BETWEEN 1 PRECEDING AND CURRENT ROW)",
+      "chgen": "refuse",
+      "analysis": "may_accept",
+      "execution": "refuse"
+    },
+    {
+      "id": "frame-inverted",
+      "axis": "frame",
+      "sql": "sum(i32) OVER (ORDER BY i32 ROWS BETWEEN 2 FOLLOWING AND 1 FOLLOWING)",
+      "chgen": "refuse",
+      "analysis": "may_accept",
+      "execution": "refuse"
+    },
+    {
+      "id": "frame-range",
+      "axis": "frame",
+      "sql": "sum(i32) OVER (ORDER BY i32 RANGE BETWEEN 1 PRECEDING AND CURRENT ROW)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Int64"
+    },
+    {
+      "id": "frame-range-without-order",
+      "axis": "frame",
+      "sql": "sum(i32) OVER (RANGE BETWEEN 1 PRECEDING AND CURRENT ROW)",
+      "chgen": "refuse",
+      "analysis": "may_accept",
+      "execution": "refuse"
+    },
+    {
+      "id": "frame-rows",
+      "axis": "frame",
+      "sql": "sum(i32) OVER (ORDER BY i32 ROWS BETWEEN 1 PRECEDING AND CURRENT ROW)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Int64",
+      "generated_value": true
+    },
+    {
+      "id": "placement-first-value-bare",
+      "axis": "placement",
+      "sql": "first_value(i32)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Int32"
+    },
+    {
+      "id": "placement-row-number-bare",
+      "axis": "placement",
+      "sql": "row_number()",
+      "chgen": "refuse",
+      "analysis": "refuse",
+      "execution": "refuse"
+    },
+    {
+      "id": "placement-row-number-over",
+      "axis": "placement",
+      "sql": "row_number() OVER (ORDER BY i32)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "UInt64",
+      "generated_value": true
+    },
+    {
+      "id": "policy-lag-frame",
+      "axis": "policy",
+      "sql": "lag(i32) OVER (ORDER BY i32 ROWS BETWEEN CURRENT ROW AND CURRENT ROW)",
+      "chgen": "refuse",
+      "analysis": "may_accept",
+      "execution": "refuse"
+    },
+    {
+      "id": "policy-lag-in-frame",
+      "axis": "policy",
+      "sql": "lagInFrame(i32, 1) OVER (ORDER BY i32 ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Int32",
+      "generated_value": true
+    },
+    {
+      "id": "policy-ntile-no-order",
+      "axis": "policy",
+      "sql": "ntile(2) OVER ()",
+      "chgen": "refuse",
+      "analysis": "may_accept",
+      "execution": "refuse"
+    },
+    {
+      "id": "result-aggregate-window",
+      "axis": "result",
+      "sql": "sum(i32) OVER (ORDER BY i32 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Int64",
+      "generated_value": true
+    },
+    {
+      "id": "result-geo",
+      "axis": "result",
+      "sql": "lagInFrame(api_point, 1) OVER (ORDER BY i32)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Tuple(Float64, Float64)"
+    },
+    {
+      "id": "result-nullable",
+      "axis": "result",
+      "sql": "lagInFrame(ni32, 1) OVER (ORDER BY i32)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Nullable(Int32)"
+    },
+    {
+      "id": "roster-first-respect-nulls",
+      "axis": "result",
+      "sql": "firstValueRespectNulls(ni32) OVER (ORDER BY i32)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Nullable(Int32)"
+    },
+    {
+      "id": "roster-lag",
+      "axis": "policy",
+      "sql": "lag(i32, 1) OVER (ORDER BY i32)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Int32",
+      "generated_value": true
+    },
+    {
+      "id": "roster-last-respect-nulls-bare",
+      "axis": "placement",
+      "sql": "last_value_respect_nulls(ni32)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Nullable(Int32)"
+    },
+    {
+      "id": "roster-lead",
+      "axis": "policy",
+      "sql": "lead(i32, 1) OVER (ORDER BY i32)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Int32",
+      "generated_value": true
+    },
+    {
+      "id": "roster-nth-value",
+      "axis": "policy",
+      "sql": "nth_value(i32, 2) OVER (ORDER BY i32 ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Int32"
+    },
+    {
+      "id": "roster-ntile",
+      "axis": "policy",
+      "sql": "ntile(2) OVER (ORDER BY i32)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "UInt64"
+    },
+    {
+      "id": "scope-known-columns",
+      "axis": "scope",
+      "sql": "sum(i32) OVER (PARTITION BY u8 ORDER BY i32)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Int64"
+    },
+    {
+      "id": "scope-named-derived",
+      "axis": "scope",
+      "sql": "sum(i32) OVER w2 WINDOW w1 AS (PARTITION BY u8), w2 AS (w1 ORDER BY i32)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Int64"
+    },
+    {
+      "id": "scope-named-distinct-case",
+      "axis": "scope",
+      "sql": "sum(i32) OVER W WINDOW W AS (PARTITION BY u8), w AS (ORDER BY i32)",
+      "chgen": "accept",
+      "analysis": "accept",
+      "execution": "accept",
+      "type": "Int64"
+    },
+    {
+      "id": "scope-named-missing",
+      "axis": "scope",
+      "sql": "sum(i32) OVER missing",
+      "chgen": "refuse",
+      "analysis": "refuse",
+      "execution": "refuse"
+    },
+    {
+      "id": "scope-named-wrong-case",
+      "axis": "scope",
+      "sql": "sum(i32) OVER W WINDOW w AS (ORDER BY i32)",
+      "chgen": "refuse",
+      "analysis": "refuse",
+      "execution": "refuse"
+    },
+    {
+      "id": "scope-unknown-order",
+      "axis": "scope",
+      "sql": "sum(i32) OVER (PARTITION BY u8 ORDER BY missing)",
+      "chgen": "refuse",
+      "analysis": "may_accept",
+      "execution": "refuse"
+    },
+    {
+      "id": "scope-unknown-partition",
+      "axis": "scope",
+      "sql": "sum(i32) OVER (PARTITION BY missing ORDER BY i32)",
+      "chgen": "refuse",
+      "analysis": "may_accept",
+      "execution": "refuse"
+    }
+  ],
+  "exec_probe_links": {
+    "frame-rows": "probe_window_sum_rows",
+    "placement-row-number-over": "probe_window_row_number",
+    "policy-lag-in-frame": "probe_window_lag_in_frame",
+    "result-aggregate-window": "probe_window_sum_rows",
+    "roster-lag": "probe_window_lag_frame_difference",
+    "roster-lead": "probe_window_lead_frame_difference"
+  }
+}

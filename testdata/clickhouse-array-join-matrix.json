@@ -1,0 +1,623 @@
+{
+  "version": 1,
+  "clickhouse_version": "25.8.29.51",
+  "fixture": "array-join-v1",
+  "cells": [
+    {
+      "id": "binding/bare",
+      "role": "binding",
+      "query": "SELECT values AS item FROM array_join_rows ARRAY JOIN values ORDER BY id, item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "item",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_bare"
+    },
+    {
+      "id": "binding/alias-preserves-source",
+      "role": "binding",
+      "query": "SELECT values AS original, item FROM array_join_rows ARRAY JOIN values AS item ORDER BY id, item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "original",
+          "type": "Array(Int32)"
+        },
+        {
+          "name": "item",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_alias"
+    },
+    {
+      "id": "binding/qualified-bare",
+      "role": "binding",
+      "query": "SELECT r.values AS item FROM array_join_rows AS r ARRAY JOIN values ORDER BY id, item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "item",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "binding/qualified-alias-source",
+      "role": "binding",
+      "query": "SELECT r.values AS original, item FROM array_join_rows AS r ARRAY JOIN values AS item ORDER BY id, item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "original",
+          "type": "Array(Int32)"
+        },
+        {
+          "name": "item",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "kind/left-empty",
+      "role": "join_kind",
+      "query": "SELECT id, item FROM array_join_rows LEFT ARRAY JOIN empty_values AS item ORDER BY id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "id",
+          "type": "UInt8"
+        },
+        {
+          "name": "item",
+          "type": "UInt32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_left"
+    },
+    {
+      "id": "kind/inner",
+      "role": "join_kind",
+      "query": "SELECT item FROM array_join_rows INNER ARRAY JOIN values AS item ORDER BY item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "item",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "binding/multiple",
+      "role": "binding",
+      "query": "SELECT a, b FROM array_join_rows ARRAY JOIN values AS a, peers AS b ORDER BY id, a",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "a",
+          "type": "Int32"
+        },
+        {
+          "name": "b",
+          "type": "UInt16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_multiple"
+    },
+    {
+      "id": "expression/array-map",
+      "role": "expression",
+      "query": "SELECT item FROM array_join_rows ARRAY JOIN arrayMap(x -\u003e x + toInt32(id), values) AS item ORDER BY item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "item",
+          "type": "Int64"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "expression/anonymous",
+      "role": "expression",
+      "query": "SELECT id AS result FROM array_join_rows ARRAY JOIN arrayMap(x -\u003e x + 1, values) ORDER BY id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "UInt8"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "wrapper/nullable",
+      "role": "wrapper",
+      "query": "SELECT item FROM array_join_rows ARRAY JOIN nullable_values AS item ORDER BY id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "item",
+          "type": "Nullable(Int16)"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_nullable"
+    },
+    {
+      "id": "wrapper/low-cardinality",
+      "role": "wrapper",
+      "query": "SELECT item FROM array_join_rows ARRAY JOIN low_values AS item ORDER BY item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "item",
+          "type": "LowCardinality(String)"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_low_cardinality"
+    },
+    {
+      "id": "shape/tuple",
+      "role": "shape",
+      "query": "SELECT item.x AS x, item.y AS y FROM array_join_rows ARRAY JOIN tuple_values AS item ORDER BY id, x",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "x",
+          "type": "UInt8"
+        },
+        {
+          "name": "y",
+          "type": "Nullable(String)"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_tuple"
+    },
+    {
+      "id": "shape/nested",
+      "role": "shape",
+      "query": "SELECT nested_values.k AS k, nested_values.v AS v FROM array_join_rows ARRAY JOIN nested_values ORDER BY id, k",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "k",
+          "type": "UInt16"
+        },
+        {
+          "name": "v",
+          "type": "String"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_nested"
+    },
+    {
+      "id": "shape/map",
+      "role": "shape",
+      "query": "SELECT item.1 AS key, item.2 AS value FROM array_join_rows ARRAY JOIN mapped AS item ORDER BY id, key",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "key",
+          "type": "String"
+        },
+        {
+          "name": "value",
+          "type": "UInt16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_map"
+    },
+    {
+      "id": "shadow/unqualified",
+      "role": "shadow",
+      "query": "SELECT scalar AS exploded FROM array_join_rows ARRAY JOIN values AS scalar ORDER BY exploded",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "exploded",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "shadow/qualified-source",
+      "role": "shadow",
+      "query": "SELECT scalar AS exploded, array_join_rows.scalar AS original FROM array_join_rows ARRAY JOIN values AS scalar ORDER BY exploded",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "exploded",
+          "type": "Int32"
+        },
+        {
+          "name": "original",
+          "type": "Int64"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "shadow/scalar-cte",
+      "role": "shadow",
+      "query": "WITH toUInt64(7) AS item SELECT item AS result FROM array_join_rows ARRAY JOIN values AS item ORDER BY id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "UInt64"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "identity/alias-case",
+      "role": "identity",
+      "query": "SELECT Item AS value FROM array_join_rows ARRAY JOIN values AS item",
+      "chgen": "refuse",
+      "chgen_error": "Item",
+      "analysis": "refuse",
+      "analysis_code": 47,
+      "execution": "refuse",
+      "execution_code": 47
+    },
+    {
+      "id": "identity/duplicate-alias",
+      "role": "identity",
+      "query": "SELECT item AS value FROM array_join_rows ARRAY JOIN values AS item, peers AS item",
+      "chgen": "refuse",
+      "chgen_error": "defined more than once",
+      "analysis": "refuse",
+      "analysis_code": 36,
+      "execution": "refuse",
+      "execution_code": 36
+    },
+    {
+      "id": "expression/missing",
+      "role": "expression",
+      "query": "SELECT item AS value FROM array_join_rows ARRAY JOIN missing AS item",
+      "chgen": "refuse",
+      "chgen_error": "missing",
+      "analysis": "refuse",
+      "analysis_code": 47,
+      "execution": "refuse",
+      "execution_code": 47
+    },
+    {
+      "id": "expression/non-array",
+      "role": "expression",
+      "query": "SELECT item AS value FROM array_join_rows ARRAY JOIN scalar AS item",
+      "chgen": "refuse",
+      "chgen_error": "requires an Array or Map",
+      "analysis": "refuse",
+      "analysis_code": 53,
+      "execution": "refuse",
+      "execution_code": 53
+    },
+    {
+      "id": "expression/empty-anonymous",
+      "role": "expression",
+      "query": "SELECT id AS result FROM array_join_rows ARRAY JOIN [] ORDER BY id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "UInt8"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_empty_anonymous"
+    },
+    {
+      "id": "shape/nested-missing",
+      "role": "shape",
+      "query": "SELECT nested_values.missing AS value FROM array_join_rows ARRAY JOIN nested_values",
+      "chgen": "refuse",
+      "chgen_error": "missing",
+      "analysis": "refuse",
+      "analysis_code": 47,
+      "execution": "refuse",
+      "execution_code": 47
+    },
+    {
+      "id": "shape/tuple-missing",
+      "role": "shape",
+      "query": "SELECT item.missing AS value FROM array_join_rows ARRAY JOIN tuple_values AS item",
+      "chgen": "refuse",
+      "chgen_error": "missing",
+      "analysis": "refuse",
+      "analysis_code": 47,
+      "execution": "refuse",
+      "execution_code": 47
+    },
+    {
+      "id": "clause/where-output",
+      "role": "clause",
+      "query": "SELECT item FROM array_join_rows ARRAY JOIN values AS item WHERE item \u003e 10 ORDER BY item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "item",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_param"
+    },
+    {
+      "id": "clause/prewhere-output",
+      "role": "clause",
+      "query": "SELECT item FROM array_join_rows ARRAY JOIN values AS item PREWHERE item \u003e 10",
+      "chgen": "refuse",
+      "chgen_error": "PREWHERE cannot use",
+      "analysis": "refuse",
+      "analysis_code": 182,
+      "execution": "refuse",
+      "execution_code": 182
+    },
+    {
+      "id": "clause/prewhere-source",
+      "role": "clause",
+      "query": "SELECT item FROM array_join_rows ARRAY JOIN values AS item PREWHERE id = 1 ORDER BY item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "item",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "clause/group-having-order",
+      "role": "clause",
+      "query": "SELECT item, count() AS n FROM array_join_rows ARRAY JOIN values AS item GROUP BY item HAVING item \u003e 10 ORDER BY item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "item",
+          "type": "Int32"
+        },
+        {
+          "name": "n",
+          "type": "UInt64"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "clause/source-array",
+      "role": "clause",
+      "query": "SELECT values AS original FROM array_join_rows ARRAY JOIN values AS item WHERE values[1] \u003e 0 ORDER BY id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "original",
+          "type": "Array(Int32)"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "runtime/equal-sizes",
+      "role": "runtime",
+      "query": "SELECT a, b FROM array_join_rows ARRAY JOIN values AS a, peers AS b ORDER BY id, a",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "a",
+          "type": "Int32"
+        },
+        {
+          "name": "b",
+          "type": "UInt16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "runtime/unequal-sizes",
+      "role": "runtime",
+      "query": "SELECT a, b FROM array_join_rows ARRAY JOIN values AS a, short_values AS b",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "a",
+          "type": "Int32"
+        },
+        {
+          "name": "b",
+          "type": "UInt16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "refuse",
+      "execution_code": 190
+    },
+    {
+      "id": "scope/derived",
+      "role": "scope",
+      "query": "SELECT item FROM (SELECT id, values FROM array_join_rows) AS d ARRAY JOIN values AS item ORDER BY id, item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "item",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "scope/cte",
+      "role": "scope",
+      "query": "WITH q AS (SELECT id, values FROM array_join_rows) SELECT item FROM q ARRAY JOIN values AS item ORDER BY id, item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "item",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "scope/set-operation",
+      "role": "scope",
+      "query": "SELECT item FROM array_join_rows ARRAY JOIN values AS item UNION ALL SELECT toInt64(7) AS item ORDER BY item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "item",
+          "type": "Int64"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_set"
+    },
+    {
+      "id": "identity/qualified-exact",
+      "role": "identity",
+      "query": "SELECT item FROM array_join_rows AS R ARRAY JOIN R.values AS item ORDER BY item",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "item",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "identity/qualified-case",
+      "role": "identity",
+      "query": "SELECT item FROM array_join_rows AS R ARRAY JOIN r.values AS item",
+      "chgen": "refuse",
+      "chgen_error": "column \"values\"",
+      "analysis": "refuse",
+      "analysis_code": 47,
+      "execution": "refuse",
+      "execution_code": 47
+    },
+    {
+      "id": "scope/same-node-alias",
+      "role": "scope",
+      "query": "SELECT a, b FROM array_join_rows ARRAY JOIN values AS a, [a] AS b",
+      "chgen": "refuse",
+      "chgen_error": "column \"a\"",
+      "analysis": "refuse",
+      "analysis_code": 47,
+      "execution": "refuse",
+      "execution_code": 47
+    },
+    {
+      "id": "scope/same-node-expression-alias",
+      "role": "scope",
+      "query": "SELECT a, b FROM array_join_rows ARRAY JOIN values AS a, arrayMap(x -\u003e x + a, peers) AS b",
+      "chgen": "refuse",
+      "chgen_error": "column \"a\"",
+      "analysis": "refuse",
+      "analysis_code": 47,
+      "execution": "refuse",
+      "execution_code": 47
+    },
+    {
+      "id": "scope/same-node-bare-rebinding",
+      "role": "scope",
+      "query": "SELECT values, b FROM array_join_rows ARRAY JOIN values, [values] AS b",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "values",
+          "type": "Int32"
+        },
+        {
+          "name": "b",
+          "type": "Array(Int32)"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "refuse",
+      "execution_code": 190
+    },
+    {
+      "id": "scope/sequential-visibility",
+      "role": "scope",
+      "query": "SELECT a, b FROM array_join_rows ARRAY JOIN values AS a ARRAY JOIN [a] AS b ORDER BY id, a",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "a",
+          "type": "Int32"
+        },
+        {
+          "name": "b",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_sequential_visibility"
+    },
+    {
+      "id": "runtime/sequential-cardinality",
+      "role": "runtime",
+      "query": "SELECT a, b FROM array_join_rows ARRAY JOIN values AS a ARRAY JOIN peers AS b ORDER BY id, a, b",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "a",
+          "type": "Int32"
+        },
+        {
+          "name": "b",
+          "type": "UInt16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_array_join_sequential_cardinality"
+    }
+  ]
+}

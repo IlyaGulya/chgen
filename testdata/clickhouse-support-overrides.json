@@ -1,0 +1,515 @@
+{
+  "format_version": 2,
+  "overrides": [
+    {
+      "kind": "data_type_family",
+      "name": "AggregateFunction",
+      "status": "explicitly_refused",
+      "semantic_family": "driver-unsupported-state",
+      "evidence": "testdata/clickhouse-type-transport-evidence.json:aggregate-state-read",
+      "test_witness": "internal/engine/type_transport_evidence_test.go:TestPinnedTypeTransportEvidenceHasRequiredHazards"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Array",
+      "status": "supported_measured",
+      "semantic_family": "container",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Bool",
+      "status": "supported_measured",
+      "semantic_family": "scalar",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Date",
+      "status": "supported_measured",
+      "semantic_family": "temporal",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Date32",
+      "status": "supported_measured",
+      "semantic_family": "temporal",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "DateTime",
+      "status": "supported_measured",
+      "semantic_family": "temporal",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "DateTime64",
+      "status": "supported_measured",
+      "semantic_family": "temporal",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Decimal",
+      "status": "supported_measured",
+      "semantic_family": "decimal",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Decimal128",
+      "status": "supported_measured",
+      "semantic_family": "decimal",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Decimal256",
+      "status": "supported_measured",
+      "semantic_family": "decimal",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Decimal32",
+      "status": "supported_measured",
+      "semantic_family": "decimal",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Decimal64",
+      "status": "supported_measured",
+      "semantic_family": "decimal",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Enum",
+      "status": "explicitly_refused",
+      "semantic_family": "width-dependent-alias",
+      "evidence": "clickhouse-25.8.29.51/type-specimen-canonical-width",
+      "test_witness": "internal/engine/integer_alias_test.go:TestWidthDependentEnumAliasIsRefused"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Enum16",
+      "status": "supported_measured",
+      "semantic_family": "enum",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Enum8",
+      "status": "supported_measured",
+      "semantic_family": "enum",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "FixedString",
+      "status": "supported_measured",
+      "semantic_family": "string",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Float32",
+      "status": "supported_measured",
+      "semantic_family": "floating-point",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Float64",
+      "status": "supported_measured",
+      "semantic_family": "floating-point",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "IPv4",
+      "status": "supported_measured",
+      "semantic_family": "network",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "IPv6",
+      "status": "supported_measured",
+      "semantic_family": "network",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Int16",
+      "status": "supported_measured",
+      "semantic_family": "integer",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Int32",
+      "status": "supported_measured",
+      "semantic_family": "integer",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Int64",
+      "status": "supported_measured",
+      "semantic_family": "integer",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Int8",
+      "status": "supported_measured",
+      "semantic_family": "integer",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "LowCardinality",
+      "status": "supported_measured",
+      "semantic_family": "wrapper",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Map",
+      "status": "supported_measured",
+      "semantic_family": "container",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Nullable",
+      "status": "supported_measured",
+      "semantic_family": "wrapper",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "SimpleAggregateFunction",
+      "status": "supported_measured",
+      "semantic_family": "measured-constructor-subset",
+      "evidence": "clickhouse-25.8.29.51/execoracle-sum-int64-round-trip",
+      "test_witness": "internal/engine/integer_alias_test.go:TestSimpleAggregateFunctionConstructorBoundary"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "String",
+      "status": "supported_measured",
+      "semantic_family": "string",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "UInt16",
+      "status": "supported_measured",
+      "semantic_family": "integer",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "UInt32",
+      "status": "supported_measured",
+      "semantic_family": "integer",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "UInt64",
+      "status": "supported_measured",
+      "semantic_family": "integer",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "UInt8",
+      "status": "supported_measured",
+      "semantic_family": "integer",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "UUID",
+      "status": "supported_measured",
+      "semantic_family": "identifier",
+      "evidence": "clickhouse-25.8.29.51/execoracle-round-trip",
+      "test_witness": "internal/engine/execoracle_test.go:TestExecOracle"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Int128",
+      "status": "explicitly_refused",
+      "semantic_family": "unsafe-driver-transport",
+      "evidence": "testdata/clickhouse-type-transport-evidence.json:wide-driver-hazards",
+      "test_witness": "internal/engine/type_transport_evidence_test.go:TestPinnedTypeTransportEvidenceHasRequiredHazards"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "UInt128",
+      "status": "explicitly_refused",
+      "semantic_family": "unsafe-driver-transport",
+      "evidence": "testdata/clickhouse-type-transport-evidence.json:wide-driver-hazards",
+      "test_witness": "internal/engine/type_transport_evidence_test.go:TestPinnedTypeTransportEvidenceHasRequiredHazards"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Int256",
+      "status": "explicitly_refused",
+      "semantic_family": "unsafe-driver-transport",
+      "evidence": "testdata/clickhouse-type-transport-evidence.json:wide-driver-hazards",
+      "test_witness": "internal/engine/type_transport_evidence_test.go:TestPinnedTypeTransportEvidenceHasRequiredHazards"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "UInt256",
+      "status": "explicitly_refused",
+      "semantic_family": "unsafe-driver-transport",
+      "evidence": "testdata/clickhouse-type-transport-evidence.json:wide-driver-hazards",
+      "test_witness": "internal/engine/type_transport_evidence_test.go:TestPinnedTypeTransportEvidenceHasRequiredHazards"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Tuple",
+      "status": "explicitly_refused",
+      "semantic_family": "shape-dependent-driver-gap",
+      "evidence": "testdata/clickhouse-type-transport-evidence.json:tuple-wide-read",
+      "test_witness": "internal/engine/type_transport_evidence_test.go:TestPinnedTypeTransportEvidenceHasRequiredHazards"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Nested",
+      "status": "explicitly_refused",
+      "semantic_family": "shape-dependent-driver-gap",
+      "evidence": "clickhouse-25.8.29.51/nested-physical-column-split",
+      "test_witness": "internal/engine/wide_integer_mapping_test.go:TestComplexTypeFamiliesHaveExactRefusals"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Variant",
+      "status": "explicitly_refused",
+      "semantic_family": "runtime-alternative",
+      "evidence": "clickhouse-25.8.29.51/clickhouse-go-v2.47.0-runtime-alternative",
+      "test_witness": "internal/engine/wide_integer_mapping_test.go:TestComplexTypeFamiliesHaveExactRefusals"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Dynamic",
+      "status": "explicitly_refused",
+      "semantic_family": "runtime-alternative",
+      "evidence": "clickhouse-25.8.29.51/clickhouse-go-v2.47.0-runtime-type",
+      "test_witness": "internal/engine/wide_integer_mapping_test.go:TestComplexTypeFamiliesHaveExactRefusals"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "JSON",
+      "status": "explicitly_refused",
+      "semantic_family": "connection-setting-dependent",
+      "evidence": "clickhouse-25.8.29.51/clickhouse-go-v2.47.0-json-mode",
+      "test_witness": "internal/engine/wide_integer_mapping_test.go:TestComplexTypeFamiliesHaveExactRefusals"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Point",
+      "status": "explicitly_refused",
+      "semantic_family": "expression-alias-loss",
+      "evidence": "clickhouse-25.8.29.51/type-oracle-geo-alias-mismatch",
+      "test_witness": "internal/engine/wide_integer_mapping_test.go:TestGeoExpressionCannotGenerateAnOrbResult"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Ring",
+      "status": "explicitly_refused",
+      "semantic_family": "expression-alias-loss",
+      "evidence": "clickhouse-25.8.29.51/type-oracle-geo-alias-mismatch",
+      "test_witness": "internal/engine/wide_integer_mapping_test.go:TestGeoExpressionCannotGenerateAnOrbResult"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "LineString",
+      "status": "explicitly_refused",
+      "semantic_family": "expression-alias-loss",
+      "evidence": "clickhouse-25.8.29.51/type-oracle-geo-alias-mismatch",
+      "test_witness": "internal/engine/wide_integer_mapping_test.go:TestGeoExpressionCannotGenerateAnOrbResult"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "Polygon",
+      "status": "explicitly_refused",
+      "semantic_family": "expression-alias-loss",
+      "evidence": "clickhouse-25.8.29.51/type-oracle-geo-alias-mismatch",
+      "test_witness": "internal/engine/wide_integer_mapping_test.go:TestGeoExpressionCannotGenerateAnOrbResult"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "MultiLineString",
+      "status": "explicitly_refused",
+      "semantic_family": "expression-alias-loss",
+      "evidence": "clickhouse-25.8.29.51/type-oracle-geo-alias-mismatch",
+      "test_witness": "internal/engine/wide_integer_mapping_test.go:TestGeoExpressionCannotGenerateAnOrbResult"
+    },
+    {
+      "kind": "data_type_family",
+      "name": "MultiPolygon",
+      "status": "explicitly_refused",
+      "semantic_family": "expression-alias-loss",
+      "evidence": "clickhouse-25.8.29.51/type-oracle-geo-alias-mismatch",
+      "test_witness": "internal/engine/wide_integer_mapping_test.go:TestGeoExpressionCannotGenerateAnOrbResult"
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "ArgMax",
+      "status": "explicitly_refused",
+      "semantic_family": "unmeasured-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/fail-closed-chain-parser",
+      "test_witness": "internal/engine/aggregate_chain_parser_test.go:TestUnmeasuredPrimitiveChainsRefuseBeforeArgumentInference"
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "ArgMin",
+      "status": "explicitly_refused",
+      "semantic_family": "unmeasured-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/fail-closed-chain-parser",
+      "test_witness": "internal/engine/aggregate_chain_parser_test.go:TestUnmeasuredPrimitiveChainsRefuseBeforeArgumentInference"
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "Array",
+      "status": "supported_measured",
+      "semantic_family": "measured-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/generated-value-probe",
+      "test_witness": "internal/engine/execoracle_test.go:TestAggregateCombinatorValueProbesCoverSupportedPrimitives"
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "Distinct",
+      "status": "partially_measured",
+      "semantic_family": "partial-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/registered-and-fail-closed-products",
+      "test_witness": "internal/engine/aggregate_signature_live_test.go:TestAggregateSignatureBoundariesAgainstClickHouse",
+      "accepted_products": [
+        "countDistinct(i32)"
+      ],
+      "refused_products": [
+        "sumDistinct(i32)"
+      ]
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "ForEach",
+      "status": "explicitly_refused",
+      "semantic_family": "unmeasured-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/fail-closed-chain-parser",
+      "test_witness": "internal/engine/aggregate_chain_parser_test.go:TestUnmeasuredPrimitiveChainsRefuseBeforeArgumentInference"
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "If",
+      "status": "supported_measured",
+      "semantic_family": "measured-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/generated-value-probe",
+      "test_witness": "internal/engine/execoracle_test.go:TestAggregateCombinatorValueProbesCoverSupportedPrimitives"
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "Map",
+      "status": "explicitly_refused",
+      "semantic_family": "unmeasured-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/fail-closed-chain-parser",
+      "test_witness": "internal/engine/aggregate_chain_parser_test.go:TestUnmeasuredPrimitiveChainsRefuseBeforeArgumentInference"
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "Merge",
+      "status": "supported_measured",
+      "semantic_family": "measured-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/generated-value-probe",
+      "test_witness": "internal/engine/execoracle_test.go:TestAggregateCombinatorValueProbesCoverSupportedPrimitives"
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "Null",
+      "status": "not_applicable",
+      "semantic_family": "internal-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/system.aggregate_function_combinators.is_internal",
+      "test_witness": "internal/apiinventory/api_inventory_test.go:TestClickHouseAPIInventoryMatchesServer"
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "OrDefault",
+      "status": "supported_measured",
+      "semantic_family": "measured-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/generated-value-probe",
+      "test_witness": "internal/engine/execoracle_test.go:TestAggregateCombinatorValueProbesCoverSupportedPrimitives"
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "OrNull",
+      "status": "supported_measured",
+      "semantic_family": "measured-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/generated-value-probe",
+      "test_witness": "internal/engine/execoracle_test.go:TestAggregateCombinatorValueProbesCoverSupportedPrimitives"
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "Resample",
+      "status": "supported_measured",
+      "semantic_family": "measured-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/generated-value-probe",
+      "test_witness": "internal/engine/execoracle_test.go:TestAggregateCombinatorValueProbesCoverSupportedPrimitives"
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "SimpleState",
+      "status": "supported_measured",
+      "semantic_family": "measured-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/generated-value-probe",
+      "test_witness": "internal/engine/execoracle_test.go:TestAggregateCombinatorValueProbesCoverSupportedPrimitives"
+    },
+    {
+      "kind": "aggregate_function_combinator",
+      "name": "State",
+      "status": "supported_measured",
+      "semantic_family": "measured-aggregate-combinator",
+      "evidence": "clickhouse-25.8.29.51/generated-value-probe",
+      "test_witness": "internal/engine/execoracle_test.go:TestAggregateCombinatorValueProbesCoverSupportedPrimitives"
+    }
+  ]
+}

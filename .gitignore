@@ -1,0 +1,7 @@
+# Build output: the compiled binary, not the chgen/ package directory.
+/chgen.bin
+/dist/
+
+# Go workspace
+go.work
+go.work.sum

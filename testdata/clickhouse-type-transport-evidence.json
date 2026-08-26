@@ -1,0 +1,50 @@
+{
+  "format_version": 1,
+  "server_version": "25.8.29.51",
+  "driver": "github.com/ClickHouse/clickhouse-go/v2 v2.47.0",
+  "endpoint": "native localhost:19000 and HTTP localhost:18123",
+  "cases": [
+    {
+      "id": "wide-non-null-nil",
+      "clickhouse_type": "Int128",
+      "path": "native batch write",
+      "outcome": "nil pointer writes zero without an error"
+    },
+    {
+      "id": "wide-signed-overflow",
+      "clickhouse_type": "Int128",
+      "path": "native batch write",
+      "outcome": "2^127 reads back as -2^127"
+    },
+    {
+      "id": "wide-unsigned-negative",
+      "clickhouse_type": "UInt128",
+      "path": "native batch write",
+      "outcome": "-1 reads back as 2^128-1"
+    },
+    {
+      "id": "wide-array-text",
+      "clickhouse_type": "Array(Int128)",
+      "path": "text parameter bind",
+      "outcome": "big.Int values format as Go structure text instead of decimal text"
+    },
+    {
+      "id": "wide-map-read",
+      "clickhouse_type": "Map(String, UInt256)",
+      "path": "native Rows.Next",
+      "outcome": "panic because big.Int is not assignable to *big.Int"
+    },
+    {
+      "id": "tuple-wide-read",
+      "clickhouse_type": "Tuple(Int128, Point)",
+      "path": "native Scan into any",
+      "outcome": "nil value without an error"
+    },
+    {
+      "id": "aggregate-state-read",
+      "clickhouse_type": "AggregateFunction(sum, Int32)",
+      "path": "native query decode",
+      "outcome": "unsupported column type error"
+    }
+  ]
+}

@@ -1,0 +1,667 @@
+{
+  "format_version": 2,
+  "source": {
+    "version": "25.8.29.51",
+    "revision": 54529,
+    "build_id": "1C050D7415593137F2ED12AF5EF02EABEF3FA872"
+  },
+  "inventory_sha256": "c6484141d63fe9b5914f367984d4724ec6eef9d138e76a6dffdf87af1de47ff6",
+  "entries": [
+    {
+      "family": "AggregateFunction",
+      "column": "api_aggregate_function",
+      "declared_type": "AggregateFunction(sum, Int64)",
+      "status": "accepted",
+      "observed_type": "AggregateFunction(sum, Int64)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Array",
+      "column": "api_array",
+      "declared_type": "Array(Int32)",
+      "status": "accepted",
+      "observed_type": "Array(Int32)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "BFloat16",
+      "column": "api_b_float16",
+      "declared_type": "BFloat16",
+      "status": "accepted",
+      "observed_type": "BFloat16",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Bool",
+      "column": "api_bool",
+      "declared_type": "Bool",
+      "status": "accepted",
+      "observed_type": "Bool",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Date",
+      "column": "api_date",
+      "declared_type": "Date",
+      "status": "accepted",
+      "observed_type": "Date",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Date32",
+      "column": "api_date32",
+      "declared_type": "Date32",
+      "status": "accepted",
+      "observed_type": "Date32",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "DateTime",
+      "column": "api_date_time",
+      "declared_type": "DateTime",
+      "status": "accepted",
+      "observed_type": "DateTime",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "DateTime32",
+      "column": "api_date_time32",
+      "declared_type": "DateTime32",
+      "status": "accepted",
+      "observed_type": "DateTime",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "DateTime64",
+      "column": "api_date_time64",
+      "declared_type": "DateTime64(3)",
+      "status": "accepted",
+      "observed_type": "DateTime64(3)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Decimal",
+      "column": "api_decimal",
+      "declared_type": "Decimal(18, 4)",
+      "status": "accepted",
+      "observed_type": "Decimal(18, 4)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Decimal128",
+      "column": "api_decimal128",
+      "declared_type": "Decimal128(4)",
+      "status": "accepted",
+      "observed_type": "Decimal(38, 4)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Decimal256",
+      "column": "api_decimal256",
+      "declared_type": "Decimal256(4)",
+      "status": "accepted",
+      "observed_type": "Decimal(76, 4)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Decimal32",
+      "column": "api_decimal32",
+      "declared_type": "Decimal32(4)",
+      "status": "accepted",
+      "observed_type": "Decimal(9, 4)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Decimal64",
+      "column": "api_decimal64",
+      "declared_type": "Decimal64(4)",
+      "status": "accepted",
+      "observed_type": "Decimal(18, 4)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Dynamic",
+      "column": "api_dynamic",
+      "declared_type": "Dynamic",
+      "status": "accepted",
+      "observed_type": "Dynamic",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Enum",
+      "column": "api_enum",
+      "declared_type": "Enum('a' = 1, 'b' = 2)",
+      "status": "accepted",
+      "observed_type": "Enum8('a' = 1, 'b' = 2)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Enum16",
+      "column": "api_enum16",
+      "declared_type": "Enum16('a' = 1, 'b' = 2)",
+      "status": "accepted",
+      "observed_type": "Enum16('a' = 1, 'b' = 2)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Enum8",
+      "column": "api_enum8",
+      "declared_type": "Enum8('a' = 1, 'b' = 2)",
+      "status": "accepted",
+      "observed_type": "Enum8('a' = 1, 'b' = 2)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "FixedString",
+      "column": "api_fixed_string",
+      "declared_type": "FixedString(8)",
+      "status": "accepted",
+      "observed_type": "FixedString(8)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Float32",
+      "column": "api_float32",
+      "declared_type": "Float32",
+      "status": "accepted",
+      "observed_type": "Float32",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Float64",
+      "column": "api_float64",
+      "declared_type": "Float64",
+      "status": "accepted",
+      "observed_type": "Float64",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "IPv4",
+      "column": "api_i_pv4",
+      "declared_type": "IPv4",
+      "status": "accepted",
+      "observed_type": "IPv4",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "IPv6",
+      "column": "api_i_pv6",
+      "declared_type": "IPv6",
+      "status": "accepted",
+      "observed_type": "IPv6",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Int128",
+      "column": "api_int128",
+      "declared_type": "Int128",
+      "status": "accepted",
+      "observed_type": "Int128",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Int16",
+      "column": "api_int16",
+      "declared_type": "Int16",
+      "status": "accepted",
+      "observed_type": "Int16",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Int256",
+      "column": "api_int256",
+      "declared_type": "Int256",
+      "status": "accepted",
+      "observed_type": "Int256",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Int32",
+      "column": "api_int32",
+      "declared_type": "Int32",
+      "status": "accepted",
+      "observed_type": "Int32",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Int64",
+      "column": "api_int64",
+      "declared_type": "Int64",
+      "status": "accepted",
+      "observed_type": "Int64",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Int8",
+      "column": "api_int8",
+      "declared_type": "Int8",
+      "status": "accepted",
+      "observed_type": "Int8",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "IntervalDay",
+      "column": "api_interval_day",
+      "declared_type": "IntervalDay",
+      "status": "accepted",
+      "observed_type": "IntervalDay",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "IntervalHour",
+      "column": "api_interval_hour",
+      "declared_type": "IntervalHour",
+      "status": "accepted",
+      "observed_type": "IntervalHour",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "IntervalMicrosecond",
+      "column": "api_interval_microsecond",
+      "declared_type": "IntervalMicrosecond",
+      "status": "accepted",
+      "observed_type": "IntervalMicrosecond",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "IntervalMillisecond",
+      "column": "api_interval_millisecond",
+      "declared_type": "IntervalMillisecond",
+      "status": "accepted",
+      "observed_type": "IntervalMillisecond",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "IntervalMinute",
+      "column": "api_interval_minute",
+      "declared_type": "IntervalMinute",
+      "status": "accepted",
+      "observed_type": "IntervalMinute",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "IntervalMonth",
+      "column": "api_interval_month",
+      "declared_type": "IntervalMonth",
+      "status": "accepted",
+      "observed_type": "IntervalMonth",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "IntervalNanosecond",
+      "column": "api_interval_nanosecond",
+      "declared_type": "IntervalNanosecond",
+      "status": "accepted",
+      "observed_type": "IntervalNanosecond",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "IntervalQuarter",
+      "column": "api_interval_quarter",
+      "declared_type": "IntervalQuarter",
+      "status": "accepted",
+      "observed_type": "IntervalQuarter",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "IntervalSecond",
+      "column": "api_interval_second",
+      "declared_type": "IntervalSecond",
+      "status": "accepted",
+      "observed_type": "IntervalSecond",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "IntervalWeek",
+      "column": "api_interval_week",
+      "declared_type": "IntervalWeek",
+      "status": "accepted",
+      "observed_type": "IntervalWeek",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "IntervalYear",
+      "column": "api_interval_year",
+      "declared_type": "IntervalYear",
+      "status": "accepted",
+      "observed_type": "IntervalYear",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "JSON",
+      "column": "api_j_s_o_n",
+      "declared_type": "JSON",
+      "status": "accepted",
+      "observed_type": "JSON",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "LineString",
+      "column": "api_line_string",
+      "declared_type": "LineString",
+      "status": "accepted",
+      "observed_type": "LineString",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "LowCardinality",
+      "column": "api_low_cardinality",
+      "declared_type": "LowCardinality(String)",
+      "status": "accepted",
+      "observed_type": "LowCardinality(String)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Map",
+      "column": "api_map",
+      "declared_type": "Map(String, Int32)",
+      "status": "accepted",
+      "observed_type": "Map(String, Int32)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "MultiLineString",
+      "column": "api_multi_line_string",
+      "declared_type": "MultiLineString",
+      "status": "accepted",
+      "observed_type": "MultiLineString",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "MultiPolygon",
+      "column": "api_multi_polygon",
+      "declared_type": "MultiPolygon",
+      "status": "accepted",
+      "observed_type": "MultiPolygon",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Nested",
+      "column": "api_nested",
+      "declared_type": "Nested(a Int32, b String)",
+      "status": "accepted",
+      "observed_type": "Array(Tuple(\n    a Int32,\n    b String))",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Nothing",
+      "column": "api_nothing",
+      "declared_type": "Nothing",
+      "status": "explicitly_refused",
+      "refusal_stage": "create",
+      "refusal_code": 370,
+      "refusal_class": "clickhouse_refused"
+    },
+    {
+      "family": "Nullable",
+      "column": "api_nullable",
+      "declared_type": "Nullable(Int32)",
+      "status": "accepted",
+      "observed_type": "Nullable(Int32)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Object",
+      "column": "api_object",
+      "declared_type": "Object('json')",
+      "status": "explicitly_refused",
+      "refusal_stage": "create",
+      "refusal_code": 44,
+      "refusal_class": "clickhouse_refused"
+    },
+    {
+      "family": "Point",
+      "column": "api_point",
+      "declared_type": "Point",
+      "status": "accepted",
+      "observed_type": "Point",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Polygon",
+      "column": "api_polygon",
+      "declared_type": "Polygon",
+      "status": "accepted",
+      "observed_type": "Polygon",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Ring",
+      "column": "api_ring",
+      "declared_type": "Ring",
+      "status": "accepted",
+      "observed_type": "Ring",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "SimpleAggregateFunction",
+      "column": "api_simple_aggregate_function",
+      "declared_type": "SimpleAggregateFunction(sum, Int64)",
+      "status": "accepted",
+      "observed_type": "SimpleAggregateFunction(sum, Int64)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "String",
+      "column": "api_string",
+      "declared_type": "String",
+      "status": "accepted",
+      "observed_type": "String",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Time",
+      "column": "api_time",
+      "declared_type": "Time",
+      "status": "explicitly_refused",
+      "refusal_stage": "create",
+      "refusal_code": 44,
+      "refusal_class": "clickhouse_refused"
+    },
+    {
+      "family": "Time64",
+      "column": "api_time64",
+      "declared_type": "Time64(3)",
+      "status": "explicitly_refused",
+      "refusal_stage": "create",
+      "refusal_code": 44,
+      "refusal_class": "clickhouse_refused"
+    },
+    {
+      "family": "Tuple",
+      "column": "api_tuple",
+      "declared_type": "Tuple(Int32, String)",
+      "status": "accepted",
+      "observed_type": "Tuple(Int32, String)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "UInt128",
+      "column": "api_u_int128",
+      "declared_type": "UInt128",
+      "status": "accepted",
+      "observed_type": "UInt128",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "UInt16",
+      "column": "api_u_int16",
+      "declared_type": "UInt16",
+      "status": "accepted",
+      "observed_type": "UInt16",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "UInt256",
+      "column": "api_u_int256",
+      "declared_type": "UInt256",
+      "status": "accepted",
+      "observed_type": "UInt256",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "UInt32",
+      "column": "api_u_int32",
+      "declared_type": "UInt32",
+      "status": "accepted",
+      "observed_type": "UInt32",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "UInt64",
+      "column": "api_u_int64",
+      "declared_type": "UInt64",
+      "status": "accepted",
+      "observed_type": "UInt64",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "UInt8",
+      "column": "api_u_int8",
+      "declared_type": "UInt8",
+      "status": "accepted",
+      "observed_type": "UInt8",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "UUID",
+      "column": "api_u_u_i_d",
+      "declared_type": "UUID",
+      "status": "accepted",
+      "observed_type": "UUID",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    },
+    {
+      "family": "Variant",
+      "column": "api_variant",
+      "declared_type": "Variant(Int32, String)",
+      "status": "accepted",
+      "observed_type": "Variant(Int32, String)",
+      "seed_witness": "INSERT INTO probe (seed) VALUES (1)",
+      "analysis_witness": "SELECT toTypeName(value) FROM probe",
+      "execution_witness": "SELECT ignore(value) FROM probe"
+    }
+  ]
+}

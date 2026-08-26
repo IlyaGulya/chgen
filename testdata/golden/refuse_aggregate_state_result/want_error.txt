@@ -1,0 +1,1 @@
+line 5: query BuildStates: result MaxState (max_state): ClickHouse type AggregateFunction(max, UInt32) has no Go mapping: clickhouse-go cannot decode an AggregateFunction column; read it with a -Merge combinator or finalizeAggregation

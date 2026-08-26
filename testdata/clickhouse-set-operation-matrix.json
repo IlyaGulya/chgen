@@ -1,0 +1,622 @@
+{
+  "version": 1,
+  "clickhouse_version": "25.8.29.51",
+  "fixture": "set-operation-v1",
+  "cells": [
+    {
+      "id": "union-all/numeric",
+      "role": "union_all",
+      "query": "SELECT id AS result FROM set_left UNION ALL SELECT id AS result FROM set_right ORDER BY result",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "UInt16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_set_union_all"
+    },
+    {
+      "id": "union-distinct/numeric",
+      "role": "union_distinct",
+      "query": "SELECT id AS result FROM set_left UNION DISTINCT SELECT id AS result FROM set_right ORDER BY result",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "UInt16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_set_union_distinct"
+    },
+    {
+      "id": "intersect/numeric",
+      "role": "intersect",
+      "query": "SELECT id AS result FROM set_left INTERSECT SELECT id AS result FROM set_right ORDER BY result",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "UInt16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_set_intersect"
+    },
+    {
+      "id": "except/numeric",
+      "role": "except",
+      "query": "SELECT id AS result FROM set_left EXCEPT SELECT id AS result FROM set_right ORDER BY result",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "UInt16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_set_except"
+    },
+    {
+      "id": "result/first-names-order",
+      "role": "result_identity",
+      "query": "SELECT id AS first_id, num AS first_num FROM set_left UNION ALL SELECT num AS ignored_num, id AS ignored_id FROM set_right",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "first_id",
+          "type": "UInt32"
+        },
+        {
+          "name": "first_num",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_set_result_vector"
+    },
+    {
+      "id": "result/width-refused",
+      "role": "width",
+      "query": "SELECT id AS result FROM set_left UNION ALL SELECT id, num FROM set_right",
+      "chgen": "refuse",
+      "chgen_error": "column count 1",
+      "analysis": "refuse",
+      "analysis_code": 258,
+      "execution": "refuse",
+      "execution_code": 258
+    },
+    {
+      "id": "result/type-refused",
+      "role": "type_join",
+      "query": "SELECT text AS result FROM set_left UNION ALL SELECT arr FROM set_right",
+      "chgen": "refuse",
+      "chgen_error": "no common type",
+      "analysis": "refuse",
+      "analysis_code": 386,
+      "execution": "refuse",
+      "execution_code": 386
+    },
+    {
+      "id": "join/nary-numeric",
+      "role": "type_join",
+      "query": "SELECT id AS result FROM set_left UNION ALL SELECT num FROM set_left UNION ALL SELECT num FROM set_right",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Int64"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "join/nullable",
+      "role": "type_join",
+      "query": "SELECT n AS result FROM set_left UNION ALL SELECT n FROM set_right",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Nullable(Int32)"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "join/string",
+      "role": "type_join",
+      "query": "SELECT text AS result FROM set_left UNION ALL SELECT text FROM set_right",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "String"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "join/decimal",
+      "role": "type_join",
+      "query": "SELECT dec AS result FROM set_left UNION ALL SELECT dec FROM set_right",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Decimal(18, 4)"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "join/datetime",
+      "role": "type_join",
+      "query": "SELECT dt AS result FROM set_left UNION ALL SELECT dt FROM set_right",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "DateTime64(3, 'UTC')"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "join/array",
+      "role": "type_join",
+      "query": "SELECT arr AS result FROM set_left UNION ALL SELECT arr FROM set_right",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Array(Int64)"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "join/low-cardinality",
+      "role": "type_join",
+      "query": "SELECT lc AS result FROM set_left UNION ALL SELECT lc FROM set_right",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "LowCardinality(String)"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_set_low_cardinality"
+    },
+    {
+      "id": "join/low-cardinality-mixed",
+      "role": "type_join",
+      "query": "SELECT lc AS result FROM set_left UNION ALL SELECT text FROM set_right",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "String"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "join/timezone-first",
+      "role": "type_join",
+      "query": "SELECT dt_alt AS result FROM set_left UNION ALL SELECT dt_alt FROM set_right",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "DateTime64(3, 'UTC')"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "join/timezone-reversed",
+      "role": "type_join",
+      "query": "SELECT dt_alt AS result FROM set_right UNION ALL SELECT dt_alt FROM set_left",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "DateTime64(3, 'Europe/Berlin')"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "parentheses/left",
+      "role": "parentheses",
+      "query": "(SELECT id AS result FROM set_left UNION ALL SELECT num FROM set_left) UNION ALL SELECT num FROM set_right",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Int64"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "parentheses/right",
+      "role": "parentheses",
+      "query": "SELECT id AS result FROM set_left UNION ALL (SELECT num FROM set_left INTERSECT SELECT num FROM set_right)",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Int64"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "precedence/intersect",
+      "role": "precedence",
+      "query": "SELECT toUInt8(1) AS result UNION ALL SELECT toUInt16(2) INTERSECT SELECT toUInt32(2) AS result ORDER BY result",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "UInt32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_set_precedence"
+    },
+    {
+      "id": "associativity/except",
+      "role": "associativity",
+      "query": "SELECT id AS result FROM set_left EXCEPT SELECT id FROM set_right EXCEPT SELECT toUInt8(2) AS result ORDER BY result",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "UInt16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_set_associativity"
+    },
+    {
+      "id": "scope/right-missing",
+      "role": "branch_scope",
+      "query": "SELECT id AS result FROM set_left UNION ALL SELECT missing FROM set_right",
+      "chgen": "refuse",
+      "chgen_error": "set branch 2",
+      "analysis": "refuse",
+      "analysis_code": 47,
+      "execution": "refuse",
+      "execution_code": 47
+    },
+    {
+      "id": "scope/first-scalar-with",
+      "role": "branch_scope",
+      "query": "WITH toInt32(7) AS shared SELECT shared AS result UNION ALL SELECT shared",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "scope/first-relation-with",
+      "role": "branch_scope",
+      "query": "WITH shared AS (SELECT toInt32(7) AS value) SELECT value AS result FROM shared UNION ALL SELECT value FROM shared",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "scope/later-with-local",
+      "role": "branch_scope",
+      "query": "SELECT toInt32(1) AS result UNION ALL WITH toInt32(2) AS local SELECT local",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "scope/later-with-hidden",
+      "role": "branch_scope",
+      "query": "SELECT toInt32(1) AS result UNION ALL WITH toInt32(2) AS local SELECT local UNION ALL SELECT local",
+      "chgen": "refuse",
+      "chgen_error": "set branch 3",
+      "analysis": "refuse",
+      "analysis_code": 47,
+      "execution": "refuse",
+      "execution_code": 47
+    },
+    {
+      "id": "scope/parenthesized-first-with-hidden",
+      "role": "branch_scope",
+      "query": "(WITH toInt32(7) AS local SELECT local AS result) UNION ALL SELECT local",
+      "chgen": "refuse",
+      "chgen_error": "set branch 2",
+      "analysis": "refuse",
+      "analysis_code": 47,
+      "execution": "refuse",
+      "execution_code": 47
+    },
+    {
+      "id": "cte/forward-scalar",
+      "role": "cte_dependency",
+      "query": "WITH later AS q, toInt32(7) AS later SELECT q AS result",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "cte/forward-relation",
+      "role": "cte_dependency",
+      "query": "WITH first AS (SELECT value FROM second), second AS (SELECT toInt32(7) AS value) SELECT value AS result FROM first",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "cte/forward-cross-namespace",
+      "role": "cte_dependency",
+      "query": "WITH first AS (SELECT q AS value), toInt32(7) AS q SELECT value AS result FROM first",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "cte/duplicate-scalar",
+      "role": "cte_identity",
+      "query": "WITH toInt32(1) AS q, toInt32(2) AS q SELECT q AS result",
+      "chgen": "refuse",
+      "chgen_error": "scalar CTE \"q\" is defined more than once",
+      "analysis": "refuse",
+      "analysis_code": 179,
+      "execution": "refuse",
+      "execution_code": 179
+    },
+    {
+      "id": "cte/duplicate-relation",
+      "role": "cte_identity",
+      "query": "WITH q AS (SELECT toInt32(1) AS value), q AS (SELECT toInt32(2) AS value) SELECT value AS result FROM q",
+      "chgen": "refuse",
+      "chgen_error": "relation CTE \"q\" is defined more than once",
+      "analysis": "refuse",
+      "analysis_code": 179,
+      "execution": "refuse",
+      "execution_code": 179
+    },
+    {
+      "id": "cte/scalar-case",
+      "role": "cte_identity",
+      "query": "WITH toInt16(1) AS q, toInt32(2) AS Q SELECT q AS lower, Q AS upper",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "lower",
+          "type": "Int16"
+        },
+        {
+          "name": "upper",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "cte/relation-case",
+      "role": "cte_identity",
+      "query": "WITH q AS (SELECT toInt16(1) AS value), Q AS (SELECT toInt32(2) AS value) SELECT q.value AS lower, Q.value AS upper FROM q CROSS JOIN Q",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "lower",
+          "type": "Int16"
+        },
+        {
+          "name": "upper",
+          "type": "Int32"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "cte/scalar-cycle",
+      "role": "cte_dependency",
+      "query": "WITH r AS q, q AS r SELECT q AS result",
+      "chgen": "refuse",
+      "chgen_error": "not resolved",
+      "analysis": "refuse",
+      "analysis_code": 47,
+      "execution": "refuse",
+      "execution_code": 47
+    },
+    {
+      "id": "cte/relation-cycle",
+      "role": "cte_dependency",
+      "query": "WITH a AS (SELECT value FROM b), b AS (SELECT value FROM a) SELECT value AS result FROM a",
+      "chgen": "refuse",
+      "chgen_error": "not present in the schema or the query scope",
+      "analysis": "refuse",
+      "analysis_code": 60,
+      "execution": "refuse",
+      "execution_code": 60
+    },
+    {
+      "id": "cte/catalog-shadow",
+      "role": "cte_shadow",
+      "query": "WITH a AS (SELECT v FROM q), q AS (SELECT toInt16(7) AS v) SELECT v AS result FROM a",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Int16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_cte_catalog_shadow"
+    },
+    {
+      "id": "cte/outer-scalar-shadow",
+      "role": "cte_shadow",
+      "query": "WITH toUInt64(100) AS x, inner_q AS (WITH x AS y, toInt16(7) AS x SELECT y AS v) SELECT v AS result FROM inner_q",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Int16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_cte_scalar_shadow"
+    },
+    {
+      "id": "cte/outer-relation-shadow",
+      "role": "cte_shadow",
+      "query": "WITH q AS (SELECT toUInt64(100) AS v), inner_q AS (WITH a AS (SELECT v FROM q), q AS (SELECT toInt16(7) AS v) SELECT v FROM a) SELECT v AS result FROM inner_q",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "Int16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "value_probe": "probe_cte_relation_shadow"
+    },
+    {
+      "id": "nested/derived",
+      "role": "derived",
+      "query": "SELECT nested.result FROM (SELECT id AS result FROM set_left UNION ALL SELECT id FROM set_right) AS nested ORDER BY result",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "UInt16"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "nested/in",
+      "role": "in",
+      "query": "SELECT id, id IN (SELECT id FROM set_left UNION ALL SELECT id FROM set_right) AS result FROM set_left ORDER BY id",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "id",
+          "type": "UInt8"
+        },
+        {
+          "name": "result",
+          "type": "UInt8"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "nested/exists",
+      "role": "exists",
+      "query": "SELECT EXISTS(SELECT id FROM set_left UNION ALL SELECT id FROM set_right) AS result",
+      "chgen": "accept",
+      "results": [
+        {
+          "name": "result",
+          "type": "UInt8"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept"
+    },
+    {
+      "id": "nested/scalar-refused",
+      "role": "scalar",
+      "query": "SELECT (SELECT id FROM set_left UNION ALL SELECT id FROM set_right) AS result",
+      "chgen": "refuse",
+      "chgen_error": "row cardinality is not statically bounded",
+      "analysis": "refuse",
+      "analysis_code": 125,
+      "execution": "refuse",
+      "execution_code": 125
+    },
+    {
+      "id": "recursive/refused",
+      "role": "recursive",
+      "query": "WITH RECURSIVE nums AS (SELECT toUInt8(1) AS n UNION ALL SELECT n + 1 FROM nums WHERE n \u003c 3) SELECT n AS result FROM nums ORDER BY result",
+      "chgen": "refuse",
+      "chgen_error": "parse SQL for type resolution",
+      "results": [
+        {
+          "name": "result",
+          "type": "UInt8"
+        }
+      ],
+      "analysis": "accept",
+      "execution": "accept",
+      "owner": "set-operation-known-gap"
+    }
+  ]
+}

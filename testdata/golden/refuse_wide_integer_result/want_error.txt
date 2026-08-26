@@ -1,0 +1,1 @@
+line 3: query ReadWideInteger: result WideInt (wide_int): ClickHouse type Int128 has a measured refusal: clickhouse-go v2.47.0 can change nil to zero, wrap an out-of-range value, or misformat a text-path Array without an error
