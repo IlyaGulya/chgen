@@ -5,10 +5,9 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${repo_root}"
 
-expected_go="$(awk '/^toolchain go/ {print substr($2, 3)}' go.mod)"
-actual_go="$(go env GOVERSION | sed 's/^go//')"
-if [[ "${actual_go}" != "${expected_go}" ]]; then
-	echo "go.mod needs Go ${expected_go}, but this command uses Go ${actual_go}." >&2
+minimum_go="$(awk '/^go / {print $2}' go.mod)"
+if [[ "${minimum_go}" != "1.24.0" ]]; then
+	echo "go.mod must declare Go 1.24.0 as the minimum version." >&2
 	exit 1
 fi
 
@@ -34,13 +33,13 @@ for tag_set in "${tag_sets[@]}"; do
 	if [[ -z "${tag_set}" ]]; then
 		echo "Verify the default source set."
 		go vet ./...
-		go tool staticcheck -checks="${staticcheck_checks}" ./...
+		go tool -modfile=tools/go.mod staticcheck -checks="${staticcheck_checks}" ./...
 		continue
 	fi
 
 	echo "Verify the ${tag_set} source set."
 	go vet -tags "${tag_set}" ./...
-	go tool staticcheck -checks="${staticcheck_checks}" -tags "${tag_set}" ./...
+	go tool -modfile=tools/go.mod staticcheck -checks="${staticcheck_checks}" -tags "${tag_set}" ./...
 	go test -tags "${tag_set}" -run '^$' ./...
 done
 
@@ -50,6 +49,6 @@ done
 go test -tags fuzzoracle ./internal/engine
 
 go test ./...
-go test ./examples -run '^TestGeneratedExamplesAreUpToDate$' -count=1
+(cd examples && go test ./... -count=1)
 go test -race -shuffle=on ./...
 "${repo_root}/scripts/external-consumer-smoke.sh"

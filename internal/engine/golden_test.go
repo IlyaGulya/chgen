@@ -249,10 +249,8 @@ func goldenLineNumber(value int) string {
 
 // TestGoldenSourceCompiles type-checks every want.go with the real
 // dependencies. A golden file that pins text which does not build would
-// make the corpus worse than no corpus: it would let a broken generator
-// stay green. The check copies each case into one temporary package
-// directory inside the module, so it uses the module's own dependency
-// versions and needs no network.
+// make the corpus worse than no corpus. It would let a broken generator
+// stay green. The check uses an isolated module with pinned dependencies.
 //
 // Set CHGEN_SKIP_GOLDEN_BUILD=1 to skip it if the Go build cache is not
 // usable in your environment.
@@ -270,16 +268,7 @@ func TestGoldenSourceCompiles(t *testing.T) {
 		t.Fatalf("read golden corpus: %v", err)
 	}
 
-	moduleRoot := moduleRootPath()
-	// The build directory must be INSIDE the module, otherwise the case
-	// package cannot see the module's dependency versions.
-	// The leading dot keeps concurrent ./... package discovery from reading
-	// the directory while this test fills or removes it.
-	buildRoot, err := os.MkdirTemp(moduleRoot, ".golden-build-")
-	if err != nil {
-		t.Fatalf("create build directory: %v", err)
-	}
-	t.Cleanup(func() { _ = os.RemoveAll(buildRoot) })
+	buildRoot := newGeneratedCompileModule(t)
 
 	packages := make([]string, 0, len(entries))
 	for _, entry := range entries {
@@ -297,21 +286,33 @@ func TestGoldenSourceCompiles(t *testing.T) {
 		if err := os.WriteFile(filepath.Join(caseDir, "queries.go"), []byte(source), 0o644); err != nil {
 			t.Fatalf("write case source: %v", err)
 		}
-		relative, err := filepath.Rel(moduleRoot, caseDir)
-		if err != nil {
-			t.Fatalf("relative path for %s: %v", caseDir, err)
-		}
-		packages = append(packages, "./"+filepath.ToSlash(relative))
+		packages = append(packages, "./"+entry.Name())
 	}
 	if len(packages) == 0 {
 		t.Fatal("no golden source to build")
 	}
 
 	command := exec.Command("go", append([]string{"build"}, packages...)...)
-	command.Dir = moduleRoot
+	command.Dir = buildRoot
 	if output, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("the golden source does not build: %v\n%s", err, output)
 	}
+}
+
+func newGeneratedCompileModule(t *testing.T) string {
+	t.Helper()
+	buildRoot := t.TempDir()
+	fixtureRoot := moduleRootPath("internal", "engine", "testdata", "generatedcompile")
+	for _, name := range []string{"go.mod", "go.sum"} {
+		data, err := os.ReadFile(filepath.Join(fixtureRoot, name))
+		if err != nil {
+			t.Fatalf("read generated compile fixture %s: %v", name, err)
+		}
+		if err := os.WriteFile(filepath.Join(buildRoot, name), data, 0o644); err != nil {
+			t.Fatalf("write generated compile fixture %s: %v", name, err)
+		}
+	}
+	return buildRoot
 }
 
 // goldenRefusalText makes the refusal text stable across machines.

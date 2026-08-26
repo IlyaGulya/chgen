@@ -14,6 +14,7 @@ package engine
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"math/big"
@@ -23,8 +24,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 // xt is one oracle ClickHouse type. kind is the lowercase constructor name.
@@ -752,11 +751,11 @@ func goDumpToCanon(node map[string]any, t *xt) (canon, error) {
 		if err != nil {
 			return canon{}, err
 		}
-		identifier, err := uuid.FromBytes(raw)
+		identifier, err := canonicalUUIDText(raw)
 		if err != nil {
-			return canon{}, fmt.Errorf("Go value is not a UUID: %x", raw)
+			return canon{}, err
 		}
-		return canonBytes([]byte(identifier.String())), nil
+		return canonBytes([]byte(identifier)), nil
 	case "enum8", "enum16":
 		// An Enum column travels as its name, thus the Go side is a
 		// string and the HTTP channel prints the same name.
@@ -822,6 +821,44 @@ func goDumpToCanon(node map[string]any, t *xt) (canon, error) {
 		return result, nil
 	}
 	return canon{}, fmt.Errorf("unhandled type %s", t.sqlType())
+}
+
+func canonicalUUIDText(raw []byte) (string, error) {
+	if len(raw) != 16 {
+		return "", fmt.Errorf("Go value is not a UUID: %x", raw)
+	}
+
+	var text [36]byte
+	hex.Encode(text[0:8], raw[0:4])
+	text[8] = '-'
+	hex.Encode(text[9:13], raw[4:6])
+	text[13] = '-'
+	hex.Encode(text[14:18], raw[6:8])
+	text[18] = '-'
+	hex.Encode(text[19:23], raw[8:10])
+	text[23] = '-'
+	hex.Encode(text[24:36], raw[10:16])
+	return string(text[:]), nil
+}
+
+func TestCanonicalUUIDText(t *testing.T) {
+	raw, err := hex.DecodeString("61f0c4045cb311e7907ba6006ad3dba0")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := canonicalUUIDText(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const want = "61f0c404-5cb3-11e7-907b-a6006ad3dba0"
+	if got != want {
+		t.Fatalf("canonicalUUIDText() = %q, want %q", got, want)
+	}
+
+	if _, err := canonicalUUIDText(raw[:15]); err == nil {
+		t.Fatal("canonicalUUIDText() accepted 15 bytes")
+	}
 }
 
 func dumpFloatBits(node map[string]any) (uint64, int, error) {

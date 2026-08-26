@@ -53,21 +53,12 @@ func TestUnsupportedExplicitTemporalParamTypeKeepsHistoricNullablePlan(t *testin
 
 func TestExplicitNonPointerTemporalParamGeneratedSourceCompiles(t *testing.T) {
 	source := generateNestedTemporalOutput(t, "time.Time")
-	moduleRoot := moduleRootPath()
-	buildDir, err := os.MkdirTemp(moduleRoot, ".temporal-param-build-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.RemoveAll(buildDir) })
+	buildDir := newGeneratedCompileModule(t)
 	if err := os.WriteFile(filepath.Join(buildDir, "queries.go"), []byte(source), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	relative, err := filepath.Rel(moduleRoot, buildDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	command := exec.Command("go", "test", "./"+filepath.ToSlash(relative))
-	command.Dir = moduleRoot
+	command := exec.Command("go", "test", ".")
+	command.Dir = buildDir
 	if output, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("generated nested source does not compile: %v\n%s", err, output)
 	}
@@ -215,12 +206,7 @@ VALUES (chgen.arg('Dt3'), chgen.arg('Dt9'), chgen.arg('Dts'), chgen.arg('Dtm'))`
 			t.Fatalf("generated container path does not use the exact shared guard %q:\n%s", want, source)
 		}
 	}
-	moduleRoot := moduleRootPath()
-	buildDir, err := os.MkdirTemp(moduleRoot, ".temporal-boundary-build-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.RemoveAll(buildDir) })
+	buildDir := newGeneratedCompileModule(t)
 	if err := os.WriteFile(filepath.Join(buildDir, "queries.go"), []byte(source), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -259,12 +245,8 @@ func TestExactDateTime64Boundary(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(buildDir, "boundary_test.go"), []byte(boundaryTest), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	relative, err := filepath.Rel(moduleRoot, buildDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	command := exec.Command("go", "test", "./"+filepath.ToSlash(relative), "-run", "^TestExactDateTime64Boundary$", "-count=1")
-	command.Dir = moduleRoot
+	command := exec.Command("go", "test", ".", "-run", "^TestExactDateTime64Boundary$", "-count=1")
+	command.Dir = buildDir
 	if output, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("generated DateTime64 boundary test failed: %v\n%s", err, output)
 	}

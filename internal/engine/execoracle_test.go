@@ -403,6 +403,8 @@ type oracleArtifact struct {
 	Conformance    conformance.Report `json:"conformance"`
 }
 
+const execOracleDriverVersion = "github.com/ClickHouse/clickhouse-go/v2 v2.47.0"
+
 func TestExecOracle(t *testing.T) {
 	httpBase := os.Getenv("CHGEN_EXEC_HTTP")
 	nativeAddr := os.Getenv("CHGEN_EXEC_NATIVE")
@@ -977,7 +979,7 @@ func TestExecOracle(t *testing.T) {
 	artifact := oracleArtifact{
 		Date:           time.Now().UTC().Format(time.RFC3339),
 		CHVersion:      version,
-		DriverVersion:  "github.com/ClickHouse/clickhouse-go/v2 v2.47.0",
+		DriverVersion:  execOracleDriverVersion,
 		RunDatabase:    runDatabase,
 		Seed:           seed,
 		RandomTypes:    randN,

@@ -1,7 +1,12 @@
 # Continuous integration for chgen.
 #
-# Five jobs, as the design asks:
+# Seven jobs, as the design asks:
 #
+#   minimum-go           the command module on the oldest supported Go
+#                        version, with toolchain downloads disabled.
+#   generated-code-compatibility
+#                        generated packages with each supported Go and driver
+#                        pair. This job compiles code but runs no query.
 #   build                the default test suite, with no server. The refusal
 #                        census, the reachability gate and the wrapper guards
 #                        all live here.
@@ -49,35 +54,96 @@ permissions:
   contents: read
 
 env:
-  # The Go version comes from the toolchain directive of go.mod. Keep the two
-  # equal; verify-go-version below fails the build when they drift apart.
-  GO_VERSION: "1.26.5"
+  # Pin both compiler versions. The minimum job also checks the go directive.
+  MINIMUM_GO_VERSION: "1.24.0"
+  CURRENT_GO_VERSION: "1.26.5"
   # The pinned server. Both oracle jobs use this one value.
   CLICKHOUSE_IMAGE_VERSION: "25.8.29.51"
 
 jobs:
-  # ---------------------------------------------------------------- build ---
-  build:
-    name: build and default tests
+  # ----------------------------------------------------- minimum Go version ---
+  minimum-go:
+    name: minimum Go 1.24
     runs-on: ubuntu-latest
+    env:
+      # Do not let Go download a newer compiler for this check.
+      GOTOOLCHAIN: local
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v7
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: ${{ env.MINIMUM_GO_VERSION }}
           check-latest: false
 
-      - name: Verify that the Go version matches go.mod
-        # The workflow pins a version and go.mod names one. If they drift, the
-        # tests run on a compiler that no contributor uses. Read the toolchain
-        # directive and compare.
+      - name: Verify the minimum Go version
         run: |
           set -euo pipefail
-          want="$(awk '/^toolchain go/ {print substr($2, 3)}' go.mod)"
-          if [ "$want" != "${GO_VERSION}" ]; then
-            echo "go.mod toolchain is go${want} but the workflow pins ${GO_VERSION}." >&2
-            echo "Change both together, on purpose." >&2
+          compiler="$(go env GOVERSION)"
+          if [ "$compiler" != "go${MINIMUM_GO_VERSION}" ]; then
+            echo "The job uses ${compiler}, but it must use go${MINIMUM_GO_VERSION}." >&2
+            exit 1
+          fi
+          directive="$(awk '/^go / {print $2; exit}' go.mod)"
+          if [ "$directive" != "${MINIMUM_GO_VERSION}" ]; then
+            echo "go.mod uses Go ${directive}, but the minimum is ${MINIMUM_GO_VERSION}." >&2
+            exit 1
+          fi
+          go version
+
+      - name: Build the command with the minimum Go version
+        run: go build -o "${RUNNER_TEMP}/chgen" ./cmd/chgen
+
+      - name: Test the command module with the minimum Go version
+        # Nested modules, such as examples, are not part of this package set.
+        run: go test ./...
+
+  # ------------------------------------------ generated code compatibility ---
+  generated-code-compatibility:
+    name: generated code (Go ${{ matrix.go }}, driver ${{ matrix.driver }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - go: "1.24.0"
+            driver: "v2.42.0"
+          - go: "1.25.0"
+            driver: "v2.47.0"
+    env:
+      # Each cell must use the compiler that the cell names.
+      GOTOOLCHAIN: local
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go }}
+          check-latest: false
+
+      - name: Compile generated code with the supported driver
+        run: go run ./internal/tooling/cmd/drivercompat -go "${{ matrix.go }}" -driver "${{ matrix.driver }}"
+
+  # ---------------------------------------------------------------- build ---
+  build:
+    name: build and default tests
+    runs-on: ubuntu-latest
+    env:
+      GOTOOLCHAIN: local
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.CURRENT_GO_VERSION }}
+          check-latest: false
+
+      - name: Verify the current Go version
+        run: |
+          set -euo pipefail
+          compiler="$(go env GOVERSION)"
+          if [ "$compiler" != "go${CURRENT_GO_VERSION}" ]; then
+            echo "The job uses ${compiler}, but it must use go${CURRENT_GO_VERSION}." >&2
             exit 1
           fi
           go version
@@ -130,7 +196,7 @@ jobs:
 
       - uses: actions/setup-go@v7
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: ${{ env.CURRENT_GO_VERSION }}
           check-latest: false
 
       - name: Wait for ClickHouse and record the instance
@@ -247,7 +313,7 @@ jobs:
 
       - uses: actions/setup-go@v7
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: ${{ env.CURRENT_GO_VERSION }}
           check-latest: false
 
       - name: Wait for ClickHouse
@@ -375,7 +441,7 @@ jobs:
 
       - uses: actions/setup-go@v7
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: ${{ env.CURRENT_GO_VERSION }}
           check-latest: false
 
       - name: Wait for the server
@@ -543,7 +609,7 @@ jobs:
 
       - uses: actions/setup-go@v7
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: ${{ env.CURRENT_GO_VERSION }}
           check-latest: false
 
       - name: Wait for both servers

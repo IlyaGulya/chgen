@@ -142,6 +142,7 @@ func validateCommandSurface(publicCommands, toolingCommands []string) error {
 func expectedToolingCommands() []string {
 	return []string{
 		"apiinventory",
+		"drivercompat",
 		"execoraclegate",
 		"gensemantics",
 		"oraclediff",

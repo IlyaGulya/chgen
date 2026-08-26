@@ -70,7 +70,7 @@ packages:
     queries: queries.sql
 ```
 
-Requires Go 1.26 or newer.
+The command requires Go 1.24 or later.
 
 Pin the generator in your Go module and run it:
 
@@ -151,6 +151,52 @@ git diff --exit-code
 The drift command compares generated output with the committed file. Tests in
 [`examples/`](examples/) also exercise the larger feature showcase; they are
 not a replacement for the drift command in a consumer project.
+
+## Go and driver compatibility
+
+The `chgen` command and root module require Go 1.24 or later. The `go get
+-tool` command and the `go tool` workflow also require a Go 1.24 or later
+toolchain.
+
+Adding `chgen` as a tool does not add `clickhouse-go` to the application module
+graph through `chgen`. The generated package still uses the driver version
+that the application selects.
+
+CI compiles generated code at the minimum Go version for each supported
+driver:
+
+| Minimum Go version | `clickhouse-go` | Evidence |
+| --- | --- | --- |
+| Go 1.24 | v2.42.0 | Generated code compiles. |
+| Go 1.25 | v2.47.0 | Generated code compiles. |
+
+Each cell proves the driver at its minimum Go version. A later Go version with
+the same supported driver is also included. The generated source uses Go 1.18
+language syntax. This syntax does not make other driver lines supported. A
+driver line that is not in the table is not supported.
+
+The execution oracle measures runtime behavior only with `clickhouse-go`
+v2.47.0. The v2.42.0 check is a compile-only check. It does not prove the same
+runtime behavior or safety limits.
+
+A project with a Go 1.18 through Go 1.23 directive can keep that directive.
+Install and run `chgen` outside the application module graph:
+
+```sh
+GOBIN="$PWD/.bin" go install github.com/IlyaGulya/chgen/cmd/chgen@latest
+./.bin/chgen
+```
+
+This path runs the command without a change to the application module graph.
+It does not give supported generated code to a project that stays on Go 1.18
+through Go 1.23. The application must move to a Go and driver pair in the
+table before its generated package is supported.
+
+This install needs a Go command that can build with Go 1.24. A Go 1.21 or later
+command can switch toolchains when `GOTOOLCHAIN` permits it. An older command
+needs a separately installed Go 1.24 or later toolchain, or a binary that was
+built with that toolchain. Installation and toolchain switching can need
+network access. The project does not publish prebuilt binaries at this time.
 
 ## How it works
 

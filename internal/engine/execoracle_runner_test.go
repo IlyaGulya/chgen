@@ -11,25 +11,26 @@ package engine
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"testing"
 )
 
+const execOracleRunnerFixture = "internal/engine/testdata/execoraclerunner"
+
 func writeRunnerModule(runnerDir string, cases []xcase, probes []probe) error {
-	repoGoMod, err := os.ReadFile(moduleRootPath("go.mod"))
-	if err != nil {
-		return err
-	}
-	goMod := strings.Replace(string(repoGoMod), "module github.com/IlyaGulya/chgen", "module execrunner", 1)
-	if err := os.WriteFile(filepath.Join(runnerDir, "go.mod"), []byte(goMod), 0o644); err != nil {
-		return err
-	}
-	goSum, err := os.ReadFile(moduleRootPath("go.sum"))
-	if err != nil {
-		return err
-	}
-	if err := os.WriteFile(filepath.Join(runnerDir, "go.sum"), goSum, 0o644); err != nil {
-		return err
+	for _, name := range []string{"go.mod", "go.sum"} {
+		data, err := os.ReadFile(moduleRootPath(execOracleRunnerFixture, name))
+		if err != nil {
+			return err
+		}
+		if name == "go.mod" {
+			data = []byte(strings.Replace(string(data), "module github.com/IlyaGulya/chgen/internal/engine/testdata/execoraclerunner", "module execrunner", 1))
+		}
+		if err := os.WriteFile(filepath.Join(runnerDir, name), data, 0o644); err != nil {
+			return err
+		}
 	}
 	var registrations strings.Builder
 	for index := range cases {
@@ -51,6 +52,55 @@ func writeRunnerModule(runnerDir string, cases []xcase, probes []probe) error {
 	}
 	main := strings.Replace(runnerMainTemplate, "//REGISTRATIONS", registrations.String(), 1)
 	return os.WriteFile(filepath.Join(runnerDir, "main.go"), []byte(main), 0o644)
+}
+
+func TestExecOracleRunnerModuleContract(t *testing.T) {
+	data, err := os.ReadFile(moduleRootPath(execOracleRunnerFixture, "go.mod"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	requirements := moduleRequirements(string(data))
+	if got := "github.com/ClickHouse/clickhouse-go/v2 " + requirements["github.com/ClickHouse/clickhouse-go/v2"]; got != execOracleDriverVersion {
+		t.Fatalf("the execution runner driver is %q, but the report identity is %q", got, execOracleDriverVersion)
+	}
+	for module, version := range map[string]string{
+		"github.com/google/uuid":        "v1.6.0",
+		"github.com/shopspring/decimal": "v1.4.0",
+	} {
+		if got := requirements[module]; got != version {
+			t.Fatalf("the execution runner requires %s %s, want %s", module, got, version)
+		}
+	}
+}
+
+func TestExecOracleRunnerBuildsWithoutServer(t *testing.T) {
+	runnerDir := t.TempDir()
+	if err := os.Mkdir(filepath.Join(runnerDir, "gen"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	stub := "package gen\n\ntype Queries struct{}\n\nfunc New(any) *Queries { return &Queries{} }\n"
+	if err := os.WriteFile(filepath.Join(runnerDir, "gen", "queries.sql.go"), []byte(stub), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeRunnerModule(runnerDir, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	command := exec.Command("go", "build", "-mod=readonly", ".")
+	command.Dir = runnerDir
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("build the execution runner: %v\n%s", err, output)
+	}
+}
+
+func moduleRequirements(goMod string) map[string]string {
+	requirements := make(map[string]string)
+	for _, line := range strings.Split(goMod, "\n") {
+		fields := strings.Fields(line)
+		if len(fields) >= 2 && strings.Contains(fields[0], ".") && strings.HasPrefix(fields[1], "v") {
+			requirements[fields[0]] = fields[1]
+		}
+	}
+	return requirements
 }
 
 const runnerMainTemplate = `package main

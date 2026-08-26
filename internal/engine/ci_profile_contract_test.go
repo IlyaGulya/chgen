@@ -82,8 +82,8 @@ func TestCIUsesCurrentApprovedGitHubActions(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantCounts := map[string]int{
-		"actions/checkout@v7":        5,
-		"actions/setup-go@v7":        5,
+		"actions/checkout@v7":        7,
+		"actions/setup-go@v7":        7,
 		"actions/upload-artifact@v7": 4,
 	}
 	gotCounts := make(map[string]int)
@@ -138,6 +138,46 @@ func TestCIActionEnumerationIgnoresComments(t *testing.T) {
 	}
 	if !slices.Equal(got, want) {
 		t.Fatalf("CI action uses with a comment = %v, want %v", got, want)
+	}
+}
+
+func TestCIMinimumGoJobUsesTheLocalToolchain(t *testing.T) {
+	workflow := readCIWorkflow(t)
+	job := ciJob(t, workflow, "minimum-go", "generated-code-compatibility")
+	if !strings.Contains(workflow, `MINIMUM_GO_VERSION: "1.24.0"`) {
+		t.Error("the workflow does not pin minimum Go 1.24.0")
+	}
+	for _, required := range []string{
+		"GOTOOLCHAIN: local",
+		"go-version: ${{ env.MINIMUM_GO_VERSION }}",
+		`go build -o "${RUNNER_TEMP}/chgen" ./cmd/chgen`,
+		"run: go test ./...",
+	} {
+		if !strings.Contains(job, required) {
+			t.Errorf("the minimum Go contract does not contain %q", required)
+		}
+	}
+	if strings.Contains(job, "clickhouse-server") || strings.Contains(job, "fuzzoracle") || strings.Contains(job, "execoracle") {
+		t.Error("the minimum Go job must not run a ClickHouse oracle")
+	}
+}
+
+func TestCIGeneratedCodeUsesEachSupportedPair(t *testing.T) {
+	job := ciJob(t, readCIWorkflow(t), "generated-code-compatibility", "build")
+	for _, required := range []string{
+		"GOTOOLCHAIN: local",
+		`go: "1.24.0"`,
+		`driver: "v2.42.0"`,
+		`go: "1.25.0"`,
+		`driver: "v2.47.0"`,
+		`go run ./internal/tooling/cmd/drivercompat -go "${{ matrix.go }}" -driver "${{ matrix.driver }}"`,
+	} {
+		if !strings.Contains(job, required) {
+			t.Errorf("the generated-code contract does not contain %q", required)
+		}
+	}
+	if strings.Contains(job, "clickhouse-server") {
+		t.Error("the generated-code compile job must not start ClickHouse")
 	}
 }
 

@@ -6,20 +6,25 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 smoke_dir="$(mktemp -d)"
 trap 'rm -rf "${smoke_dir}"' EXIT
 
+go_124_root="$(GOTOOLCHAIN=go1.24.0 go env GOROOT)"
+consumer_go="${go_124_root}/bin/go"
+if [[ "$(GOTOOLCHAIN=local "${consumer_go}" env GOVERSION)" != "go1.24.0" ]]; then
+	echo "The consumer test must use Go 1.24.0." >&2
+	exit 1
+fi
+
 if grep -Eq '^[[:space:]]*replace[[:space:](]' "${repo_root}/go.mod"; then
 	echo "go.mod has a replace directive, so a versioned install is not safe." >&2
 	exit 1
 fi
 
-sed "s|REPO_ROOT|${repo_root}|" >"${smoke_dir}/go.mod" <<'EOF'
-module example.com/chgen-consumer
-
-go 1.26.0
-
-require github.com/IlyaGulya/chgen v0.0.0
-
-replace github.com/IlyaGulya/chgen => REPO_ROOT
-EOF
+printf '%s\n' \
+	'module example.com/chgen-consumer' \
+	'' \
+	'go 1.24.0' \
+	'' \
+	'require github.com/IlyaGulya/chgen v0.0.0' \
+	>"${smoke_dir}/go.mod"
 
 mkdir -p "${smoke_dir}/consumer"
 sed 's/^+//' >"${smoke_dir}/consumer/consumer.go" <<'EOF'
@@ -116,8 +121,26 @@ EOF
 
 (
 	cd "${smoke_dir}"
-	go mod tidy
-	go test ./...
-	GOBIN="${smoke_dir}/bin" go install github.com/IlyaGulya/chgen/cmd/chgen
-	"${smoke_dir}/bin/chgen" -version
+	export GOTOOLCHAIN=local
+
+	"${consumer_go}" mod edit -replace="github.com/IlyaGulya/chgen=${repo_root}"
+	"${consumer_go}" mod tidy
+	"${consumer_go}" test ./...
+	"${consumer_go}" get -tool github.com/IlyaGulya/chgen/cmd/chgen
+	"${consumer_go}" tool chgen -version
+
+	if [[ "$(awk '/^go / {print $2; exit}' go.mod)" != "1.24.0" ]]; then
+		echo "The tool changed the consumer Go version." >&2
+		exit 1
+	fi
+
+	forbidden='clickhouse-go|ch-go|google/uuid|opentelemetry|staticcheck|honnef\.co/go/tools'
+	if grep -Eiq "${forbidden}" go.mod; then
+		echo "The tool added a forbidden module to the consumer go.mod file." >&2
+		exit 1
+	fi
+	if "${consumer_go}" list -m all | grep -Eiq "${forbidden}"; then
+		echo "The tool added a forbidden module to the consumer module graph." >&2
+		exit 1
+	fi
 )
