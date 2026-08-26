@@ -1,7 +1,9 @@
 package engine
 
 import (
-	"regexp"
+	"go/token"
+	"unicode"
+	"unicode/utf8"
 )
 
 // Command is the generated query operation.
@@ -102,4 +104,14 @@ type queryBuilder struct {
 	sqlLine int
 }
 
-var goIdentifierPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+func isGoIdentifier(name string) bool {
+	return name != "_" && token.IsIdentifier(name)
+}
+
+func lowerFirstIdentifier(name string) string {
+	first, size := utf8.DecodeRuneInString(name)
+	if size == 0 {
+		return name
+	}
+	return string(unicode.ToLower(first)) + name[size:]
+}

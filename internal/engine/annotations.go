@@ -231,11 +231,13 @@ func parseNamedArgAt(sql string, start int) (string, int, bool, error) {
 	}
 	nameStart := index + 1
 	index++
-	for index < len(sql) && isSQLIdentifierByte(sql[index]) {
-		index++
+	closing := strings.IndexByte(sql[index:], '\'')
+	if closing < 0 {
+		return "", start, true, fmt.Errorf("invalid chgen.arg at byte %d: expected closing quote", start)
 	}
+	index += closing
 	name := sql[nameStart:index]
-	if !goIdentifierPattern.MatchString(name) {
+	if !isGoIdentifier(name) {
 		return "", start, true, fmt.Errorf("invalid chgen.arg name %q", name)
 	}
 	if index >= len(sql) || sql[index] != '\'' {
@@ -301,7 +303,7 @@ func parseNameAnnotation(line string) (Query, error) {
 	if len(fields) != 2 {
 		return Query{}, fmt.Errorf("expected -- name: QueryName :many|:one|:exec")
 	}
-	if !goIdentifierPattern.MatchString(fields[0]) {
+	if !isGoIdentifier(fields[0]) {
 		return Query{}, fmt.Errorf("invalid query name %q", fields[0])
 	}
 	command := Command(strings.TrimPrefix(fields[1], ":"))
@@ -318,7 +320,7 @@ func parseParamAnnotation(line string) (Param, error) {
 	if len(fields) != 1 && len(fields) != 2 {
 		return Param{}, fmt.Errorf("expected -- param: GoName [GoType]")
 	}
-	if !goIdentifierPattern.MatchString(fields[0]) {
+	if !isGoIdentifier(fields[0]) {
 		return Param{}, fmt.Errorf("invalid parameter name %q", fields[0])
 	}
 	if len(fields) == 1 {
@@ -335,10 +337,10 @@ func parseResultAnnotation(line string) (Result, error) {
 	if len(fields) != 2 && len(fields) != 3 {
 		return Result{}, fmt.Errorf("expected -- result: GoName SQLAlias [GoType]")
 	}
-	if !goIdentifierPattern.MatchString(fields[0]) {
+	if !isGoIdentifier(fields[0]) {
 		return Result{}, fmt.Errorf("invalid result field name %q", fields[0])
 	}
-	if !goIdentifierPattern.MatchString(fields[1]) {
+	if !isGoIdentifier(fields[1]) {
 		return Result{}, fmt.Errorf("invalid result SQL alias %q", fields[1])
 	}
 	if len(fields) == 2 {
@@ -352,7 +354,7 @@ func parseResultAnnotation(line string) (Result, error) {
 
 func parseResultCapacityAnnotation(line string) (string, error) {
 	fields := strings.Fields(strings.TrimSpace(strings.TrimPrefix(line, "-- result-capacity:")))
-	if len(fields) != 1 || !goIdentifierPattern.MatchString(fields[0]) {
+	if len(fields) != 1 || !isGoIdentifier(fields[0]) {
 		return "", fmt.Errorf("expected -- result-capacity: SliceParameter")
 	}
 	return fields[0], nil

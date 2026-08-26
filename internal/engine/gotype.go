@@ -3,6 +3,8 @@ package engine
 import (
 	"fmt"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 func goType(columnType CHType) (string, error) {
@@ -208,12 +210,9 @@ func exportedIdentifier(name string) string {
 		if len(part) == 0 {
 			continue
 		}
-		first := part[0]
-		if first >= 'a' && first <= 'z' {
-			first -= 'a' - 'A'
-		}
-		result.WriteByte(first)
-		result.WriteString(part[1:])
+		first, size := utf8.DecodeRuneInString(part)
+		result.WriteRune(unicode.ToUpper(first))
+		result.WriteString(part[size:])
 	}
 	if result.Len() == 0 {
 		return "Result"

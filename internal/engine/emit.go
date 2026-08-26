@@ -12,7 +12,7 @@ import (
 
 // Generate returns gofmt-formatted generated Go source for queries.
 func Generate(packageName string, queries []Query) ([]byte, error) {
-	if !goIdentifierPattern.MatchString(packageName) {
+	if !isGoIdentifier(packageName) {
 		return nil, fmt.Errorf("invalid package name %q", packageName)
 	}
 	if len(queries) == 0 {
@@ -266,10 +266,7 @@ func generatedParamArg(param Param) string {
 
 var generatedTemplate = template.Must(template.New("chgen").Funcs(template.FuncMap{
 	"lowerFirst": func(name string) string {
-		if name == "" {
-			return name
-		}
-		return strings.ToLower(name[:1]) + name[1:]
+		return lowerFirstIdentifier(name)
 	},
 	"quoteSQL": func(sql string) string {
 		return strings.TrimSpace(sql)

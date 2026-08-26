@@ -56,7 +56,9 @@ packages:
   default `querygen` is not kept: a silent default package name in a
   multi-package file would be a trap.
 - `output` (path, required). One file per package. Two packages must not
-  declare the same output; that is an error.
+  declare the same output; that is an error. One directory must not contain
+  two generated outputs because both files declare `Queries`, `Querier`,
+  `MockQuerier`, and `New`.
 - `queries` (inputs, required). See 1.3. Every matched file is an annotated
   query file. Queries from several files join into one package; duplicate
   query names are an error (section 6).
@@ -74,6 +76,9 @@ carries type information.
 Unknown keys anywhere in the file are an error, not a warning. A misspelled
 key must not silently change what the run reads.
 
+The YAML stream must contain exactly one document. Duplicate keys, aliases,
+merge keys, and values with the wrong YAML type are errors.
+
 ### 1.3 The `<inputs>` value
 
 `queries` and `schema` accept one path or a list of paths. Each entry is one
@@ -81,12 +86,35 @@ of:
 
 - a file path — used as-is;
 - a directory path — expanded per section 4;
-- a glob pattern (`*`, `?`, `[...]` in the base name, `Go path/filepath.Glob`
-  syntax) — matches files only, sorted byte-wise.
+- a glob pattern (`*`, `?`, or a character class such as `[0-9]`, with Go
+  `path/filepath.Glob` semantics) — matches files only, sorted byte-wise.
+  Adjacent stars have the same non-recursive meaning as one star. Braces are
+  normal characters.
 
 An entry that names a missing file, an empty directory (after filtering), or
 a glob with zero matches is an error. A silent empty input would generate a
 wrong catalog; fail-loud is the project rule.
+
+Input symbolic links are allowed when their resolved targets are regular
+files or directories. The resolved path identifies duplicate inputs and
+collisions. An output symbolic link is an error. A link in an output parent
+path is allowed, but the generator checks the resolved parent again directly
+before it creates the temporary output. Output collision keys fold path case
+and Unicode normalization. This conservative check keeps one config portable
+between file systems with different path identity rules.
+
+An output name must end in `.go`. Go ignores names that start with `.` or `_`,
+and it selects names with known GOOS or GOARCH suffixes for only some targets.
+These names and `_test.go` names are errors.
+
+Planning expands all inputs and generates all packages in memory. A planning
+or generation error changes no output. During commit, chgen writes, closes,
+and syncs a complete temporary file in the target directory before it calls
+`os.Rename`. Replacement behavior follows the host implementation of
+`os.Rename`. A new output uses mode `0666` after the caller's umask. A replaced
+output keeps its previous permission mode. A cross-directory commit is not one
+atomic operation. Another process can also change a path after the final
+identity check because Go has no portable path lock for this operation.
 
 ### 1.4 Example: two generated packages
 
@@ -263,7 +291,8 @@ For a `schema` or `queries` entry that is a directory:
 5. If no file remains, fail (message in section 5).
 
 A glob entry matches files only, is filtered and sorted by the same rules
-2–4, and fails on zero matches after filtering.
+2–4, and fails on zero matches after filtering. It also fails on a file system
+read error. Its pattern grammar is the Go `path/filepath.Glob` grammar.
 
 `schema_migrations` handling, in any schema input: a `CREATE TABLE` or
 `ALTER TABLE` whose target table is exactly `schema_migrations` is skipped

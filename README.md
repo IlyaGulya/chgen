@@ -99,10 +99,34 @@ Subdirectories are not descended. A glob applies the same filter and sort. An
 entry that resolves to nothing is an error; a silent empty input would
 generate a wrong catalog.
 
+The glob syntax is the Go `path/filepath.Glob` syntax. It supports `*`, `?`,
+and character classes such as `[0-9]`. Adjacent stars have the same
+non-recursive meaning as one star, and braces are normal characters. A file
+system read error stops glob expansion. A symbolic link is allowed for an
+input when its resolved target is a regular file or directory. Resolved paths
+also identify duplicate inputs. Output collision checks also fold path case and
+Unicode normalization, so a config cannot depend on case-sensitive file system
+behavior.
+
 A `CREATE TABLE` or `ALTER TABLE` whose target is exactly `schema_migrations`
 is skipped: that table belongs to `golang-migrate`, not to the domain schema.
 
-Unknown configuration keys are an error, not a warning.
+The YAML file must contain exactly one document. Duplicate keys, unknown keys,
+aliases, merge keys, and values of the wrong YAML type are errors.
+
+An output must use a normal `.go` file name. A leading `.` or `_`, a
+`_test.go` suffix, and a known GOOS or GOARCH suffix are errors. One directory
+can contain only one generated output because each output declares the common
+`Queries`, `Querier`, `MockQuerier`, and `New` names. An output symbolic link
+is an error.
+
+The generator validates and generates all packages before it writes an
+output. It writes and syncs a complete temporary file before `os.Rename`
+replaces each output. Replacement behavior follows the host implementation of
+`os.Rename`. A new output uses mode `0666` after the caller's umask. A replaced
+output keeps its previous permission mode. A commit of files in different
+directories is not one atomic operation. A commit-time I/O error can replace
+an earlier output and leave a later output unchanged.
 
 ## Examples
 

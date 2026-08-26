@@ -9,6 +9,141 @@ import (
 	"testing"
 )
 
+func TestGenerateUsesTheGoPackageIdentifierContract(t *testing.T) {
+	for _, name := range []string{"querygen", "_querygen", "данные"} {
+		t.Run("valid_"+name, func(t *testing.T) {
+			_, err := Generate(name, nil)
+			if err == nil || err.Error() != "no queries to generate" {
+				t.Fatalf("Generate(%q, nil) error = %v, want no queries to generate", name, err)
+			}
+		})
+	}
+	for _, name := range []string{"", "_", "for", "7query", "query-name", "query.name"} {
+		t.Run("invalid_"+name, func(t *testing.T) {
+			_, err := Generate(name, nil)
+			want := fmt.Sprintf("invalid package name %q", name)
+			if err == nil || err.Error() != want {
+				t.Fatalf("Generate(%q, nil) error = %v, want %q", name, err, want)
+			}
+		})
+	}
+}
+
+func TestParseAndGenerateUnicodeIdentifiers(t *testing.T) {
+	physical, err := schemaFromDDLErr(t, `CREATE TABLE events (id UInt64);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queries, err := parseQueriesWithSchema(t, `-- name: Получить :one
+-- param: Порог uint64
+-- result: Значение value uint64
+SELECT id AS value FROM events WHERE id = chgen.arg('Порог')`, physical)
+	if err != nil {
+		t.Fatal(err)
+	}
+	generated, err := Generate("данные", queries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(generated)
+	for _, want := range []string{
+		"package данные",
+		"type ПолучитьRow struct",
+		"Значение uint64",
+		"type ПолучитьParams struct",
+		"Порог uint64",
+		"const получитьSQL",
+		"func (q *Queries) Получить",
+	} {
+		if !strings.Contains(text, want) {
+			t.Errorf("generated output does not contain %q:\n%s", want, text)
+		}
+	}
+}
+
+func TestParseAndGenerateUnicodeExternalIdentifier(t *testing.T) {
+	physical, err := schemaFromDDLErr(t, `CREATE TABLE events (id UInt64);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	external, err := schemaFromDDLErr(t, `CREATE TABLE external_values (id UInt64);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queries, err := parseQueriesWithCatalogsErr(t, `-- name: Читать :many
+SELECT events.id
+FROM events
+INNER JOIN chgen.external('Данные', external_values) AS values
+    ON values.id = events.id`, physical, external)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := queries[0].ExternalParams[0].WireName; got != "данные" {
+		t.Fatalf("external wire name = %q, want %q", got, "данные")
+	}
+	generated, err := Generate("данные", queries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(generated)
+	for _, want := range []string{
+		"Данные []ExternalValuesRow",
+		`newExternalValuesRowExternalTable("данные", arg.Данные)`,
+	} {
+		if !strings.Contains(text, want) {
+			t.Errorf("generated output does not contain %q:\n%s", want, text)
+		}
+	}
+}
+
+func TestIdentifierCaseConversionSupportsUnicode(t *testing.T) {
+	if got := lowerFirstIdentifier("Данные"); got != "данные" {
+		t.Fatalf("lowerFirstIdentifier() = %q, want %q", got, "данные")
+	}
+	if got := exportedIdentifier("данные"); got != "Данные" {
+		t.Fatalf("exportedIdentifier() = %q, want %q", got, "Данные")
+	}
+}
+
+func TestAnnotationsRejectKeywordsAndTheBlankIdentifier(t *testing.T) {
+	for _, name := range []string{"for", "_"} {
+		t.Run("query_"+name, func(t *testing.T) {
+			if _, err := parseNameAnnotation("-- name: " + name + " :one"); err == nil {
+				t.Fatalf("query name %q did not fail", name)
+			}
+		})
+		t.Run("parameter_"+name, func(t *testing.T) {
+			if _, err := parseParamAnnotation("-- param: " + name + " uint64"); err == nil {
+				t.Fatalf("parameter name %q did not fail", name)
+			}
+		})
+		t.Run("result_"+name, func(t *testing.T) {
+			if _, err := parseResultAnnotation("-- result: " + name + " value uint64"); err == nil {
+				t.Fatalf("result name %q did not fail", name)
+			}
+		})
+	}
+}
+
+func TestExternalParametersRejectKeywordsAndTheBlankIdentifier(t *testing.T) {
+	external, err := schemaFromDDLErr(t, `CREATE TABLE external_values (id UInt64);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"for", "_"} {
+		t.Run(name, func(t *testing.T) {
+			_, _, err := normalizeExternalTables(
+				"SELECT * FROM chgen.external('"+name+"', external_values)",
+				external,
+				&Schema{Tables: map[string]Table{}},
+			)
+			if err == nil {
+				t.Fatalf("external parameter name %q did not fail", name)
+			}
+		})
+	}
+}
+
 func TestParseSchemaFilesMergesMigrationCatalog(t *testing.T) {
 	dir := t.TempDir()
 	first := filepath.Join(dir, "first.sql")

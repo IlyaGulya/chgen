@@ -2,9 +2,11 @@ package engine
 
 import (
 	"fmt"
+	"go/ast"
+	"strings"
+	"unicode"
 
 	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
-	"strings"
 )
 
 // ExternalParam describes one request-scoped ClickHouse external table used by
@@ -93,12 +95,12 @@ func normalizeExternalTables(sql string, externalSchema *Schema, physicalSchema 
 		if goName == "" {
 			goName = exportedIdentifier(schemaName)
 		}
-		if !goIdentifierPattern.MatchString(goName) || goName[0] < 'A' || goName[0] > 'Z' {
+		if !isGoIdentifier(goName) || !ast.IsExported(goName) {
 			return "", nil, fmt.Errorf("chgen.external parameter name %q must be an exported Go identifier", goName)
 		}
 		wireName := schemaName
 		if goName != exportedIdentifier(schemaName) {
-			wireName = strings.ToLower(goName[:1]) + goName[1:]
+			wireName = lowerFirstIdentifier(goName)
 		}
 
 		columns := make([]ExternalColumn, 0, len(table.ColumnOrder))
@@ -173,10 +175,20 @@ func normalizeExternalTables(sql string, externalSchema *Schema, physicalSchema 
 			params = append(params, param)
 		}
 
-		normalized.WriteString(wireName)
+		writeSQLIdentifier(&normalized, wireName)
 		index = end
 	}
 	return normalized.String(), params, nil
+}
+
+func writeSQLIdentifier(output *strings.Builder, name string) {
+	if strings.IndexFunc(name, func(character rune) bool { return character > unicode.MaxASCII }) < 0 {
+		output.WriteString(name)
+		return
+	}
+	output.WriteByte('"')
+	output.WriteString(name)
+	output.WriteByte('"')
 }
 
 const externalTablePrefix = "chgen.external"
@@ -202,11 +214,13 @@ func parseExternalAt(sql string, start int) (string, string, int, bool, error) {
 	if index < len(sql) && sql[index] == '\'' {
 		nameStart := index + 1
 		index++
-		for index < len(sql) && isSQLIdentifierByte(sql[index]) {
-			index++
+		closing := strings.IndexByte(sql[index:], '\'')
+		if closing < 0 {
+			return "", "", start, true, fmt.Errorf("invalid chgen.external parameter name at byte %d", start)
 		}
+		index += closing
 		goName = sql[nameStart:index]
-		if index >= len(sql) || sql[index] != '\'' {
+		if !isGoIdentifier(goName) {
 			return "", "", start, true, fmt.Errorf("invalid chgen.external parameter name at byte %d", start)
 		}
 		index = skipSQLWhitespace(sql, index+1)
