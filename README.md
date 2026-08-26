@@ -16,12 +16,24 @@ guessed-type fallback.
 - Find unknown tables, columns, parameters, and unsafe types during generation.
 - Remove hand-written query bindings, result structs, and `Scan` calls.
 - Keep parameter names in SQL with `chgen.arg('Name')`.
-- Get a `Querier` interface and `MockQuerier` for unit tests.
+- Generate type-safe ClickHouse queries for Go.
 - Use ClickHouse types such as `LowCardinality`, `Nullable`, arrays, maps,
   merged aggregate-state results, UUIDs, IP addresses, decimals, and temporal
   values.
-- Generate the same result on a developer computer and in CI. A server is not
-  necessary during generation.
+
+## Quick start
+
+The command requires Go 1.24 or later. Add it to your module, create the
+initial files, and generate the Go package:
+
+```sh
+go get -tool github.com/IlyaGulya/chgen/cmd/chgen@latest
+go tool chgen init
+go tool chgen
+```
+
+The `init` command creates `chgen.yaml`, `schema.sql`, and `queries.sql` in the
+current directory. It refuses to replace any of these files.
 
 ## From SQL to a Go method
 
@@ -70,12 +82,9 @@ packages:
     queries: queries.sql
 ```
 
-The command requires Go 1.24 or later.
-
-Pin the generator in your Go module and run it:
+Run the generator after you change the schema or a query:
 
 ```sh
-go get -tool github.com/IlyaGulya/chgen/cmd/chgen@latest
 go tool chgen
 ```
 
@@ -124,10 +133,10 @@ row scan. Your application supplies the connection and database selection.
 The same files are in the runnable generator example in
 [`examples/quickstart/`](examples/quickstart/).
 
-## Quick start
+## Command options
 
-The example above shows the minimum source files. Use `-f` for another
-configuration path. Use `-version` to print the command version:
+Use `-f` for another configuration path. Use `-version` to print the command
+version:
 
 ```sh
 go tool chgen -f path/to/chgen.yaml
