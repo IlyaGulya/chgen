@@ -332,8 +332,10 @@ Inputs:
 Schema and DDL:
 
 - `%s:%d: RENAME COLUMN is not supported; supported ALTER TABLE operations:
-  ADD COLUMN, MODIFY COLUMN, DROP COLUMN` (one message per unsupported
-  clause, named by its SQL keyword, never by its Go AST type)
+  ADD COLUMN, MODIFY COLUMN, DROP COLUMN; projection operations ADD
+  PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION are
+  ignored` (one message per unsupported clause, named by its SQL keyword,
+  never by its Go AST type)
 - `%s:%d: statement is not CREATE TABLE or a supported ALTER TABLE; move
   non-schema SQL out of the schema inputs`
 - `%s:%d: duplicate CREATE TABLE %q; first declared at %s:%d`

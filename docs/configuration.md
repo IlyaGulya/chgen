@@ -114,6 +114,10 @@ Schema inputs are applied in order. The catalog supports these changes:
 - `ALTER TABLE ... MODIFY COLUMN`
 - `ALTER TABLE ... DROP COLUMN`
 
+Projection operations (`ADD PROJECTION`, `MATERIALIZE PROJECTION`,
+`DROP PROJECTION`, and `CLEAR PROJECTION`) are parsed and ignored. They change
+physical projection storage, not the table's query column catalog.
+
 Engine clauses, engine arguments, and sort keys remain in the catalog. A
 `CREATE TABLE` or `ALTER TABLE` whose target is exactly
 `schema_migrations` is ignored. This table belongs to `golang-migrate` and is

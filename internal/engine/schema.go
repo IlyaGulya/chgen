@@ -186,6 +186,31 @@ func engineExprText(expr clickhouse.Expr) string {
 	}
 }
 
+type catalogAlterAction uint8
+
+const (
+	catalogAlterReject catalogAlterAction = iota
+	catalogAlterApply
+	catalogAlterIgnore
+)
+
+// classifyCatalogAlter defines the effect of one ALTER TABLE clause on the
+// catalog. Ignored clauses are understood schema operations whose effects are
+// outside the column and engine metadata that chgen models.
+func classifyCatalogAlter(clause clickhouse.AlterTableClause) catalogAlterAction {
+	switch clause.(type) {
+	case *clickhouse.AlterTableAddColumn, *clickhouse.AlterTableModifyColumn, *clickhouse.AlterTableDropColumn:
+		return catalogAlterApply
+	case *clickhouse.AlterTableAddProjection,
+		*clickhouse.AlterTableMaterializeProjection,
+		*clickhouse.AlterTableDropProjection,
+		*clickhouse.AlterTableClearProjection:
+		return catalogAlterIgnore
+	default:
+		return catalogAlterReject
+	}
+}
+
 func applyAlterTable(schema *Schema, alterTable *clickhouse.AlterTable) error {
 	if alterTable.TableIdentifier == nil || alterTable.TableIdentifier.Table == nil {
 		return fmt.Errorf("ALTER TABLE has no table name")
@@ -269,6 +294,9 @@ func applyAlterTable(schema *Schema, alterTable *clickhouse.AlterTable) error {
 				}
 			}
 		default:
+			if classifyCatalogAlter(expression) == catalogAlterIgnore {
+				continue
+			}
 			return fmt.Errorf("unsupported ALTER TABLE %s clause %T", tableName, expression)
 		}
 	}

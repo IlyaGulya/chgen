@@ -3,6 +3,7 @@ package engine
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -167,7 +168,52 @@ func TestParseSchemaCatalogsUnsupportedAlterClause(t *testing.T) {
 ALTER TABLE orders RENAME COLUMN order_id TO id;
 `)
 	_, err := ParseSchemaCatalogs([]string{path})
-	want := path + ":2: RENAME COLUMN is not supported; supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN"
+	want := path + ":2: RENAME COLUMN is not supported; supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN; projection operations ADD PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION are ignored"
+	if err == nil || err.Error() != want {
+		t.Fatalf("got %v, want %q", err, want)
+	}
+}
+
+func TestParseSchemaCatalogsIgnoresProjectionAlters(t *testing.T) {
+	dir := t.TempDir()
+	path := writeSchemaFile(t, dir, "schema.sql", `
+CREATE TABLE orders (order_id String, customer_id String) ENGINE = MergeTree ORDER BY order_id;
+ALTER TABLE orders ADD PROJECTION by_customer (SELECT customer_id, count() GROUP BY customer_id);
+ALTER TABLE orders MATERIALIZE PROJECTION by_customer;
+ALTER TABLE orders CLEAR PROJECTION by_customer;
+ALTER TABLE orders DROP PROJECTION by_customer;
+`)
+	catalogs, err := ParseSchemaCatalogs([]string{path})
+	if err != nil {
+		t.Fatalf("ParseSchemaCatalogs: %v", err)
+	}
+	table := catalogs.Physical.Tables["orders"]
+	if got, want := table.ColumnOrder, []string{"order_id", "customer_id"}; !slices.Equal(got, want) {
+		t.Fatalf("column order after projection ALTERs = %v, want %v", got, want)
+	}
+}
+
+func TestParseSchemaCatalogsAppliesColumnAlterBesideIgnoredProjection(t *testing.T) {
+	dir := t.TempDir()
+	path := writeSchemaFile(t, dir, "schema.sql", `
+CREATE TABLE orders (order_id String) ENGINE = MergeTree ORDER BY order_id;
+ALTER TABLE orders ADD COLUMN channel String, ADD PROJECTION by_channel (SELECT channel, count() GROUP BY channel);
+`)
+	catalogs, err := ParseSchemaCatalogs([]string{path})
+	if err != nil {
+		t.Fatalf("ParseSchemaCatalogs: %v", err)
+	}
+	if _, ok := catalogs.Physical.Tables["orders"].Columns["channel"]; !ok {
+		t.Fatal("channel column missing after mixed ALTER")
+	}
+}
+
+func TestParseSchemaCatalogsProjectionAlterRequiresKnownTable(t *testing.T) {
+	dir := t.TempDir()
+	path := writeSchemaFile(t, dir, "schema.sql", `ALTER TABLE missing ADD PROJECTION by_id (SELECT id ORDER BY id);
+`)
+	_, err := ParseSchemaCatalogs([]string{path})
+	want := path + ":1: ALTER TABLE missing targets an unknown table"
 	if err == nil || err.Error() != want {
 		t.Fatalf("got %v, want %q", err, want)
 	}

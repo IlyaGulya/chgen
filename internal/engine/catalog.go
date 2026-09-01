@@ -140,7 +140,7 @@ func applyPhysicalCreate(catalogs *SchemaCatalogs, path string, line int, statem
 
 const migrationsTableName = "schema_migrations"
 
-var supportedAlterOperations = "supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN"
+var supportedAlterOperations = "supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN; projection operations ADD PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION are ignored"
 
 func applyCatalogAlter(catalogs *SchemaCatalogs, path, content string, line int, statement *clickhouse.AlterTable) error {
 	if statement.TableIdentifier == nil || statement.TableIdentifier.Table == nil {
@@ -154,9 +154,9 @@ func applyCatalogAlter(catalogs *SchemaCatalogs, path, content string, line int,
 		return fmt.Errorf("%s:%d: ALTER TABLE %q targets an external schema; edit its CREATE TABLE instead", path, line, tableName)
 	}
 	for _, clause := range statement.AlterExprs {
-		switch clause.(type) {
-		case *clickhouse.AlterTableAddColumn, *clickhouse.AlterTableModifyColumn, *clickhouse.AlterTableDropColumn:
-		default:
+		switch classifyCatalogAlter(clause) {
+		case catalogAlterApply, catalogAlterIgnore:
+		case catalogAlterReject:
 			clauseLine := lineOfOffset(content, int(clause.Pos()))
 			return fmt.Errorf("%s:%d: %s is not supported; %s", path, clauseLine, alterClauseKeyword(clause), supportedAlterOperations)
 		}
