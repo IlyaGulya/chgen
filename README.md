@@ -155,7 +155,7 @@ One run:
 
 1. Reads and validates `chgen.yaml`.
 2. Reads schema and query inputs in configuration order.
-3. Applies supported `CREATE TABLE` and `ALTER TABLE` statements.
+3. Applies supported `CREATE TABLE`, `DROP TABLE`, and `ALTER TABLE` statements.
 4. Resolves query parameters and result types.
 5. Generates all configured packages.
 

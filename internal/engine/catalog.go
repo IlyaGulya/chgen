@@ -87,12 +87,17 @@ func applySchemaSource(catalogs *SchemaCatalogs, path, raw string) error {
 			if err := applyCatalogAlter(catalogs, path, content, line, statement); err != nil {
 				return err
 			}
+		case *clickhouse.DropStmt:
+			line := lineOfOffset(content, int(statement.DropPos))
+			if err := applyCatalogDrop(catalogs, path, line, statement); err != nil {
+				return err
+			}
 		case *clickhouse.CreateView, *clickhouse.CreateMaterializedView, *clickhouse.InsertStmt:
 			// Views and seed INSERT statements do not contribute physical
 			// column definitions to this catalog.
 		default:
 			line := lineOfOffset(content, int(statement.Pos()))
-			return fmt.Errorf("%s:%d: statement is not CREATE TABLE or a supported ALTER TABLE; move non-schema SQL out of the schema inputs", path, line)
+			return fmt.Errorf("%s:%d: statement is not CREATE TABLE, DROP TABLE/VIEW, or a supported ALTER TABLE; move non-schema SQL out of the schema inputs", path, line)
 		}
 	}
 	return nil
@@ -135,6 +140,39 @@ func applyPhysicalCreate(catalogs *SchemaCatalogs, path string, line int, statem
 	table.File = path
 	table.Line = line
 	catalogs.Physical.Tables[table.Name] = table
+	return nil
+}
+
+func applyCatalogDrop(catalogs *SchemaCatalogs, path string, line int, statement *clickhouse.DropStmt) error {
+	if statement.Name == nil || statement.Name.Table == nil {
+		return fmt.Errorf("%s:%d: %s has no object name", path, line, statement.Type())
+	}
+
+	switch statement.DropTarget {
+	case clickhouse.KeywordView:
+		// Views never enter the catalog, so dropping one is a catalog no-op.
+		// Accept it explicitly so migration replay does not mistake the absent
+		// catalog entry for an unknown physical table.
+		return nil
+	case clickhouse.KeywordTable:
+	default:
+		return fmt.Errorf("%s:%d: %s is not supported; supported DROP operations: DROP TABLE, DROP VIEW", path, line, statement.Type())
+	}
+
+	tableName := statement.Name.Table.Name
+	if tableName == migrationsTableName {
+		return nil
+	}
+	if _, exists := catalogs.External.Tables[tableName]; exists {
+		return fmt.Errorf("%s:%d: DROP TABLE %q targets an external schema; remove or edit its CREATE TABLE instead", path, line, tableName)
+	}
+	if _, exists := catalogs.Physical.Tables[tableName]; !exists {
+		if statement.IfExists {
+			return nil
+		}
+		return fmt.Errorf("%s:%d: DROP TABLE %q targets an unknown table; add IF EXISTS if the table may be absent", path, line, tableName)
+	}
+	delete(catalogs.Physical.Tables, tableName)
 	return nil
 }
 

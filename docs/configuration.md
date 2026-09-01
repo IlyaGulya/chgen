@@ -110,6 +110,8 @@ migrations outside these entries.
 
 Schema inputs are applied in order. The catalog supports these changes:
 
+- `DROP TABLE`, which removes the table from the catalog; `IF EXISTS` permits
+  an already absent table
 - `ALTER TABLE ... ADD COLUMN`, including `AFTER` placement
 - `ALTER TABLE ... MODIFY COLUMN`
 - `ALTER TABLE ... DROP COLUMN`
@@ -118,8 +120,11 @@ Projection operations (`ADD PROJECTION`, `MATERIALIZE PROJECTION`,
 `DROP PROJECTION`, and `CLEAR PROJECTION`) are parsed and ignored. They change
 physical projection storage, not the table's query column catalog.
 
+`DROP VIEW` is also parsed and ignored because views never enter the catalog.
+`DROP DATABASE`, `DROP DICTIONARY`, and `DROP USER` or `DROP ROLE` are rejected.
+
 Engine clauses, engine arguments, and sort keys remain in the catalog. A
-`CREATE TABLE` or `ALTER TABLE` whose target is exactly
+`CREATE TABLE`, `ALTER TABLE`, or `DROP TABLE` whose target is exactly
 `schema_migrations` is ignored. This table belongs to `golang-migrate` and is
 not part of the application schema.
 

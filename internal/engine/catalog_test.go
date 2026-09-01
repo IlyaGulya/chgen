@@ -134,6 +134,7 @@ func TestParseSchemaCatalogsSkipsSchemaMigrations(t *testing.T) {
 	path := writeSchemaFile(t, dir, "schema.sql", `
 CREATE TABLE schema_migrations (version Int64, dirty UInt8) ENGINE = MergeTree ORDER BY version;
 ALTER TABLE schema_migrations ADD COLUMN note String;
+DROP TABLE schema_migrations;
 CREATE TABLE orders (order_id String) ENGINE = MergeTree ORDER BY order_id;
 `)
 	catalogs, err := ParseSchemaCatalogs([]string{path})
@@ -145,6 +146,127 @@ CREATE TABLE orders (order_id String) ENGINE = MergeTree ORDER BY order_id;
 	}
 	if _, ok := catalogs.Physical.Tables["orders"]; !ok {
 		t.Errorf("orders missing")
+	}
+}
+
+func TestParseSchemaCatalogsAppliesDropTable(t *testing.T) {
+	dir := t.TempDir()
+	path := writeSchemaFile(t, dir, "schema.sql", `
+CREATE TABLE obsolete_orders (order_id String) ENGINE = MergeTree ORDER BY order_id;
+DROP TABLE obsolete_orders;
+CREATE TABLE orders (order_id String) ENGINE = MergeTree ORDER BY order_id;
+`)
+	catalogs, err := ParseSchemaCatalogs([]string{path})
+	if err != nil {
+		t.Fatalf("ParseSchemaCatalogs: %v", err)
+	}
+	if _, ok := catalogs.Physical.Tables["obsolete_orders"]; ok {
+		t.Fatal("obsolete_orders remains in the catalog after DROP TABLE")
+	}
+	if _, ok := catalogs.Physical.Tables["orders"]; !ok {
+		t.Fatal("orders missing from the catalog")
+	}
+}
+
+func TestParseSchemaCatalogsAllowsCreateAfterDropTable(t *testing.T) {
+	dir := t.TempDir()
+	path := writeSchemaFile(t, dir, "schema.sql", `
+CREATE TABLE orders (legacy_id UInt64) ENGINE = MergeTree ORDER BY legacy_id;
+DROP TABLE orders;
+CREATE TABLE orders (order_id String) ENGINE = MergeTree ORDER BY order_id;
+`)
+	catalogs, err := ParseSchemaCatalogs([]string{path})
+	if err != nil {
+		t.Fatalf("ParseSchemaCatalogs: %v", err)
+	}
+	table := catalogs.Physical.Tables["orders"]
+	if got, want := table.ColumnOrder, []string{"order_id"}; !slices.Equal(got, want) {
+		t.Fatalf("recreated table column order = %v, want %v", got, want)
+	}
+}
+
+func TestParseQueryFilesRejectsTableRemovedByDrop(t *testing.T) {
+	dir := t.TempDir()
+	schemaPath := writeSchemaFile(t, dir, "schema.sql", `
+CREATE TABLE orders (order_id String) ENGINE = MergeTree ORDER BY order_id;
+DROP TABLE orders;
+`)
+	queryPath := writeSchemaFile(t, dir, "queries.sql", `-- name: ListOrders :many
+SELECT order_id FROM orders;
+`)
+	catalogs, err := ParseSchemaCatalogs([]string{schemaPath})
+	if err != nil {
+		t.Fatalf("ParseSchemaCatalogs: %v", err)
+	}
+	_, err = ParseQueryFiles([]string{queryPath}, catalogs)
+	if err == nil || !strings.Contains(err.Error(), `table "orders" is not present in the schema or the query scope`) {
+		t.Fatalf("ParseQueryFiles after DROP TABLE: %v", err)
+	}
+}
+
+func TestParseSchemaCatalogsDropUnknownTable(t *testing.T) {
+	dir := t.TempDir()
+	path := writeSchemaFile(t, dir, "schema.sql", `DROP TABLE missing;
+`)
+	_, err := ParseSchemaCatalogs([]string{path})
+	want := path + `:1: DROP TABLE "missing" targets an unknown table; add IF EXISTS if the table may be absent`
+	if err == nil || err.Error() != want {
+		t.Fatalf("got %v, want %q", err, want)
+	}
+}
+
+func TestParseSchemaCatalogsDropUnknownTableIfExists(t *testing.T) {
+	dir := t.TempDir()
+	path := writeSchemaFile(t, dir, "schema.sql", `
+DROP TABLE IF EXISTS missing;
+CREATE TABLE orders (order_id String) ENGINE = MergeTree ORDER BY order_id;
+`)
+	catalogs, err := ParseSchemaCatalogs([]string{path})
+	if err != nil {
+		t.Fatalf("ParseSchemaCatalogs: %v", err)
+	}
+	if _, ok := catalogs.Physical.Tables["orders"]; !ok {
+		t.Fatal("orders missing after DROP TABLE IF EXISTS no-op")
+	}
+}
+
+func TestParseSchemaCatalogsDropViewIsCatalogNoOp(t *testing.T) {
+	dir := t.TempDir()
+	path := writeSchemaFile(t, dir, "schema.sql", `
+CREATE TABLE orders (order_id String) ENGINE = MergeTree ORDER BY order_id;
+CREATE VIEW order_view AS SELECT order_id FROM orders;
+DROP VIEW order_view;
+`)
+	catalogs, err := ParseSchemaCatalogs([]string{path})
+	if err != nil {
+		t.Fatalf("ParseSchemaCatalogs: %v", err)
+	}
+	if _, ok := catalogs.Physical.Tables["orders"]; !ok {
+		t.Fatal("orders missing after DROP VIEW")
+	}
+}
+
+func TestParseSchemaCatalogsRejectsDropDictionary(t *testing.T) {
+	dir := t.TempDir()
+	path := writeSchemaFile(t, dir, "schema.sql", `DROP DICTIONARY events_by_id;
+`)
+	_, err := ParseSchemaCatalogs([]string{path})
+	want := path + ":1: DROP DICTIONARY is not supported; supported DROP operations: DROP TABLE, DROP VIEW"
+	if err == nil || err.Error() != want {
+		t.Fatalf("got %v, want %q", err, want)
+	}
+}
+
+func TestParseSchemaCatalogsDropAgainstExternal(t *testing.T) {
+	dir := t.TempDir()
+	path := writeSchemaFile(t, dir, "schema.sql", `-- chgen:external
+CREATE TABLE order_keys (order_id String);
+DROP TABLE order_keys;
+`)
+	_, err := ParseSchemaCatalogs([]string{path})
+	want := path + `:3: DROP TABLE "order_keys" targets an external schema; remove or edit its CREATE TABLE instead`
+	if err == nil || err.Error() != want {
+		t.Fatalf("got %v, want %q", err, want)
 	}
 }
 
@@ -225,9 +347,28 @@ func TestParseSchemaCatalogsRejectsNonSchemaStatement(t *testing.T) {
 SELECT 1;
 `)
 	_, err := ParseSchemaCatalogs([]string{path})
-	want := path + ":2: statement is not CREATE TABLE or a supported ALTER TABLE; move non-schema SQL out of the schema inputs"
+	want := path + ":2: statement is not CREATE TABLE, DROP TABLE/VIEW, or a supported ALTER TABLE; move non-schema SQL out of the schema inputs"
 	if err == nil || err.Error() != want {
 		t.Fatalf("got %v, want %q", err, want)
+	}
+}
+
+func TestParseSchemaCatalogsRejectsNonCatalogDropStatements(t *testing.T) {
+	tests := map[string]string{
+		"database": "DROP DATABASE analytics;",
+		"role":     "DROP ROLE analyst;",
+		"user":     "DROP USER reporter;",
+	}
+	for name, ddl := range tests {
+		t.Run(name, func(t *testing.T) {
+			dir := t.TempDir()
+			path := writeSchemaFile(t, dir, "schema.sql", ddl+"\n")
+			_, err := ParseSchemaCatalogs([]string{path})
+			want := path + ":1: statement is not CREATE TABLE, DROP TABLE/VIEW, or a supported ALTER TABLE; move non-schema SQL out of the schema inputs"
+			if err == nil || err.Error() != want {
+				t.Fatalf("got %v, want %q", err, want)
+			}
+		})
 	}
 }
 

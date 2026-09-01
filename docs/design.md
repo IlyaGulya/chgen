@@ -294,16 +294,21 @@ A glob entry matches files only, is filtered and sorted by the same rules
 2–4, and fails on zero matches after filtering. It also fails on a file system
 read error. Its pattern grammar is the Go `path/filepath.Glob` grammar.
 
-`schema_migrations` handling, in any schema input: a `CREATE TABLE` or
-`ALTER TABLE` whose target table is exactly `schema_migrations` is skipped
-without error and produces no catalog entry. The table belongs to
-`golang-migrate`, not to the domain schema. A query that references
-`schema_migrations` therefore fails with the ordinary unknown-table error.
-Every other unmodelled DDL statement is still rejected, unchanged.
+`schema_migrations` handling, in any schema input: a `CREATE TABLE`,
+`ALTER TABLE`, or `DROP TABLE` whose target table is exactly
+`schema_migrations` is skipped without error and produces no catalog entry.
+The table belongs to `golang-migrate`, not to the domain schema. A query that
+references `schema_migrations` therefore fails with the ordinary unknown-table
+error. Every other unmodelled DDL statement is still rejected, unchanged.
 
-Duplicate `CREATE TABLE` for one name across ordered inputs remains an error,
-as today. A VIEW stub can add a relation that the migrations do not define, so
-it does not collide.
+`DROP TABLE` removes a physical table from the ordered catalog. An unknown
+table is an error unless the statement has `IF EXISTS`. `DROP VIEW` is an
+explicit no-op because views never enter either catalog. `DROP DATABASE`,
+`DROP DICTIONARY`, and `DROP USER` or `DROP ROLE` remain unsupported.
+
+Duplicate `CREATE TABLE` for one name across ordered inputs remains an error
+unless an intervening `DROP TABLE` removed the earlier definition. A VIEW stub
+can add a relation that the migrations do not define, so it does not collide.
 
 ## 5. Error messages
 
@@ -336,8 +341,12 @@ Schema and DDL:
   PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION are
   ignored` (one message per unsupported clause, named by its SQL keyword,
   never by its Go AST type)
-- `%s:%d: statement is not CREATE TABLE or a supported ALTER TABLE; move
-  non-schema SQL out of the schema inputs`
+- `%s:%d: DROP TABLE %q targets an unknown table; add IF EXISTS if the table
+  may be absent`
+- `%s:%d: DROP DICTIONARY is not supported; supported DROP operations: DROP
+  TABLE, DROP VIEW`
+- `%s:%d: statement is not CREATE TABLE, DROP TABLE/VIEW, or a supported ALTER
+  TABLE; move non-schema SQL out of the schema inputs`
 - `%s:%d: duplicate CREATE TABLE %q; first declared at %s:%d`
 
 External tables:
