@@ -10,6 +10,7 @@ package examplequeries
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -17,6 +18,9 @@ import (
 	"github.com/ClickHouse/clickhouse-go/v2/ext"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
+
+// ErrNoRows is returned by a :one query when ClickHouse returns no row.
+var ErrNoRows = errors.New("no rows")
 
 // Queries is the generated ClickHouse query set. The target database is a
 // connection property (clickhouse Auth.Database); the SQL never names it.
@@ -433,7 +437,7 @@ func (q *Queries) CountOrdersForCustomer(ctx context.Context, arg CountOrdersFor
 		if err := rows.Err(); err != nil {
 			return result, fmt.Errorf("CountOrdersForCustomer rows: %w", err)
 		}
-		return result, fmt.Errorf("CountOrdersForCustomer: no rows")
+		return result, fmt.Errorf("CountOrdersForCustomer: %w", ErrNoRows)
 	}
 	if err := rows.Scan(&result.OrderCount, &result.TotalSpend); err != nil {
 		return result, fmt.Errorf("CountOrdersForCustomer scan: %w", err)

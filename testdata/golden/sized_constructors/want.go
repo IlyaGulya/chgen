@@ -9,11 +9,15 @@ package golden
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/shopspring/decimal"
 )
+
+// ErrNoRows is returned by a :one query when ClickHouse returns no row.
+var ErrNoRows = errors.New("no rows")
 
 // Queries is the generated ClickHouse query set. The target database is a
 // connection property (clickhouse Auth.Database); the SQL never names it.
@@ -94,7 +98,7 @@ func (q *Queries) ReadConstructors(ctx context.Context, arg ReadConstructorsPara
 		if err := rows.Err(); err != nil {
 			return result, fmt.Errorf("ReadConstructors rows: %w", err)
 		}
-		return result, fmt.Errorf("ReadConstructors: no rows")
+		return result, fmt.Errorf("ReadConstructors: %w", ErrNoRows)
 	}
 	if err := rows.Scan(&result.FixedString, &result.DecimalFromInt, &result.SmallDecimal, &result.IntOrNull, &result.IntOrZero, &result.FromLowCardinality, &result.FromNullable); err != nil {
 		return result, fmt.Errorf("ReadConstructors scan: %w", err)

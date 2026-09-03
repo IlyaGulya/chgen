@@ -16,6 +16,11 @@ FROM orders;
 The query name must be a Go identifier other than `_`. Query names must be
 unique across all query files in one generated package.
 
+A `:one` method still returns an error when the result is empty, but generated
+packages export `ErrNoRows` so callers can distinguish absence from a query or
+driver failure with `errors.Is(err, querygen.ErrNoRows)`. The rendered error
+text remains `<QueryName>: no rows`.
+
 The command after the name selects the generated method result:
 
 | Command | Generated result |

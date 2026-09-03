@@ -9,10 +9,14 @@ package golden
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
+
+// ErrNoRows is returned by a :one query when ClickHouse returns no row.
+var ErrNoRows = errors.New("no rows")
 
 // Queries is the generated ClickHouse query set. The target database is a
 // connection property (clickhouse Auth.Database); the SQL never names it.
@@ -102,7 +106,7 @@ func (q *Queries) ReadWrappers(ctx context.Context, arg ReadWrappersParams) (Rea
 		if err := rows.Err(); err != nil {
 			return result, fmt.Errorf("ReadWrappers rows: %w", err)
 		}
-		return result, fmt.Errorf("ReadWrappers: no rows")
+		return result, fmt.Errorf("ReadWrappers: %w", ErrNoRows)
 	}
 	if err := rows.Scan(&result.Plain, &result.Nullable, &result.LowCardinality, &result.LowCardinalityNullable, &result.NullableInt, &result.NullableArrayElement, &result.NullableMapValue); err != nil {
 		return result, fmt.Errorf("ReadWrappers scan: %w", err)

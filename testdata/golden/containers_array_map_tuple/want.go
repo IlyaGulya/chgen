@@ -9,10 +9,14 @@ package golden
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
+
+// ErrNoRows is returned by a :one query when ClickHouse returns no row.
+var ErrNoRows = errors.New("no rows")
 
 // Queries is the generated ClickHouse query set. The target database is a
 // connection property (clickhouse Auth.Database); the SQL never names it.
@@ -95,7 +99,7 @@ func (q *Queries) ReadContainers(ctx context.Context, arg ReadContainersParams) 
 		if err := rows.Err(); err != nil {
 			return result, fmt.Errorf("ReadContainers rows: %w", err)
 		}
-		return result, fmt.Errorf("ReadContainers: no rows")
+		return result, fmt.Errorf("ReadContainers: %w", ErrNoRows)
 	}
 	if err := rows.Scan(&result.TagList, &result.NestedList, &result.AttributeMap); err != nil {
 		return result, fmt.Errorf("ReadContainers scan: %w", err)
@@ -139,7 +143,7 @@ func (q *Queries) ReadTupleElements(ctx context.Context, arg ReadTupleElementsPa
 		if err := rows.Err(); err != nil {
 			return result, fmt.Errorf("ReadTupleElements rows: %w", err)
 		}
-		return result, fmt.Errorf("ReadTupleElements: no rows")
+		return result, fmt.Errorf("ReadTupleElements: %w", ErrNoRows)
 	}
 	if err := rows.Scan(&result.FirstElement, &result.SecondElement, &result.NamedElement, &result.NamedByFunction); err != nil {
 		return result, fmt.Errorf("ReadTupleElements scan: %w", err)

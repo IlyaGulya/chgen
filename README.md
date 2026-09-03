@@ -187,6 +187,10 @@ Raw positional parameters are not allowed in schema-aware query sources.
 See [Query source format](docs/query-source.md) for all annotations and command
 forms.
 
+Generated packages with a `:one` query export `ErrNoRows`. Use
+`errors.Is(err, querygen.ErrNoRows)` when an empty result is an expected
+outcome.
+
 ## Features
 
 ### Generated application API

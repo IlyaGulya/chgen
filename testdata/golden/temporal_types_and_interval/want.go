@@ -9,11 +9,15 @@ package golden
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
+
+// ErrNoRows is returned by a :one query when ClickHouse returns no row.
+var ErrNoRows = errors.New("no rows")
 
 // Queries is the generated ClickHouse query set. The target database is a
 // connection property (clickhouse Auth.Database); the SQL never names it.
@@ -224,7 +228,7 @@ func (q *Queries) ReadTemporalColumns(ctx context.Context, arg ReadTemporalColum
 		if err := rows.Err(); err != nil {
 			return result, fmt.Errorf("ReadTemporalColumns rows: %w", err)
 		}
-		return result, fmt.Errorf("ReadTemporalColumns: no rows")
+		return result, fmt.Errorf("ReadTemporalColumns: %w", ErrNoRows)
 	}
 	if err := rows.Scan(&result.Day, &result.WideDay, &result.Second, &result.SecondUtc, &result.Milli, &result.MicroUtc, &result.NullableMilli); err != nil {
 		return result, fmt.Errorf("ReadTemporalColumns scan: %w", err)
@@ -281,7 +285,7 @@ func (q *Queries) ReadIntervalResults(ctx context.Context, arg ReadIntervalResul
 		if err := rows.Err(); err != nil {
 			return result, fmt.Errorf("ReadIntervalResults rows: %w", err)
 		}
-		return result, fmt.Errorf("ReadIntervalResults: no rows")
+		return result, fmt.Errorf("ReadIntervalResults: %w", ErrNoRows)
 	}
 	if err := rows.Scan(&result.DayPlusDay, &result.DayPlusHour, &result.SecondPlusMonth, &result.MilliMinusSecond, &result.StartOfHour); err != nil {
 		return result, fmt.Errorf("ReadIntervalResults scan: %w", err)
@@ -328,7 +332,7 @@ func (q *Queries) CountAfter(ctx context.Context, arg CountAfterParams) (CountAf
 		if err := rows.Err(); err != nil {
 			return result, fmt.Errorf("CountAfter rows: %w", err)
 		}
-		return result, fmt.Errorf("CountAfter: no rows")
+		return result, fmt.Errorf("CountAfter: %w", ErrNoRows)
 	}
 	if err := rows.Scan(&result.Total); err != nil {
 		return result, fmt.Errorf("CountAfter scan: %w", err)

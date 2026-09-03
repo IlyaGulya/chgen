@@ -56,6 +56,7 @@ func Generate(packageName string, queries []Query) ([]byte, error) {
 		ExternalTables:      externalTables,
 		NeedsExternalTables: len(externalTables) > 0,
 		NeedsNullableParam:  hasNullableParams(queries),
+		NeedsOne:            hasCommand(queries, CommandOne),
 		// A result or an external-table column can need any of these types.
 		// A parameter can carry every one of them except json.RawMessage,
 		// which is a result-only shape.
@@ -148,6 +149,7 @@ type templateData struct {
 	ExternalTables      []ExternalParam
 	NeedsExternalTables bool
 	NeedsNullableParam  bool
+	NeedsOne            bool
 	NeedsJSON           bool
 	NeedsTime           bool
 	NeedsNet            bool
@@ -239,6 +241,15 @@ func hasNullableParams(queries []Query) bool {
 			if strings.HasPrefix(param.GoType, "*") {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+func hasCommand(queries []Query, command Command) bool {
+	for _, query := range queries {
+		if query.Command == command {
+			return true
 		}
 	}
 	return false
@@ -372,6 +383,9 @@ var generatedTemplate = template.Must(template.New("chgen").Funcs(template.FuncM
 	},
 	"sortedImports": func(data templateData) []string {
 		imports := []string{"context", "fmt"}
+		if data.NeedsOne {
+			imports = append(imports, "errors")
+		}
 		if data.NeedsJSON {
 			imports = append(imports, "encoding/json")
 		}
@@ -410,6 +424,11 @@ import (
 	"github.com/ClickHouse/clickhouse-go/v2/ext"
 {{- end}}
 )
+
+{{- if .NeedsOne}}
+// ErrNoRows is returned by a :one query when ClickHouse returns no row.
+var ErrNoRows = errors.New("no rows")
+{{- end}}
 
 // Queries is the generated ClickHouse query set. The target database is a
 // connection property (clickhouse Auth.Database); the SQL never names it.
@@ -709,7 +728,7 @@ func (q *Queries) {{.Name}}(ctx context.Context, arg {{.Name}}Params) ({{.Name}}
 		if err := rows.Err(); err != nil {
 			return result, fmt.Errorf("{{.Name}} rows: %w", err)
 		}
-		return result, fmt.Errorf("{{.Name}}: no rows")
+		return result, fmt.Errorf("{{.Name}}: %w", ErrNoRows)
 	}
 	if err := rows.Scan({{range $index, $result := .Results}}{{if $index}}, {{end}}&result.{{$result.GoName}}{{end}}); err != nil {
 		return result, fmt.Errorf("{{.Name}} scan: %w", err)

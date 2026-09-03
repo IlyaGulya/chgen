@@ -9,6 +9,7 @@ package golden
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 
@@ -16,6 +17,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
+
+// ErrNoRows is returned by a :one query when ClickHouse returns no row.
+var ErrNoRows = errors.New("no rows")
 
 // Queries is the generated ClickHouse query set. The target database is a
 // connection property (clickhouse Auth.Database); the SQL never names it.
@@ -100,7 +104,7 @@ func (q *Queries) ReadScalarFamilies(ctx context.Context, arg ReadScalarFamilies
 		if err := rows.Err(); err != nil {
 			return result, fmt.Errorf("ReadScalarFamilies rows: %w", err)
 		}
-		return result, fmt.Errorf("ReadScalarFamilies: no rows")
+		return result, fmt.Errorf("ReadScalarFamilies: %w", ErrNoRows)
 	}
 	if err := rows.Scan(&result.UuidValue, &result.DecimalValue, &result.SmallDecimal, &result.Enum8Value, &result.Enum16Value, &result.Ipv4Value, &result.Ipv6Value, &result.NullableUuid, &result.NullableDecimal); err != nil {
 		return result, fmt.Errorf("ReadScalarFamilies scan: %w", err)

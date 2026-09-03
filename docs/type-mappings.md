@@ -32,6 +32,12 @@ The query annotation controls the method result:
 | `-- name: Name :one` | `(NameRow, error)` |
 | `-- name: Name :exec` | `error` |
 
+When a `:one` query returns no row, the generated method wraps the package's
+exported `ErrNoRows` sentinel. Callers can use
+`errors.Is(err, querygen.ErrNoRows)` without depending on error text. Query,
+row-iteration, and scan failures continue to wrap their original errors and do
+not match `ErrNoRows`.
+
 A method always takes `context.Context` and a `NameParams` value. A query with
 no parameters gets an empty `NameParams` struct. `MockQuerier` implements the
 same interface. An unset mock function returns an error.
