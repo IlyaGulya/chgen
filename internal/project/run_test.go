@@ -95,6 +95,42 @@ packages:
 	}
 }
 
+func TestRunReadsIndexAndColumnChangesFromSchemaDirectory(t *testing.T) {
+	dir := t.TempDir()
+	writeProjectText(t, dir, "migrations/001.sql", "CREATE TABLE orders (order_id String) ENGINE = MergeTree ORDER BY order_id;\n")
+	writeProjectText(t, dir, "migrations/002.sql", `
+ALTER TABLE orders ADD COLUMN channel String,
+    ADD INDEX idx_channel channel TYPE bloom_filter(0.01) GRANULARITY 1;
+ALTER TABLE orders MATERIALIZE INDEX idx_channel;
+ALTER TABLE orders CLEAR INDEX idx_channel;
+ALTER TABLE orders DROP INDEX idx_channel;
+ALTER TABLE orders ADD COLUMN version UInt64;
+`)
+	writeProjectText(t, dir, "queries.sql", "-- name: ListOrders :many\nSELECT channel, version FROM orders;\n")
+	writeProjectText(t, dir, "chgen.yaml", `
+version: 1
+packages:
+  - name: querygen
+    output: generated/queries.sql.go
+    queries: queries.sql
+    schema: migrations
+`)
+	if err := Run(filepath.Join(dir, "chgen.yaml")); err != nil {
+		t.Fatalf("generate with index migration in schema directory: %v", err)
+	}
+	generated, err := os.ReadFile(filepath.Join(dir, "generated/queries.sql.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Both fields originate in the same file as the index operations. Hiding
+	// that migration or skipping it wholesale must not satisfy this test.
+	fields := strings.Fields(string(generated))
+	normalized := strings.Join(fields, " ")
+	if !strings.Contains(normalized, "Channel string") || !strings.Contains(normalized, "Version uint64") {
+		t.Fatalf("column changes in index migration missing from generated code:\n%s", generated)
+	}
+}
+
 func TestRunWritesAnAbsoluteOutput(t *testing.T) {
 	configDir := t.TempDir()
 	output := filepath.Join(t.TempDir(), "generated", "queries.sql.go")

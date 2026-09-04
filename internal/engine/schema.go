@@ -206,6 +206,14 @@ func classifyCatalogAlter(clause clickhouse.AlterTableClause) catalogAlterAction
 		*clickhouse.AlterTableDropProjection,
 		*clickhouse.AlterTableClearProjection:
 		return catalogAlterIgnore
+	// Data-skipping indexes do not change columns or the engine metadata we
+	// model. Ignore only these clauses so column changes in the same migration
+	// still reach the catalog.
+	case *clickhouse.AlterTableAddIndex,
+		*clickhouse.AlterTableMaterializeIndex,
+		*clickhouse.AlterTableDropIndex,
+		*clickhouse.AlterTableClearIndex:
+		return catalogAlterIgnore
 	default:
 		return catalogAlterReject
 	}

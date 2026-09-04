@@ -120,6 +120,15 @@ Projection operations (`ADD PROJECTION`, `MATERIALIZE PROJECTION`,
 `DROP PROJECTION`, and `CLEAR PROJECTION`) are parsed and ignored. They change
 physical projection storage, not the table's query column catalog.
 
+Data-skipping index operations (`ADD INDEX`, `MATERIALIZE INDEX`, `DROP INDEX`,
+and `CLEAR INDEX`) are likewise parsed and ignored: they do not change the
+columns or engine metadata modeled by the catalog. Column changes in the same
+statement or migration still apply. Keep these migrations in the schema inputs;
+there is no need to hide a whole file because it contains index operations.
+The target table must still exist, and other unsupported ALTER clauses still
+fail. Ignoring index DDL does not validate index definitions or track whether
+an index exists, and does not enable these commands in `:exec` queries.
+
 `DROP VIEW` is also parsed and ignored because views never enter the catalog.
 `DROP DATABASE`, `DROP DICTIONARY`, and `DROP USER` or `DROP ROLE` are rejected.
 
