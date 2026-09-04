@@ -181,6 +181,7 @@ Use an annotation when you want another type or field name:
 | `-- param: GoName [GoType]` | Set one parameter type. |
 | `-- result: GoName SQLAlias [GoType]` | Set one result field. |
 | `-- result-capacity: SliceParameter` | Pre-allocate a `:many` result slice. |
+| `-- chgen:unchecked-setting name` | Explicitly accept an unmodelled setting for one query; the caller verifies type safety. |
 
 A computed result expression needs an SQL alias. A direct column does not.
 Raw positional parameters are not allowed in schema-aware query sources.

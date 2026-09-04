@@ -32,6 +32,47 @@ The command after the name selects the generated method result:
 See [Type mappings and generated API](type-mappings.md) for the exact method,
 row, parameter, interface, and mock types.
 
+## Unchecked SETTINGS
+
+`optimize_read_in_order` and `max_threads` are built-in settings. For example,
+`SETTINGS optimize_read_in_order = 1, max_threads = 1` works without an opt-in.
+See the [measured SETTINGS roster](statement-query-conformance.md#measured-settings)
+for built-in literal domains.
+
+For a setting outside that roster, opt in for one named query:
+
+```sql
+-- name: ReadFirstOrder :one
+-- chgen:unchecked-setting max_rows_to_read
+SELECT order_id, total_amount
+FROM orders
+ORDER BY order_id
+LIMIT 1
+SETTINGS max_rows_to_read = 100000;
+```
+
+This is an explicit escape hatch, **not semantic validation**. The resolver
+ignores the named unknown setting when inferring types; the generated SQL
+retains it unchanged. The caller must verify server support, valid values,
+and that the setting does not invalidate inferred parameter or result types.
+Do not use it to enable type-changing behavior such as `join_use_nulls`
+without a matching resolver model. Successful generation does not prove that
+an unchecked setting is valid or type-neutral.
+
+The annotation goes after `-- name:` and before the SQL body. Repeat it for
+each setting. Names are exact lowercase identifiers; wildcards and a global
+allow-all switch are not supported. It applies to all SETTINGS clauses within
+that query, including nested queries and INSERT SELECT, but not the next
+query or another file. Duplicate annotations and names absent from the SQL
+are errors. Values must remain unsigned integer (UInt64 range), Boolean, or
+string literals; parameters and expressions are not allowed.
+
+Built-in validation always wins: annotating `max_block_size` cannot allow
+`max_block_size = 0`. If a future release adds a rule for an opted-in name,
+that rule takes effect automatically. Other unknown settings still fail.
+The annotation does not bypass SQL parsing, column resolution, unsupported
+functions, DDL restrictions, or any non-SETTINGS validation.
+
 ## Named parameters
 
 Use `chgen.arg('GoName')` to declare a query parameter:

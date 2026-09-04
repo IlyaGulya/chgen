@@ -110,12 +110,19 @@ const (
 )
 
 func resolveQuery(query *Query, schema *Schema) error {
+	return resolveQueryWithUncheckedSettings(query, schema, nil)
+}
+
+func resolveQueryWithUncheckedSettings(query *Query, schema *Schema, unchecked []string) error {
 	statements, err := parseChgenStatements(query.SQL, query.Command)
 	if err != nil {
 		return fmt.Errorf("parse SQL for type resolution: %w", err)
 	}
 	if len(statements) != 1 {
 		return fmt.Errorf("expected exactly one SQL statement, got %d", len(statements))
+	}
+	if err := omitUncheckedSettingsForResolution(statements[0], unchecked); err != nil {
+		return err
 	}
 
 	if query.Command == CommandExec {
@@ -2252,6 +2259,7 @@ var selectSettingRoster = map[string]selectSettingRule{
 	"max_threads":                                  {kind: selectSettingUnsignedLiteral},
 	"memory_overcommit_ratio_denominator":          {kind: selectSettingUnsignedLiteral},
 	"memory_overcommit_ratio_denominator_for_user": {kind: selectSettingUnsignedLiteral},
+	"optimize_read_in_order":                       {kind: selectSettingBooleanLiteral},
 	"preferred_block_size_bytes":                   {kind: selectSettingUnsignedLiteral},
 	"use_uncompressed_cache":                       {kind: selectSettingBooleanLiteral},
 }
@@ -2267,7 +2275,7 @@ func validateSettingsClauseWithRoster(settings *clickhouse.SettingsClause, roste
 		}
 		rule, ok := roster[item.Name.Name]
 		if !ok {
-			return fmt.Errorf("SETTINGS name %q is not in the measured resolver roster", item.Name.Name)
+			return fmt.Errorf("SETTINGS name %q is not in the measured resolver roster; after verifying its effect on result types, opt in with %s %s in the query header", item.Name.Name, uncheckedSettingDirective, item.Name.Name)
 		}
 		switch rule.kind {
 		case selectSettingUnsignedLiteral:

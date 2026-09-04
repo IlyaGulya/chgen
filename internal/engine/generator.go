@@ -96,9 +96,10 @@ func SetQueryBatchState(query *Query, batchInsert bool, batchInsertTable string)
 }
 
 type queryBuilder struct {
-	query       Query
-	sqlLines    []string
-	bodyStarted bool
+	query             Query
+	sqlLines          []string
+	bodyStarted       bool
+	uncheckedSettings []string
 	// sqlLine is the 1-based line number of the first SQL body line. The raw
 	// placeholder check uses it to point at the offending source line.
 	sqlLine int

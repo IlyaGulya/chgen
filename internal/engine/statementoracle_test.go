@@ -81,3 +81,49 @@ func statementFixtureParts(sql string) []string {
 	}
 	return parts
 }
+
+// TestSettingsReadControlsAgainstClickHouse checks both the server result types
+// and the executed row. This is a correctness witness, not a performance claim.
+func TestSettingsReadControlsAgainstClickHouse(t *testing.T) {
+	const ddl = "CREATE TABLE settings_ordered (id UInt64, value Int32) ENGINE = MergeTree ORDER BY id"
+	oracle := execWitnessFixtureWithDDL(t, ddl, "INSERT INTO settings_ordered VALUES (3, 30), (1, 10), (2, 20)")
+	version, err := oracle.exec("SELECT version()")
+	if err != nil || strings.TrimSpace(version) != MeasuredCHVersion {
+		t.Fatalf("server version = %q, error = %v; want %s", version, err, MeasuredCHVersion)
+	}
+	for _, settings := range []string{
+		"optimize_read_in_order = 0, max_threads = 1",
+		"optimize_read_in_order = 1, max_threads = 1",
+		"optimize_read_in_order = true, max_threads = 2",
+		"optimize_read_in_order = false, max_threads = 0",
+		"optimize_read_in_order = 1, max_threads = 1, max_rows_to_read = 100",
+	} {
+		t.Run(settings, func(t *testing.T) {
+			sql := "SELECT id, value FROM settings_ordered ORDER BY id LIMIT 1 SETTINGS " + settings
+			header := "-- name: ReadFirst :one\n"
+			if strings.Contains(settings, "max_rows_to_read") {
+				header += uncheckedSettingDirective + " max_rows_to_read\n"
+			}
+			queries, err := parseQueriesWithDDL(t, ddl, header+sql)
+			if err != nil {
+				t.Fatal(err)
+			}
+			analysis, err := arrayJoinServerResults(oracle, sql)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(analysis) != len(queries[0].Results) {
+				t.Fatalf("server results = %#v; inferred = %#v", analysis, queries[0].Results)
+			}
+			for index, result := range queries[0].Results {
+				if analysis[index].Name != result.SQLName || analysis[index].Type != result.CHType.String() {
+					t.Fatalf("server result = %#v; inferred = %#v", analysis[index], result)
+				}
+			}
+			got, err := oracle.exec(queries[0].SQL + " FORMAT TabSeparated")
+			if err != nil || strings.TrimSpace(got) != "1\t10" {
+				t.Fatalf("execution = %q, error = %v; want first row 1, 10", got, err)
+			}
+		})
+	}
+}

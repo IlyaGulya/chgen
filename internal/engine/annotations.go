@@ -37,12 +37,23 @@ func parseQueriesInFile(file, input string, schema *Schema, externalSchema *Sche
 			continue
 		}
 		if current == nil {
+			if strings.HasPrefix(trimmed, uncheckedSettingDirective) {
+				return nil, fmt.Errorf("%s:%d: %s must follow a -- name annotation", file, lineNumber+1, uncheckedSettingDirective)
+			}
 			if trimmed == "" || strings.HasPrefix(trimmed, "--") {
 				continue
 			}
 			return nil, fmt.Errorf("line %d: SQL appears before a -- name annotation", lineNumber+1)
 		}
 
+		if !current.bodyStarted && strings.HasPrefix(trimmed, uncheckedSettingDirective) {
+			name, err := parseUncheckedSettingAnnotation(trimmed, current.uncheckedSettings)
+			if err != nil {
+				return nil, fmt.Errorf("%s:%d: %w", file, lineNumber+1, err)
+			}
+			current.uncheckedSettings = append(current.uncheckedSettings, name)
+			continue
+		}
 		if !current.bodyStarted && strings.HasPrefix(trimmed, "-- param:") {
 			param, err := parseParamAnnotation(trimmed)
 			if err != nil {
@@ -116,7 +127,7 @@ func parseQueriesInFile(file, input string, schema *Schema, externalSchema *Sche
 		if err != nil {
 			return nil, wrap(err)
 		}
-		if err := resolveQuery(&builder.query, querySchema); err != nil {
+		if err := resolveQueryWithUncheckedSettings(&builder.query, querySchema, builder.uncheckedSettings); err != nil {
 			return nil, wrap(err)
 		}
 		queries = append(queries, builder.query)
