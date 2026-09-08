@@ -229,6 +229,9 @@ jobs:
       - name: Verify SETTINGS read controls and explicit opt-in
         run: go test -tags fuzzoracle -run '^TestSettingsReadControlsAgainstClickHouse$' -count=1 -v ./internal/engine
 
+      - name: Verify EXCHANGE catalog against ClickHouse
+        run: go test -tags fuzzoracle -run '^TestCatalogExchangeAgainstClickHouse$' -count=1 -v ./internal/engine
+
       - name: Run the type oracle over every seed of the fixed seed set
         # One report per seed, all against the ONE server this job started,
         # so that every report shares one server_run. The

@@ -44,7 +44,11 @@ func applySchemaSource(catalogs *SchemaCatalogs, path, raw string) error {
 	// The TTL preprocessor blanks the unsupported rollup tail in place, so
 	// byte offsets and line numbers of the processed text match the file.
 	content := stripUnsupportedTTLRollup(raw)
-	statements, err := clickhouse.NewParser(content).ParseStmts()
+	parserContent, exchanges, err := normalizeSchemaExchanges(content)
+	if err != nil {
+		return fmt.Errorf("%s:%w", path, err)
+	}
+	statements, err := clickhouse.NewParser(parserContent).ParseStmts()
 	if err != nil {
 		return fmt.Errorf("%s: parse schema SQL: %w", path, err)
 	}
@@ -94,6 +98,12 @@ func applySchemaSource(catalogs *SchemaCatalogs, path, raw string) error {
 				return err
 			}
 		case *clickhouse.RenameStmt:
+			if exchanges[int(statement.Pos())] {
+				if err := applyCatalogExchange(catalogs, path, lineOfOffset(content, int(statement.Pos())), statement); err != nil {
+					return err
+				}
+				continue
+			}
 			if err := applyCatalogRename(catalogs, path, content, statement); err != nil {
 				return err
 			}
@@ -102,7 +112,7 @@ func applySchemaSource(catalogs *SchemaCatalogs, path, raw string) error {
 			// column definitions to this catalog.
 		default:
 			line := lineOfOffset(content, int(statement.Pos()))
-			return fmt.Errorf("%s:%d: statement is not CREATE TABLE, DROP TABLE/VIEW, RENAME TABLE, or a supported ALTER TABLE; move non-schema SQL out of the schema inputs", path, line)
+			return fmt.Errorf("%s:%d: statement is not CREATE TABLE, DROP TABLE/VIEW, RENAME TABLE, EXCHANGE TABLES, or a supported ALTER TABLE; move non-schema SQL out of the schema inputs", path, line)
 		}
 	}
 	return nil

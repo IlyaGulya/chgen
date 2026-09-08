@@ -25,6 +25,20 @@ released chgen module.
 The upstream default branch is `master`, not `main`. A version command must
 use the correct branch name.
 
+## Schema-only adapter: EXCHANGE TABLES
+
+The pinned upstream parser does not parse EXCHANGE. For schema inputs only,
+`normalizeSchemaExchanges` recognizes `EXCHANGE TABLES a AND b` with an optional
+ON CLUSTER clause. It changes EXCHANGE, TABLES, and AND to padded RENAME, TABLE,
+and TO tokens in a parser-only copy. Every byte offset and newline is retained.
+The original statement position selects a dedicated catalog exchange handler;
+the operation is never applied as a rename. The upstream parser validates the
+identifiers and cluster clause. Multiple pairs and qualified names are refused.
+
+Quoted tokens and comments are skipped during recognition. Tests pin those
+boundaries and check the complete exchanged definitions. This adapter does not
+change query SQL, the upstream dependency, or the executable-query grammar.
+
 ## Open gap: sub-second INTERVAL units
 
 Measured on ClickHouse 25.8.29.51, the server accepts both units:

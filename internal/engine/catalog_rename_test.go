@@ -74,7 +74,6 @@ func TestCatalogRenameErrorsLeaveCatalogUnchanged(t *testing.T) {
 		{"RENAME DATABASE a TO b;", "RENAME DATABASE is not supported"},
 		{"RENAME DICTIONARY a TO b;", "RENAME DICTIONARY is not supported"},
 		{"RENAME TABLE IF EXISTS missing TO b;", "parse schema SQL"},
-		{"EXCHANGE TABLES a AND staged;", "parse schema SQL"},
 	} {
 		t.Run(test.sql, func(t *testing.T) {
 			const ddl = "CREATE TABLE a (id UInt64); CREATE TABLE staged (id String);\n-- chgen:external\nCREATE TABLE external_keys (id String);"

@@ -116,6 +116,7 @@ Schema inputs are applied in order. The catalog supports these changes:
 - `ALTER TABLE ... MODIFY COLUMN`
 - `ALTER TABLE ... DROP COLUMN`
 - `RENAME TABLE old TO new`, including multiple pairs applied in source order
+- `EXCHANGE TABLES a AND b`, which swaps the full definitions of two tables
 
 RENAME preserves columns, column order, engine metadata, and the original
 CREATE location. Its source must exist and its target must be free at that
@@ -124,7 +125,16 @@ staged TO old` installs the staged definition under the serving name. A swap
 through a temporary name is also accepted. chgen validates all pairs before
 publishing the catalog change. This does not make the server operation atomic:
 [ClickHouse multi-table RENAME is non-atomic](https://clickhouse.com/docs/reference/statements/rename).
-Atomic server swaps require EXCHANGE, which is not supported by this parser.
+Atomic server swaps use EXCHANGE on a database engine that supports it.
+
+EXCHANGE requires two distinct, existing, unqualified physical table names.
+Columns, column order, engine metadata, and original CREATE locations move
+with each definition. Both names are checked before the catalog changes.
+External schemas, `schema_migrations`, and EXCHANGE DICTIONARIES are rejected.
+An optional ON CLUSTER clause is accepted. This is schema-input support only;
+it does not enable EXCHANGE in `:exec` queries. See the
+[ClickHouse EXCHANGE requirements](https://clickhouse.com/docs/reference/statements/exchange)
+for database-engine support. chgen does not model database engines.
 
 RENAME requires unqualified physical table names. External schemas, names
 equal to `schema_migrations`, RENAME DATABASE, and RENAME DICTIONARY are

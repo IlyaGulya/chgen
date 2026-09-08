@@ -16,6 +16,47 @@ import (
 	"github.com/IlyaGulya/chgen/internal/conformance"
 )
 
+// TestCatalogExchangeAgainstClickHouse checks both swapped definitions and rows.
+func TestCatalogExchangeAgainstClickHouse(t *testing.T) {
+	const ddl = "CREATE TABLE serving (id UInt64) ENGINE=MergeTree ORDER BY id; CREATE TABLE staged (id String, workflow_path String) ENGINE=MergeTree ORDER BY (workflow_path, id);"
+	parts := statementFixtureParts(ddl)
+	oracle := execWitnessFixtureWithDDL(t, parts[0], "INSERT INTO serving VALUES (7)")
+	for _, sql := range []string{parts[1], "INSERT INTO staged VALUES ('new', 'ci')"} {
+		if _, err := oracle.exec(sql); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if version, err := oracle.exec("SELECT version()"); err != nil || strings.TrimSpace(version) != MeasuredCHVersion {
+		t.Fatalf("server version = %q, error = %v", version, err)
+	}
+	const exchange = "EXCHANGE TABLES serving AND staged"
+	if _, err := oracle.exec(exchange); err != nil {
+		t.Fatal(err)
+	}
+	catalogs := catalogsFromDDL(t, ddl+exchange)
+	for _, test := range []struct{ sql, want string }{{"SELECT id, workflow_path FROM serving", "new\tci"}, {"SELECT id FROM staged", "7"}} {
+		queries, err := parseQueriesWithCatalogs(t, "-- name: Read :many\n"+test.sql, catalogs)
+		if err != nil {
+			t.Fatal(err)
+		}
+		results, err := arrayJoinServerResults(oracle, test.sql)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(results) != len(queries[0].Results) {
+			t.Fatal("result width differs")
+		}
+		for i, result := range queries[0].Results {
+			if results[i].Name != result.SQLName || results[i].Type != result.CHType.String() {
+				t.Fatalf("server result %#v differs from %#v", results[i], result)
+			}
+		}
+		if got, err := oracle.exec(test.sql + " FORMAT TabSeparated"); err != nil || strings.TrimSpace(got) != test.want {
+			t.Fatalf("rows = %q, error = %v, want %q", got, err, test.want)
+		}
+	}
+}
+
 // TestStatementOracle measures expressions inside complete query contexts.
 func TestStatementOracle(t *testing.T) {
 	baseURL := os.Getenv("CHGEN_ORACLE_URL")
