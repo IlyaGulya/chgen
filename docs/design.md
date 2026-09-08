@@ -346,7 +346,7 @@ Schema and DDL:
   may be absent`
 - `%s:%d: DROP DICTIONARY is not supported; supported DROP operations: DROP
   TABLE, DROP VIEW`
-- `%s:%d: statement is not CREATE TABLE, DROP TABLE/VIEW, or a supported ALTER
+- `%s:%d: statement is not CREATE TABLE, DROP TABLE/VIEW, RENAME TABLE, or a supported ALTER
   TABLE; move non-schema SQL out of the schema inputs`
 - `%s:%d: duplicate CREATE TABLE %q; first declared at %s:%d`
 

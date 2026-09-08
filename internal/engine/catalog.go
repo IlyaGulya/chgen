@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"strings"
 
@@ -92,12 +93,16 @@ func applySchemaSource(catalogs *SchemaCatalogs, path, raw string) error {
 			if err := applyCatalogDrop(catalogs, path, line, statement); err != nil {
 				return err
 			}
+		case *clickhouse.RenameStmt:
+			if err := applyCatalogRename(catalogs, path, content, statement); err != nil {
+				return err
+			}
 		case *clickhouse.CreateView, *clickhouse.CreateMaterializedView, *clickhouse.InsertStmt:
 			// Views and seed INSERT statements do not contribute physical
 			// column definitions to this catalog.
 		default:
 			line := lineOfOffset(content, int(statement.Pos()))
-			return fmt.Errorf("%s:%d: statement is not CREATE TABLE, DROP TABLE/VIEW, or a supported ALTER TABLE; move non-schema SQL out of the schema inputs", path, line)
+			return fmt.Errorf("%s:%d: statement is not CREATE TABLE, DROP TABLE/VIEW, RENAME TABLE, or a supported ALTER TABLE; move non-schema SQL out of the schema inputs", path, line)
 		}
 	}
 	return nil
@@ -173,6 +178,50 @@ func applyCatalogDrop(catalogs *SchemaCatalogs, path string, line int, statement
 		return fmt.Errorf("%s:%d: DROP TABLE %q targets an unknown table; add IF EXISTS if the table may be absent", path, line, tableName)
 	}
 	delete(catalogs.Physical.Tables, tableName)
+	return nil
+}
+
+func applyCatalogRename(catalogs *SchemaCatalogs, path, content string, statement *clickhouse.RenameStmt) error {
+	line := lineOfOffset(content, int(statement.Pos()))
+	if statement.RenameTarget != clickhouse.KeywordTable {
+		return fmt.Errorf("%s:%d: %s is not supported; supported RENAME operation: RENAME TABLE", path, line, statement.Type())
+	}
+	if len(statement.TargetPairList) == 0 {
+		return fmt.Errorf("%s:%d: RENAME TABLE has no name pairs", path, line)
+	}
+	// Resolve pairs in source order so names freed or created by an earlier
+	// pair are visible to the next pair. Publish only a fully valid catalog.
+	// This does not imply atomic execution of multi-table RENAME on the server.
+	tables := maps.Clone(catalogs.Physical.Tables)
+	for _, pair := range statement.TargetPairList {
+		if pair == nil || pair.Old == nil || pair.New == nil || pair.Old.Table == nil || pair.New.Table == nil {
+			return fmt.Errorf("%s:%d: RENAME TABLE has an incomplete name pair", path, line)
+		}
+		pairLine := lineOfOffset(content, int(pair.Pos()))
+		if pair.Old.Database != nil || pair.New.Database != nil {
+			return fmt.Errorf("%s:%d: RENAME TABLE requires unqualified names; cross-database renames are not modeled", path, pairLine)
+		}
+		oldName, newName := pair.Old.Table.Name, pair.New.Table.Name
+		if oldName == migrationsTableName || newName == migrationsTableName {
+			return fmt.Errorf("%s:%d: RENAME TABLE cannot rename to or from excluded table %q", path, pairLine, migrationsTableName)
+		}
+		for _, name := range []string{oldName, newName} {
+			if _, exists := catalogs.External.Tables[name]; exists {
+				return fmt.Errorf("%s:%d: RENAME TABLE %q targets an external schema; edit its CREATE TABLE instead", path, pairLine, name)
+			}
+		}
+		table, exists := tables[oldName]
+		if !exists {
+			return fmt.Errorf("%s:%d: RENAME TABLE source %q is an unknown table", path, pairLine, oldName)
+		}
+		if _, exists := tables[newName]; exists {
+			return fmt.Errorf("%s:%d: RENAME TABLE target %q already exists", path, pairLine, newName)
+		}
+		delete(tables, oldName)
+		table.Name = newName
+		tables[newName] = table
+	}
+	catalogs.Physical.Tables = tables
 	return nil
 }
 

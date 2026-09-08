@@ -115,6 +115,22 @@ Schema inputs are applied in order. The catalog supports these changes:
 - `ALTER TABLE ... ADD COLUMN`, including `AFTER` placement
 - `ALTER TABLE ... MODIFY COLUMN`
 - `ALTER TABLE ... DROP COLUMN`
+- `RENAME TABLE old TO new`, including multiple pairs applied in source order
+
+RENAME preserves columns, column order, engine metadata, and the original
+CREATE location. Its source must exist and its target must be free at that
+point in the pair sequence. For example, `RENAME TABLE old TO archived,
+staged TO old` installs the staged definition under the serving name. A swap
+through a temporary name is also accepted. chgen validates all pairs before
+publishing the catalog change. This does not make the server operation atomic:
+[ClickHouse multi-table RENAME is non-atomic](https://clickhouse.com/docs/reference/statements/rename).
+Atomic server swaps require EXCHANGE, which is not supported by this parser.
+
+RENAME requires unqualified physical table names. External schemas, names
+equal to `schema_migrations`, RENAME DATABASE, and RENAME DICTIONARY are
+rejected. RENAME TABLE has no IF EXISTS form. ON CLUSTER is accepted but does
+not change the local catalog model. These rules apply to schema inputs, not
+to executable `:exec` queries.
 
 Projection operations (`ADD PROJECTION`, `MATERIALIZE PROJECTION`,
 `DROP PROJECTION`, and `CLEAR PROJECTION`) are parsed and ignored. They change

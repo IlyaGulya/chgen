@@ -131,6 +131,30 @@ packages:
 	}
 }
 
+func TestRunReadsRenameFromSchemaDirectory(t *testing.T) {
+	dir := t.TempDir()
+	writeProjectText(t, dir, "migrations/001.sql", "CREATE TABLE serving (id UInt64) ENGINE = MergeTree ORDER BY id;\n")
+	writeProjectText(t, dir, "migrations/002.sql", `
+CREATE TABLE staged (id UInt64, workflow_path String) ENGINE = MergeTree ORDER BY (workflow_path, id);
+INSERT INTO staged SELECT id, '' FROM serving;
+RENAME TABLE serving TO archived, staged TO serving;
+ALTER TABLE serving ADD COLUMN label String;
+DROP TABLE archived;
+`)
+	writeProjectText(t, dir, "queries.sql", "-- name: Read :many\nSELECT id, workflow_path, label FROM serving;\n")
+	writeProjectText(t, dir, "chgen.yaml", "version: 1\npackages:\n  - name: querygen\n    output: generated/queries.sql.go\n    queries: queries.sql\n    schema: migrations\n")
+	if err := Run(filepath.Join(dir, "chgen.yaml")); err != nil {
+		t.Fatal(err)
+	}
+	generated, err := os.ReadFile(filepath.Join(dir, "generated/queries.sql.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if code := strings.Join(strings.Fields(string(generated)), " "); !strings.Contains(code, "WorkflowPath string") || !strings.Contains(code, "Label string") {
+		t.Fatalf("renamed definition missing from generated code:\n%s", generated)
+	}
+}
+
 func TestRunWritesAnAbsoluteOutput(t *testing.T) {
 	configDir := t.TempDir()
 	output := filepath.Join(t.TempDir(), "generated", "queries.sql.go")

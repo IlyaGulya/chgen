@@ -438,7 +438,7 @@ func TestParseSchemaCatalogsRejectsNonSchemaStatement(t *testing.T) {
 SELECT 1;
 `)
 	_, err := ParseSchemaCatalogs([]string{path})
-	want := path + ":2: statement is not CREATE TABLE, DROP TABLE/VIEW, or a supported ALTER TABLE; move non-schema SQL out of the schema inputs"
+	want := path + ":2: statement is not CREATE TABLE, DROP TABLE/VIEW, RENAME TABLE, or a supported ALTER TABLE; move non-schema SQL out of the schema inputs"
 	if err == nil || err.Error() != want {
 		t.Fatalf("got %v, want %q", err, want)
 	}
@@ -455,7 +455,7 @@ func TestParseSchemaCatalogsRejectsNonCatalogDropStatements(t *testing.T) {
 			dir := t.TempDir()
 			path := writeSchemaFile(t, dir, "schema.sql", ddl+"\n")
 			_, err := ParseSchemaCatalogs([]string{path})
-			want := path + ":1: statement is not CREATE TABLE, DROP TABLE/VIEW, or a supported ALTER TABLE; move non-schema SQL out of the schema inputs"
+			want := path + ":1: statement is not CREATE TABLE, DROP TABLE/VIEW, RENAME TABLE, or a supported ALTER TABLE; move non-schema SQL out of the schema inputs"
 			if err == nil || err.Error() != want {
 				t.Fatalf("got %v, want %q", err, want)
 			}
