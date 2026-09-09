@@ -274,9 +274,15 @@ func applyFunctionSignatureOverride(name string, signature functionSignature) fu
 		signature.forms = []signatureForm{fixedSignatureForm(value), fixedSignatureForm(argSortLambda, value)}
 	case "tostartofinterval":
 		signature.forms = []signatureForm{fixedSignatureForm(value, interval)}
-	case "substring", "arrayslice":
+	case "substring":
 		signature.forms = []signatureForm{
 			fixedSignatureForm(value, offsetValue), fixedSignatureForm(value, offsetValue, offsetValue),
+		}
+	case "arrayslice":
+		// Unlike substring, arraySlice requires integer offsets. Nullable
+		// integer columns are legal, so use the nullable-capable index sort.
+		signature.forms = []signatureForm{
+			fixedSignatureForm(value, indexValue), fixedSignatureForm(value, indexValue, indexValue),
 		}
 	case "arrayresize":
 		signature.forms = []signatureForm{

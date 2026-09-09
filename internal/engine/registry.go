@@ -581,14 +581,27 @@ var functionSemanticSpecs = map[string]functionSpec{
 	// member of the scalar family has. See hexArgumentDomain for the
 	// measured grid.
 	"hex": {family: semanticFamilyFixedResult, rule: fixedFunctionType("String"), class: wrapperTransparent, strategy: argsIndependent, domain: &hexArgumentDomain, gen: scalarCall("hex", 1), measuredFacts: measuredFacts(functionFactDynamicForcesNullable), resultMode: resultRuleGeneric, domainMode: argumentDomainRestricted, domainArgs: []int{0}, parameterPolicy: parameterResultCurated, evidence: registryMeasurementEvidence},
-	// abs and negate both compute a new numeric value, thus their class
-	// is wrapperTransparent: Nullable and LowCardinality move through
-	// the way the measured comments on the two rules record. Neither
-	// function had a registered rule before this entry, so a call
-	// refused with "function abs has no registered type rule" although
-	// the server answers it. avgArgumentDomain is reused because it is
-	// the exact measured accept-set of both names: an integer, a float
-	// or a Decimal, and nothing else.
+	// Native-integer cursor decoding; see cursor_functions.go for the
+	// measured promotion and timestamp rules.
+	"bitshiftright": {
+		family: semanticFamilyDedicated, rule: bitShiftRightFunctionType,
+		class: wrapperTransparent, strategy: argsGeneric,
+		domain: &bitShiftIntegerDomain, domainArgs: []int{0, 1},
+		gen:        scalarCall("bitShiftRight", 2),
+		resultMode: resultRuleGeneric, domainMode: argumentDomainRestricted,
+		parameterPolicy: parameterResultCurated, evidence: registryMeasurementEvidence,
+	},
+	"fromunixtimestamp64milli": {
+		family: semanticFamilyContextDependent,
+		class:  wrapperTransparent, strategy: argsGeneric,
+		domain: &bitShiftIntegerDomain, domainArgs: []int{0},
+		gen: &genSpec{
+			spelling: "fromUnixTimestamp64Milli", minArity: 1, maxArity: 2,
+			argSorts: []argSort{argSortValue, argSortConstString}, place: placementScalar,
+		},
+		resultMode: resultRuleSpecialRoute, domainMode: argumentDomainRestricted,
+		parameterPolicy: parameterResultCurated, evidence: registryMeasurementEvidence,
+	},
 	"abs":    {family: semanticFamilyDedicated, rule: absFunctionType, class: wrapperTransparent, strategy: argsFirstOnly, domain: &avgArgumentDomain, gen: scalarCall("abs", 1), resultMode: resultRuleGeneric, domainMode: argumentDomainRestricted, domainArgs: []int{0}, parameterPolicy: parameterResultCurated, evidence: registryMeasurementEvidence},
 	"negate": {family: semanticFamilyDedicated, rule: negateFunctionType, class: wrapperTransparent, strategy: argsFirstOnly, domain: &avgArgumentDomain, gen: scalarCall("negate", 1), resultMode: resultRuleGeneric, domainMode: argumentDomainRestricted, domainArgs: []int{0}, parameterPolicy: parameterResultCurated, evidence: registryMeasurementEvidence},
 	// round, roundBankers, floor, ceil and trunc/truncate all give their

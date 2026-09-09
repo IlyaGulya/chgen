@@ -40,7 +40,7 @@ func TestNullIfRefusesGeometryResult(t *testing.T) {
 	for _, name := range nonNullableGeometryTypes {
 		schema := schemaFromDDL(t, "CREATE TABLE probe (g "+name+") ENGINE = Memory")
 		_, err := inferTestExprType(t, schema, "nullIf(g, g)")
-		if err == nil || !strings.Contains(err.Error(), "inside Nullable") {
+		if err == nil || !strings.Contains(err.Error(), "a scalar, not an Array, a Map or a Tuple") {
 			t.Errorf("nullIf(%s, %s): %v", name, name, err)
 		}
 	}

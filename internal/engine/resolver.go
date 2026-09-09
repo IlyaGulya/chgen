@@ -2785,7 +2785,17 @@ func resolveSetSubquery(left clickhouse.Expr, subquery *clickhouse.SubQuery, sch
 	if leftType.normalizedName() == "tuple" {
 		wantArity = len(leftType.Params)
 	}
-	if len(results) != wantArity {
+	keyArity := len(results)
+	// IN consumes set keys, not SELECT columns: one Tuple-valued column
+	// supplies the same key components as a multi-column projection.
+	// Unwrap only this outer key; nested tuples remain components.
+	if keyArity == 1 && results[0].typeOf.normalizedName() == "tuple" {
+		keyArity = len(results[0].typeOf.Params)
+		if keyArity != wantArity {
+			return fmt.Errorf("IN set tuple has %d components, want %d", keyArity, wantArity)
+		}
+	}
+	if keyArity != wantArity {
 		return fmt.Errorf("IN set projection has %d expressions, want %d", len(results), wantArity)
 	}
 	_ = innerScope

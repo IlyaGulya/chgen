@@ -186,9 +186,10 @@ func TestSpecWithoutARuleIsRoutedElsewhere(t *testing.T) {
 	// inferFunctionType sends each of them to its own inference
 	// function before the registry lookup.
 	routedElsewhere := map[string]bool{
-		"tostartofinterval": true,
-		"totimezone":        true,
-		"tupleelement":      true,
+		"fromunixtimestamp64milli": true,
+		"tostartofinterval":        true,
+		"totimezone":               true,
+		"tupleelement":             true,
 		// and, or and xor route to inferLogicOperatorFunctionType,
 		// because the result depends on the argument EXPRESSIONS (a
 		// bare, or for xor a Nullable, Bool argument changes the base
@@ -272,7 +273,7 @@ func TestNoArgumentFunctionsAreIndependent(t *testing.T) {
 // never through the generic rule path (which only ever checks argument
 // zero, too narrow for this variadic family). See the regression.
 func TestEveryDomainHasARule(t *testing.T) {
-	routedElsewhere := map[string]bool{"and": true, "or": true, "xor": true}
+	routedElsewhere := map[string]bool{"and": true, "or": true, "xor": true, "fromunixtimestamp64milli": true}
 	for name, spec := range functionRegistry {
 		if spec.domain != nil && spec.rule == nil && !routedElsewhere[name] {
 			t.Errorf("function %q has an argument domain but no type rule, so the domain is never read", name)

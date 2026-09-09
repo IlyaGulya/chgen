@@ -413,7 +413,7 @@ func (c genDrawCandidate) renderArgumentSort(r *rand.Rand, position int, argumen
 		switch c.name {
 		case "arraystringconcat":
 			return "','", true
-		case "now", "now64", "todatetime", "todatetime64", "todatetime64ornull", "todatetime64orzero",
+		case "fromunixtimestamp64milli", "now", "now64", "todatetime", "todatetime64", "todatetime64ornull", "todatetime64orzero",
 			"tostartofday", "tostartofhour", "tostartofminute", "totimezone":
 			return "'UTC'", true
 		}

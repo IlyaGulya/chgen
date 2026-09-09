@@ -49,6 +49,7 @@ var currentScalarSamplingExpansion = []string{
 	"arraymax", "arraymin", "arraypartialreversesort", "arraypartialsort", "arrayproduct",
 	"arrayreversefill", "arrayreversesort", "arrayreversesplit", "arraysplit", "arraysum",
 	"toyyyymm", "toyyyymmdd", "toyyyymmddhhmmss",
+	"bitshiftright", "fromunixtimestamp64milli",
 }
 
 // currentWindowSamplingExpansion names the measured window classes that were
@@ -676,7 +677,15 @@ func TestCurrentSamplingExpansionIsIntendedAndReachable(t *testing.T) {
 			t.Errorf("scalar expansion %s is not a writable scalar candidate", name)
 		}
 		family := generatedFunctionSemanticFamilies[name]
-		if strings.HasPrefix(name, "toyyyymm") {
+		if name == "bitshiftright" {
+			if family != "dedicated-scalar" {
+				t.Errorf("scalar expansion %s has family %q", name, family)
+			}
+		} else if name == "fromunixtimestamp64milli" {
+			if family != "context-dependent-scalar" {
+				t.Errorf("scalar expansion %s has family %q", name, family)
+			}
+		} else if strings.HasPrefix(name, "toyyyymm") {
 			if family != "conversion-scalar" {
 				t.Errorf("scalar expansion %s has family %q", name, family)
 			}

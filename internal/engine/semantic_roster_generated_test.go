@@ -2,7 +2,7 @@
 
 package engine
 
-const generatedSemanticDigest = "baf85abc23acc8f799c71b6c5542b715e4cadef1da4a28ffc8d007f3f4caae7e"
+const generatedSemanticDigest = "2cb8b8558881487b77055a193640cc5f7ed1de3b137aaee5aefd34c37cac44d5"
 
 // generatedFunctionAuditRoster lists each static semantic source entry for tests.
 var generatedFunctionAuditRoster = []string{
@@ -58,6 +58,7 @@ var generatedFunctionAuditRoster = []string{
 	"assumenotnull",
 	"avg",
 	"avgif",
+	"bitshiftright",
 	"ceil",
 	"cityhash64",
 	"concat",
@@ -74,6 +75,7 @@ var generatedFunctionAuditRoster = []string{
 	"first_value_respect_nulls",
 	"firstvaluerespectnulls",
 	"floor",
+	"fromunixtimestamp64milli",
 	"greater",
 	"greaterorequals",
 	"greatest",
@@ -237,6 +239,7 @@ var generatedFunctionSemanticFamilies = map[string]string{
 	"assumenotnull":             "dedicated-scalar",
 	"avg":                       "fixed-result-aggregate",
 	"avgif":                     "fixed-result-aggregate",
+	"bitshiftright":             "dedicated-scalar",
 	"ceil":                      "first-argument-scalar",
 	"cityhash64":                "fixed-result-scalar",
 	"concat":                    "common-supertype-scalar",
@@ -253,6 +256,7 @@ var generatedFunctionSemanticFamilies = map[string]string{
 	"first_value_respect_nulls": "first-argument-window",
 	"firstvaluerespectnulls":    "first-argument-window",
 	"floor":                     "first-argument-scalar",
+	"fromunixtimestamp64milli":  "context-dependent-scalar",
 	"greater":                   "predicate-scalar",
 	"greaterorequals":           "predicate-scalar",
 	"greatest":                  "common-supertype-scalar",

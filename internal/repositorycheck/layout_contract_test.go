@@ -513,6 +513,8 @@ func validateLayoutSnapshot(value layoutSnapshot) error {
 	wantProduction := []string{"doc.go", "facade.go"}
 	wantTests := []string{
 		"api_contract_test.go",
+		"cursor_query_test.go",
+		"oracle_regression_test.go",
 		"facade_test.go",
 	}
 	if len(value.rootProduction) > 10 || !sameRequiredValues(value.rootProduction, wantProduction) || len(value.rootProduction) != len(wantProduction) {

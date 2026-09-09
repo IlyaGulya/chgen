@@ -31,7 +31,7 @@ passes only when chgen and the execution witness both refuse it.
 
 The live gate writes `testdata/clickhouse-function-probe-evidence.json`. This
 artifact binds the exact catalog digest to the server identity, fixture,
-matrix, 1,587 probe outcomes, and 857 legal execution types. A refusal keeps
+matrix, probe outcomes, and legal execution types. A refusal keeps
 its phase, error code, expression, and a bounded project-owned class. It does
 not copy the ClickHouse diagnostic message. The support manifest promotes only
 functions from this validated artifact.

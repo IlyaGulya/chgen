@@ -2050,7 +2050,19 @@ func arrayElementFunctionResult(args []CHType) (CHType, error) {
 		return CHType{}, fmt.Errorf("arrayElement has no arguments")
 	}
 	if strings.EqualFold(args[0].Name, "Array") && len(args[0].Params) == 1 {
-		return stripNestedLowCardinality(args[0].Params[0]), nil
+		result := stripNestedLowCardinality(args[0].Params[0])
+		// A NULL index produces NULL, independently of the element's
+		// nullability (measured with real Nullable(UInt64) columns).
+		if len(args) > 1 {
+			_, nullable, _ := splitCHWrappers(args[1])
+			if nullable {
+				if !canBeInsideNullable(result) {
+					return CHType{}, fmt.Errorf("arrayElement cannot put %s inside Nullable for a nullable index", result.String())
+				}
+				return wrapNullable(result), nil
+			}
+		}
+		return result, nil
 	}
 	return CHType{}, fmt.Errorf("arrayElement expects an Array argument")
 }

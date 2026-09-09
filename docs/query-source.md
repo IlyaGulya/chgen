@@ -3,6 +3,44 @@
 `chgen` reads annotated ClickHouse SQL files. It checks each query against the
 schema catalog before it generates Go code.
 
+## Cursor timestamps and tuple set keys
+
+`bitShiftRight(value, shift)` accepts native integers up to 64 bits and Bool.
+The result uses the wider operand width and is signed if either operand is
+signed. Nullable propagates; shift values must satisfy ClickHouse's runtime
+constraints. Wider integers, strings, and floating-point shifts are outside
+this rule's measured domain.
+
+`fromUnixTimestamp64Milli(value[, 'timezone'])` accepts the same integer
+domain and produces `DateTime64(3[, 'timezone'])`. Nullable propagates, while
+LowCardinality is removed. The optional timezone must be a constant from the
+measured timezone roster. For example:
+
+```sql
+fromUnixTimestamp64Milli(toInt64(bitShiftRight(cursor, 20)), 'UTC')
+```
+
+For tuple-valued `IN`/`NOT IN` keys, both `SELECT x, y` and `SELECT (x, y)`
+can supply the key components. This also works with named tuple columns and
+nested tuple components. Only the outer set key is interpreted this way:
+ordinary query results are not flattened and the SQL is not rewritten.
+
+These rules are measured on ClickHouse 25.8.29.51. The generated runtime test
+compares both key forms using external tables, exact cursor matching, empty
+inputs, epoch timestamps, and millisecond precision.
+
+`arrayElement(array, nullable_index)` produces a nullable element, mapped to
+a Go pointer; a NULL index is not a default element. A container element that
+cannot be nullable is refused. `arraySlice` offsets must be integers (nullable
+integers remain valid).
+
+Geometry aliases are checked as their underlying Array/Tuple structures in
+comparisons and scalar conversions. Computed `greatest`, `least`, and
+`assumeNotNull` results use those structural types; this does not add a Go
+mapping for geometry. Interval values are not treated as integers by array
+reductions, and incompatible Interval comparisons are rejected before they
+can be used inside a larger expression.
+
 ## Query declaration
 
 Each query starts with one name annotation:

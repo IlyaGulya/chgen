@@ -158,7 +158,7 @@ func inferExprType(expression clickhouse.Expr, scope queryScope) (CHType, error)
 		if err != nil {
 			return CHType{}, err
 		}
-		return windowResultWithoutGeoAliases(result), nil
+		return withoutGeometryAliases(result), nil
 	case *clickhouse.FunctionExpr:
 		if expr.Name != nil && strings.EqualFold(expr.Name.Name, "exists") {
 			return CHType{Name: "UInt8"}, nil
@@ -170,7 +170,7 @@ func inferExprType(expression clickhouse.Expr, scope queryScope) (CHType, error)
 		name := strings.ToLower(expr.Name.Name)
 		switch {
 		case name == "first_value", name == "last_value", isAggregateCallName(name):
-			return windowResultWithoutGeoAliases(result), nil
+			return withoutGeometryAliases(result), nil
 		default:
 			return result, nil
 		}

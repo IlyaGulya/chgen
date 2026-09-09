@@ -31,6 +31,8 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 		return CHType{}, err
 	}
 	switch name {
+	case "fromunixtimestamp64milli":
+		return inferUnixMillisecondsType(function.Name.Name, args, scope)
 	case "if", "multiif", "coalesce", "ifnull":
 		return inferConditionalFamilyType(name, function.Name.Name, args, scope)
 	case "tupleelement":
@@ -974,7 +976,8 @@ func greatestLeastFunctionType(name string) functionTypeRule {
 		if len(args) == 0 {
 			return CHType{}, fmt.Errorf("function has no arguments")
 		}
-		return greatestLeastCommonCHTypes(name, args)
+		result, err := greatestLeastCommonCHTypes(name, args)
+		return withoutGeometryAliases(result), err
 	}
 }
 
@@ -1296,6 +1299,9 @@ func withoutNullableFunctionArgument(args []CHType) (CHType, error) {
 		return CHType{}, err
 	}
 	result = readSimpleAggregateValue(result)
+	// Like aggregate/window results, these computed values lose geometry
+	// aliases on ClickHouse 25.8; preserve the structural column type.
+	result = withoutGeometryAliases(result)
 	if strings.EqualFold(result.Name, "LowCardinality") && len(result.Params) == 1 {
 		inner := result.Params[0]
 		if strings.EqualFold(inner.Name, "Nullable") && len(inner.Params) == 1 {
@@ -2195,7 +2201,7 @@ func arraySumResultType(displayName string, bodyType CHType) (CHType, error) {
 		return base, nil
 	case lower == "bool" || lower == "boolean", strings.HasPrefix(lower, "uint"):
 		return CHType{Name: "UInt64"}, nil
-	case strings.HasPrefix(lower, "int"):
+	case integerBaseType(base) && strings.HasPrefix(lower, "int"):
 		return CHType{Name: "Int64"}, nil
 	}
 	return CHType{}, fmt.Errorf("function %s cannot aggregate the type %s", displayName, bodyType.String())

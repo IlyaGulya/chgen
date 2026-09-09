@@ -37,6 +37,7 @@ import (
 // combinator below, because the resolver's lowercasing is a separate
 // concern from whether the rule names a real function.
 var serverFunctionNamesLowered = []string{
+	"bitshiftright", "fromunixtimestamp64milli",
 	"abs", "adddays", "addhours", "addminutes", "addmonths",
 	"addquarters", "addseconds", "addweeks", "addyears", "and",
 	"any", "anylast", "argmax", "argmin",

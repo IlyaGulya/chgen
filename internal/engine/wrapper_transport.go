@@ -653,6 +653,11 @@ func transportForFunction(name string, class functionWrapperClass) wrapperTransp
 // wrapperTransportOverrides holds the functions whose measured transport
 // does not follow their class.
 var wrapperTransportOverrides = map[string]wrapperTransport{
+	// Millisecond conversion keeps Nullable but decodes LowCardinality,
+	// even with a constant timezone (measured on 25.8.29.51 real columns).
+	"fromunixtimestamp64milli": {
+		lowCardinality: wrapperDrop, nullable: wrapperKeep, simpleAggregate: wrapperDrop,
+	},
 	"greatest":                  greatestLeastTransport,
 	"least":                     greatestLeastTransport,
 	"and":                       logicOperatorTransport,

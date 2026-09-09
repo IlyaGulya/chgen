@@ -4595,14 +4595,14 @@
           {
             "prefix": [
               "value",
-              "offset_value"
+              "index_value"
             ]
           },
           {
             "prefix": [
               "value",
-              "offset_value",
-              "offset_value"
+              "index_value",
+              "index_value"
             ]
           }
         ],
@@ -4625,7 +4625,7 @@
         {
           "arity": 2,
           "position": 1,
-          "sort": "offset_value",
+          "sort": "index_value",
           "legal_probe_id": "arrayslice/legal/a2/p1",
           "illegal_probe_id": "arrayslice/illegal_domain/a2/p1"
         },
@@ -4639,14 +4639,14 @@
         {
           "arity": 3,
           "position": 1,
-          "sort": "offset_value",
+          "sort": "index_value",
           "legal_probe_id": "arrayslice/legal/a3/p1",
           "illegal_probe_id": "arrayslice/illegal_domain/a3/p1"
         },
         {
           "arity": 3,
           "position": 2,
-          "sort": "offset_value",
+          "sort": "index_value",
           "legal_probe_id": "arrayslice/legal/a3/p2",
           "illegal_probe_id": "arrayslice/illegal_domain/a3/p2"
         }
@@ -4687,7 +4687,7 @@
           "kind": "illegal_domain",
           "arity": 2,
           "position": 1,
-          "sql": "arraySlice(arr_i, dec)",
+          "sql": "arraySlice(arr_i, f32)",
           "expected_chgen": "refuse"
         },
         {
@@ -4725,7 +4725,7 @@
           "kind": "illegal_domain",
           "arity": 3,
           "position": 1,
-          "sql": "arraySlice(arr_i, dec, i8)",
+          "sql": "arraySlice(arr_i, f32, i8)",
           "expected_chgen": "refuse"
         },
         {
@@ -4741,7 +4741,7 @@
           "kind": "illegal_domain",
           "arity": 3,
           "position": 2,
-          "sql": "arraySlice(arr_i, i8, dec)",
+          "sql": "arraySlice(arr_i, i8, f32)",
           "expected_chgen": "refuse"
         },
         {
@@ -5474,6 +5474,106 @@
           "position": -1,
           "sql": "avgIf(i8, i32 \u003e 1)",
           "expected_chgen": "accept"
+        }
+      ]
+    },
+    {
+      "name": "bitshiftright",
+      "family": "dedicated-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "bitShiftRight",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value",
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "clickhouse-25.8.29.51/registry-real-columns"
+      },
+      "positions": [
+        {
+          "arity": 2,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "bitshiftright/legal/a2/p0",
+          "illegal_probe_id": "bitshiftright/illegal_domain/a2/p0"
+        },
+        {
+          "arity": 2,
+          "position": 1,
+          "sort": "value",
+          "legal_probe_id": "bitshiftright/legal/a2/p1",
+          "illegal_probe_id": "bitshiftright/illegal_domain/a2/p1"
+        }
+      ],
+      "probes": [
+        {
+          "id": "bitshiftright/legal_result/a2/p-1",
+          "kind": "legal_result",
+          "arity": 2,
+          "position": -1,
+          "sql": "bitShiftRight(i8, i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "bitshiftright/legal/a2/p0",
+          "kind": "legal_domain",
+          "arity": 2,
+          "sql": "bitShiftRight(i8, i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "bitshiftright/illegal_domain/a2/p0",
+          "kind": "illegal_domain",
+          "arity": 2,
+          "sql": "bitShiftRight(f32, i8)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "bitshiftright/legal/a2/p1",
+          "kind": "legal_domain",
+          "arity": 2,
+          "position": 1,
+          "sql": "bitShiftRight(i8, i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "bitshiftright/illegal_domain/a2/p1",
+          "kind": "illegal_domain",
+          "arity": 2,
+          "position": 1,
+          "sql": "bitShiftRight(i8, f32)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "bitshiftright/illegal_arity/a1/p-1",
+          "kind": "illegal_arity",
+          "arity": 1,
+          "position": -1,
+          "sql": "bitShiftRight(i8)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "bitshiftright/illegal_arity/a3/p-1",
+          "kind": "illegal_arity",
+          "arity": 3,
+          "position": -1,
+          "sql": "bitShiftRight(i8, i8, i8)",
+          "expected_chgen": "refuse"
         }
       ]
     },
@@ -7087,6 +7187,140 @@
           "position": -1,
           "sql": "floor(i8, 1, i8)",
           "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
+      "name": "fromunixtimestamp64milli",
+      "family": "context-dependent-scalar",
+      "probe_recipe": "context-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type",
+        "placement"
+      ],
+      "spelling": "fromUnixTimestamp64Milli",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          },
+          {
+            "prefix": [
+              "value",
+              "constant_string"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "clickhouse-25.8.29.51/registry-real-columns"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "fromunixtimestamp64milli/legal/a1/p0",
+          "illegal_probe_id": "fromunixtimestamp64milli/illegal_domain/a1/p0"
+        },
+        {
+          "arity": 2,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "fromunixtimestamp64milli/legal/a2/p0",
+          "illegal_probe_id": "fromunixtimestamp64milli/illegal_domain/a2/p0"
+        },
+        {
+          "arity": 2,
+          "position": 1,
+          "sort": "constant_string",
+          "legal_probe_id": "fromunixtimestamp64milli/legal/a2/p1"
+        }
+      ],
+      "probes": [
+        {
+          "id": "fromunixtimestamp64milli/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "fromUnixTimestamp64Milli(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "fromunixtimestamp64milli/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "fromUnixTimestamp64Milli(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "fromunixtimestamp64milli/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "fromUnixTimestamp64Milli(f32)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "fromunixtimestamp64milli/legal_result/a2/p-1",
+          "kind": "legal_result",
+          "arity": 2,
+          "position": -1,
+          "sql": "fromUnixTimestamp64Milli(i8, 'UTC')",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "fromunixtimestamp64milli/legal/a2/p0",
+          "kind": "legal_domain",
+          "arity": 2,
+          "sql": "fromUnixTimestamp64Milli(i8, 'UTC')",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "fromunixtimestamp64milli/illegal_domain/a2/p0",
+          "kind": "illegal_domain",
+          "arity": 2,
+          "sql": "fromUnixTimestamp64Milli(f32, 'UTC')",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "fromunixtimestamp64milli/legal/a2/p1",
+          "kind": "legal_domain",
+          "arity": 2,
+          "position": 1,
+          "sql": "fromUnixTimestamp64Milli(i8, 'UTC')",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "fromunixtimestamp64milli/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "fromUnixTimestamp64Milli()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "fromunixtimestamp64milli/illegal_arity/a3/p-1",
+          "kind": "illegal_arity",
+          "arity": 3,
+          "position": -1,
+          "sql": "fromUnixTimestamp64Milli(i8, 'UTC', i8)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "fromunixtimestamp64milli/legal_placement/a1/p-1",
+          "kind": "legal_placement",
+          "arity": 1,
+          "position": -1,
+          "sql": "fromUnixTimestamp64Milli(i8)",
+          "expected_chgen": "accept"
         }
       ]
     },

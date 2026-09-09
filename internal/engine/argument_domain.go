@@ -264,6 +264,7 @@ func arrayBaseType(value CHType) bool {
 // The three container columns are the ONE boundary that every row of the
 // sweep shares, thus one rule covers the whole family.
 func containerBaseType(value CHType) bool {
+	value = withoutGeometryAliases(value)
 	switch value.normalizedName() {
 	case "array", "map", "tuple":
 		return true
@@ -1330,6 +1331,11 @@ const (
 // zero result means "not covered by the sweep", and the caller then
 // accepts the pair.
 func comparisonClassesOf(base CHType) comparisonClass {
+	if strings.HasPrefix(base.normalizedName(), "interval") {
+		// Interval counts compare with native numbers and DateTime.
+		// Decimal and the other date/time types are excluded pairwise.
+		return comparisonClassNumeric
+	}
 	switch base.normalizedName() {
 	case "int8", "int16", "int32", "int64", "int", "int128", "int256",
 		"uint8", "uint16", "uint32", "uint64", "uint128", "uint256",
@@ -1386,6 +1392,25 @@ func comparisonClassesOf(base CHType) comparisonClass {
 func comparableBaseTypes(left, right CHType) bool {
 	if left.Name == "" || right.Name == "" {
 		return true
+	}
+	// Geometry aliases participate as their Array/Tuple structures, not
+	// as unknown scalar types that bypass the comparability boundary.
+	left = withoutGeometryAliases(left)
+	right = withoutGeometryAliases(right)
+	// Interval counts compare with integers and other intervals, but
+	// not with Decimal, Date, Date32 or DateTime64 column values. This
+	// boundary is symmetric and must precede the unknown-class fallback.
+	for _, pair := range [][2]CHType{{left, right}, {right, left}} {
+		if !strings.HasPrefix(pair[0].normalizedName(), "interval") {
+			continue
+		}
+		switch pair[1].normalizedName() {
+		case "date", "date32", "datetime64":
+			return false
+		}
+		if arithmeticDecimalType(pair[1]) {
+			return false
+		}
 	}
 	// An AggregateFunction state is NOT an unknown. It is measurably
 	// incomparable with EVERY type, itself included. Measured on

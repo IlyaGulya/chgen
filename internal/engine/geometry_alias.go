@@ -2,7 +2,10 @@ package engine
 
 import "strings"
 
-func windowResultWithoutGeoAliases(value CHType) CHType {
+// withoutGeometryAliases exposes the structural Array/Tuple type used by
+// computed results and argument-domain checks. Direct column declarations
+// retain their aliases; this is not a global catalog normalization.
+func withoutGeometryAliases(value CHType) CHType {
 	point := CHType{Name: "Tuple", Params: []CHType{{Name: "Float64"}, {Name: "Float64"}}}
 	array := func(inner CHType) CHType {
 		return CHType{Name: "Array", Params: []CHType{inner}}
@@ -23,7 +26,7 @@ func windowResultWithoutGeoAliases(value CHType) CHType {
 	result := value
 	result.Params = make([]CHType, len(value.Params))
 	for index, parameter := range value.Params {
-		result.Params[index] = windowResultWithoutGeoAliases(parameter)
+		result.Params[index] = withoutGeometryAliases(parameter)
 	}
 	return result
 }

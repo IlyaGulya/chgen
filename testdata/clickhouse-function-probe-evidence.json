@@ -1,16 +1,16 @@
 {
   "format_version": 2,
-  "catalog_sha256": "36564309d877bb9baf9943bc8edeb0e88a7c6f32da5e76eb446927c4855d00b3",
+  "catalog_sha256": "5f3d3b177147a7371a47a2f32695d0b6e9098227be4defc4071976b51fa8d055",
   "report": {
     "metadata": {
       "server": {
         "version": "25.8.29.51",
-        "server_run": 1788929453,
-        "server_uptime_s": 1910
+        "server_run": 1788943684,
+        "server_uptime_s": 385
       },
       "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
       "seed_hash": "92d8066c8fa76055871158c665f36ddd75e6c6512d8f05ec38a720cbe014c7d9",
-      "matrix_hash": "94243feaf3b3ee682abb410b7ae369c4cbc98cebd0255083367c8f96b1c12230",
+      "matrix_hash": "377ec501c87de1b31e0aec21ba582e8b78dc343ac790d17b9ccf6943bf464779",
       "fixture_columns": [
         {
           "table": "t",
@@ -10985,7 +10985,7 @@
       },
       {
         "id": "arrayslice/illegal_domain/a2/p1",
-        "expression": "arraySlice(arr_i, dec)",
+        "expression": "arraySlice(arr_i, f32)",
         "table": "t",
         "fixture": "current-fixture",
         "expectation": "illegal",
@@ -11029,7 +11029,7 @@
       },
       {
         "id": "arrayslice/illegal_domain/a3/p1",
-        "expression": "arraySlice(arr_i, dec, i8)",
+        "expression": "arraySlice(arr_i, f32, i8)",
         "table": "t",
         "fixture": "current-fixture",
         "expectation": "illegal",
@@ -11051,7 +11051,7 @@
       },
       {
         "id": "arrayslice/illegal_domain/a3/p2",
-        "expression": "arraySlice(arr_i, i8, dec)",
+        "expression": "arraySlice(arr_i, i8, f32)",
         "table": "t",
         "fixture": "current-fixture",
         "expectation": "illegal",
@@ -12868,6 +12868,175 @@
           "raw": "Float64",
           "canonical": {
             "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "bitshiftright/illegal_arity/a1/p-1",
+        "expression": "bitShiftRight(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function bitShiftRight rejects argument position 2: it accepts these argument counts: 2; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "bitshiftright/illegal_arity/a3/p-1",
+        "expression": "bitShiftRight(i8, i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function bitShiftRight rejects argument position 4: it accepts these argument counts: 2; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "bitshiftright/illegal_domain/a2/p0",
+        "expression": "bitShiftRight(f32, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function bitShiftRight does not accept an argument of type Float32; ClickHouse needs an integer of at most 64 bits or Bool here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "bitshiftright/illegal_domain/a2/p1",
+        "expression": "bitShiftRight(i8, f32)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function bitShiftRight does not accept an argument of type Float32; ClickHouse needs an integer of at most 64 bits or Bool here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "bitshiftright/legal/a2/p0",
+        "expression": "bitShiftRight(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Int8",
+          "canonical": {
+            "Name": "Int8",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Int8",
+          "canonical": {
+            "Name": "Int8",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "bitshiftright/legal/a2/p1",
+        "expression": "bitShiftRight(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Int8",
+          "canonical": {
+            "Name": "Int8",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Int8",
+          "canonical": {
+            "Name": "Int8",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "bitshiftright/legal_result/a2/p-1",
+        "expression": "bitShiftRight(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Int8",
+          "canonical": {
+            "Name": "Int8",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Int8",
+          "canonical": {
+            "Name": "Int8",
             "Args": null
           }
         },
@@ -15627,6 +15796,358 @@
           "canonical": {
             "Name": "Int8",
             "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "fromunixtimestamp64milli/illegal_arity/a0/p-1",
+        "expression": "fromUnixTimestamp64Milli()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function fromUnixTimestamp64Milli rejects argument position 1: it accepts these argument counts: 1, 2; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "fromunixtimestamp64milli/illegal_arity/a3/p-1",
+        "expression": "fromUnixTimestamp64Milli(i8, 'UTC', i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function fromUnixTimestamp64Milli rejects argument position 4: it accepts these argument counts: 1, 2; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "fromunixtimestamp64milli/illegal_domain/a1/p0",
+        "expression": "fromUnixTimestamp64Milli(f32)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function fromUnixTimestamp64Milli does not accept an argument of type Float32; ClickHouse needs an integer of at most 64 bits or Bool here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "fromunixtimestamp64milli/illegal_domain/a2/p0",
+        "expression": "fromUnixTimestamp64Milli(f32, 'UTC')",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function fromUnixTimestamp64Milli does not accept an argument of type Float32; ClickHouse needs an integer of at most 64 bits or Bool here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "fromunixtimestamp64milli/legal/a1/p0",
+        "expression": "fromUnixTimestamp64Milli(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "DateTime64(3)",
+          "canonical": {
+            "Name": "DateTime64",
+            "Args": [
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "3"
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "DateTime64(3)",
+          "canonical": {
+            "Name": "DateTime64",
+            "Args": [
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "3"
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "fromunixtimestamp64milli/legal/a2/p0",
+        "expression": "fromUnixTimestamp64Milli(i8, 'UTC')",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "DateTime64(3, 'UTC')",
+          "canonical": {
+            "Name": "DateTime64",
+            "Args": [
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "3"
+              },
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "'UTC'"
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "DateTime64(3, 'UTC')",
+          "canonical": {
+            "Name": "DateTime64",
+            "Args": [
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "3"
+              },
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "'UTC'"
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "fromunixtimestamp64milli/legal/a2/p1",
+        "expression": "fromUnixTimestamp64Milli(i8, 'UTC')",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "DateTime64(3, 'UTC')",
+          "canonical": {
+            "Name": "DateTime64",
+            "Args": [
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "3"
+              },
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "'UTC'"
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "DateTime64(3, 'UTC')",
+          "canonical": {
+            "Name": "DateTime64",
+            "Args": [
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "3"
+              },
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "'UTC'"
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "fromunixtimestamp64milli/legal_placement/a1/p-1",
+        "expression": "fromUnixTimestamp64Milli(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "DateTime64(3)",
+          "canonical": {
+            "Name": "DateTime64",
+            "Args": [
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "3"
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "DateTime64(3)",
+          "canonical": {
+            "Name": "DateTime64",
+            "Args": [
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "3"
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "fromunixtimestamp64milli/legal_result/a1/p-1",
+        "expression": "fromUnixTimestamp64Milli(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "DateTime64(3)",
+          "canonical": {
+            "Name": "DateTime64",
+            "Args": [
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "3"
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "DateTime64(3)",
+          "canonical": {
+            "Name": "DateTime64",
+            "Args": [
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "3"
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "fromunixtimestamp64milli/legal_result/a2/p-1",
+        "expression": "fromUnixTimestamp64Milli(i8, 'UTC')",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "DateTime64(3, 'UTC')",
+          "canonical": {
+            "Name": "DateTime64",
+            "Args": [
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "3"
+              },
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "'UTC'"
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "DateTime64(3, 'UTC')",
+          "canonical": {
+            "Name": "DateTime64",
+            "Args": [
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "3"
+              },
+              {
+                "Label": "",
+                "Type": null,
+                "Literal": "'UTC'"
+              }
+            ]
           }
         },
         "server_execution": {
@@ -46700,6 +47221,9 @@
     "avgif/legal/a2/p1": "Float64",
     "avgif/legal_placement/a2/p-1": "Float64",
     "avgif/legal_result/a2/p-1": "Float64",
+    "bitshiftright/legal/a2/p0": "Int8",
+    "bitshiftright/legal/a2/p1": "Int8",
+    "bitshiftright/legal_result/a2/p-1": "Int8",
     "ceil/legal/a1/p0": "Int8",
     "ceil/legal/a2/p0": "Int8",
     "ceil/legal/a2/p1": "Int8",
@@ -46772,6 +47296,12 @@
     "floor/legal/a2/p1": "Int8",
     "floor/legal_result/a1/p-1": "Int8",
     "floor/legal_result/a2/p-1": "Int8",
+    "fromunixtimestamp64milli/legal/a1/p0": "DateTime64(3)",
+    "fromunixtimestamp64milli/legal/a2/p0": "DateTime64(3, 'UTC')",
+    "fromunixtimestamp64milli/legal/a2/p1": "DateTime64(3, 'UTC')",
+    "fromunixtimestamp64milli/legal_placement/a1/p-1": "DateTime64(3)",
+    "fromunixtimestamp64milli/legal_result/a1/p-1": "DateTime64(3)",
+    "fromunixtimestamp64milli/legal_result/a2/p-1": "DateTime64(3, 'UTC')",
     "greater/legal/a2/p0": "UInt8",
     "greater/legal/a2/p1": "UInt8",
     "greater/legal_result/a2/p-1": "UInt8",
