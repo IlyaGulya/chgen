@@ -78,7 +78,7 @@ var serverFunctionNamesLowered = []string{
 	"touint16orzero", "touint256", "touint256ornull", "touint256orzero",
 	"touint32", "touint32ornull", "touint32orzero", "touint64",
 	"touint64ornull", "touint64orzero", "touint8", "touint8ornull",
-	"touint8orzero", "touuidornull", "touuidorzero", "toyyyymmdd", "trim",
+	"touint8orzero", "touuidornull", "touuidorzero", "toyyyymm", "toyyyymmdd", "toyyyymmddhhmmss", "trim",
 	"trimleft", "trimright", "trunc", "truncate", "tuple", "tupleelement",
 	"uniq", "uniqcombined", "uniqcombined64", "uniqexact",
 	"uniqhll12", "uniqtheta", "upper", "xor",

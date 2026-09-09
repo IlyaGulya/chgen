@@ -20988,6 +20988,82 @@
       ]
     },
     {
+      "name": "toyyyymm",
+      "family": "conversion-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "toYYYYMM",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "clickhouse-25.8.29.51/registry-real-columns"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "toyyyymm/legal/a1/p0",
+          "illegal_probe_id": "toyyyymm/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "toyyyymm/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "toYYYYMM(d)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "toyyyymm/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "toYYYYMM(d)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "toyyyymm/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "toYYYYMM(i8)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "toyyyymm/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "toYYYYMM()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "toyyyymm/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "toYYYYMM(d, i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
       "name": "toyyyymmdd",
       "family": "conversion-scalar",
       "probe_recipe": "scalar-signature",
@@ -21059,6 +21135,82 @@
           "arity": 2,
           "position": -1,
           "sql": "toYYYYMMDD(d, i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
+      "name": "toyyyymmddhhmmss",
+      "family": "conversion-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "toYYYYMMDDhhmmss",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "clickhouse-25.8.29.51/registry-real-columns"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "toyyyymmddhhmmss/legal/a1/p0",
+          "illegal_probe_id": "toyyyymmddhhmmss/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "toyyyymmddhhmmss/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "toYYYYMMDDhhmmss(d)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "toyyyymmddhhmmss/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "toYYYYMMDDhhmmss(d)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "toyyyymmddhhmmss/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "toYYYYMMDDhhmmss(i8)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "toyyyymmddhhmmss/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "toYYYYMMDDhhmmss()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "toyyyymmddhhmmss/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "toYYYYMMDDhhmmss(d, i8)",
           "expected_chgen": "refuse"
         }
       ]

@@ -2,7 +2,7 @@
 
 package engine
 
-const generatedSemanticDigest = "8674f6f3f1a5765cc55c19da67e5acd03ba193f8ed3d2544b44fced3cc63d73d"
+const generatedSemanticDigest = "baf85abc23acc8f799c71b6c5542b715e4cadef1da4a28ffc8d007f3f4caae7e"
 
 // generatedFunctionAuditRoster lists each static semantic source entry for tests.
 var generatedFunctionAuditRoster = []string{
@@ -162,7 +162,9 @@ var generatedFunctionAuditRoster = []string{
 	"touint32",
 	"touint64",
 	"touint8",
+	"toyyyymm",
 	"toyyyymmdd",
+	"toyyyymmddhhmmss",
 	"trim",
 	"trimleft",
 	"trimright",
@@ -339,7 +341,9 @@ var generatedFunctionSemanticFamilies = map[string]string{
 	"touint32":                  "conversion-scalar",
 	"touint64":                  "conversion-scalar",
 	"touint8":                   "conversion-scalar",
+	"toyyyymm":                  "conversion-scalar",
 	"toyyyymmdd":                "conversion-scalar",
+	"toyyyymmddhhmmss":          "conversion-scalar",
 	"trim":                      "fixed-result-scalar",
 	"trimleft":                  "fixed-result-scalar",
 	"trimright":                 "fixed-result-scalar",

@@ -157,10 +157,28 @@ DROP TABLE archived;
 
 func TestRunReadsExchangeFromSchemaDirectory(t *testing.T) {
 	dir := t.TempDir()
-	writeProjectText(t, dir, "migrations/001.sql", "CREATE TABLE serving (id UInt64) ENGINE=MergeTree ORDER BY id;")
-	writeProjectText(t, dir, "migrations/002.sql", "CREATE TABLE staged (id String, workflow_path String) ENGINE=MergeTree ORDER BY (workflow_path, id); EXCHANGE TABLES serving AND staged; DROP TABLE staged; ALTER TABLE serving ADD COLUMN label String;")
-	writeProjectText(t, dir, "queries.sql", "-- name: Read :many\nSELECT id, workflow_path, label FROM serving;")
-	writeProjectText(t, dir, "chgen.yaml", "version: 1\npackages:\n  - name: querygen\n    output: generated/queries.sql.go\n    queries: queries.sql\n    schema: migrations\n")
+	writeProjectText(t, dir, "migrations/001.sql", `
+CREATE TABLE serving (id UInt64)
+ENGINE = MergeTree ORDER BY id;
+`)
+	writeProjectText(t, dir, "migrations/002.sql", `
+CREATE TABLE staged (id String, workflow_path String)
+ENGINE = MergeTree ORDER BY (workflow_path, id);
+
+EXCHANGE TABLES serving AND staged;
+DROP TABLE staged;
+ALTER TABLE serving ADD COLUMN label String;
+`)
+	writeProjectText(t, dir, "queries.sql", `-- name: Read :many
+SELECT id, workflow_path, label FROM serving;
+`)
+	writeProjectText(t, dir, "chgen.yaml", `version: 1
+packages:
+  - name: querygen
+    output: generated/queries.sql.go
+    queries: queries.sql
+    schema: migrations
+`)
 	if err := Run(filepath.Join(dir, "chgen.yaml")); err != nil {
 		t.Fatal(err)
 	}

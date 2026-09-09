@@ -51,6 +51,8 @@ type Result struct {
 
 	// CHType is the inferred ClickHouse type of the selected expression.
 	CHType CHType
+	// Asserted marks a client result contract, checked against server metadata.
+	Asserted bool
 }
 
 // temporalPlan gives the read-side check plan of this column. It reports
@@ -73,6 +75,7 @@ type Query struct {
 	SQL            string
 	// NamedParamNames contains one source chgen.arg name for each placeholder.
 	NamedParamNames []string
+	resultContracts map[string]resultTypeContract
 
 	// batchInsert marks a fixed INSERT ... VALUES whose tuple is bare
 	// placeholders only. Such a statement goes through the native

@@ -12,7 +12,10 @@ import (
 // The recorded positions select exchange semantics; they are never replayed as
 // renames. Quoted tokens and comments are not interpreted as keywords.
 func normalizeSchemaExchanges(sql string) (string, map[int]bool, error) {
-	type token struct{ start, end int }
+	type token struct {
+		start int
+		end   int
+	}
 	var tokens []token
 	out := []byte(sql)
 	exchanges := make(map[int]bool)
@@ -30,15 +33,22 @@ func normalizeSchemaExchanges(sql string) (string, map[int]bool, error) {
 		}
 		// Qualified names are deliberately outside the catalog boundary. Each
 		// name is one token; the upstream parser validates identifier spelling.
-		if !word(1, "TABLES") || !word(3, "AND") || !(len(tokens) == 5 || len(tokens) == 8 && word(5, "ON") && word(6, "CLUSTER")) {
+		plainExchange := len(tokens) == 5
+		clusterExchange := len(tokens) == 8 && word(5, "ON") && word(6, "CLUSTER")
+		if !word(1, "TABLES") || !word(3, "AND") || !(plainExchange || clusterExchange) {
 			return fmt.Errorf("%d: expected EXCHANGE TABLES name AND name [ON CLUSTER cluster] with unqualified names", line)
 		}
 		for _, replacement := range []struct {
 			index int
 			text  string
-		}{{0, "RENAME"}, {1, "TABLE"}, {3, "TO"}} {
+		}{
+			{0, "RENAME"},
+			{1, "TABLE"},
+			{3, "TO"},
+		} {
 			t := tokens[replacement.index]
-			copy(out[t.start:t.end], replacement.text+strings.Repeat(" ", t.end-t.start-len(replacement.text)))
+			padding := strings.Repeat(" ", t.end-t.start-len(replacement.text))
+			copy(out[t.start:t.end], replacement.text+padding)
 		}
 		exchanges[tokens[0].start] = true
 		return nil

@@ -59,14 +59,9 @@ type functionTypeRule func([]CHType) (CHType, error)
 // without the argument wrappers can silently drop a Nullable.
 var errPlaceholderResultType = errors.New("positional placeholder has no result type")
 
-// pinTypeHint tells the user how to continue after a refusal. chgen
-// refuses instead of guessing a type, because a guessed type is silently
-// wrong and the generated Go then scans into the wrong Go type. The
-// annotation lets the user pin the type by hand. The spelling is the one
-// that the README documents:
-//
-//	-- result: GoName SQLAlias [GoType]
-const pinTypeHint = "give the result an alias and pin its type with a `-- result: GoName SQLAlias GoType` annotation"
+// Go representation overrides cannot repair missing ClickHouse inference.
+// A result-contract suggestion is added only at the eligible output boundary.
+const pinTypeHint = "use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
 
 // functionWrapperClass says how a function moves the Nullable and
 // LowCardinality wrappers of its arguments into its result.
@@ -132,8 +127,15 @@ func resolveQueryWithUncheckedSettings(query *Query, schema *Schema, unchecked [
 	if !ok {
 		return fmt.Errorf("%s query must be a SELECT, got %T", query.Command, statements[0])
 	}
+	if err := validateResultContractTargets(query, selectQuery); err != nil {
+		return err
+	}
 	scope, scopes, err := resolveScope(selectQuery, schema)
 	if err != nil {
+		var missing *unregisteredFunctionError
+		if len(query.resultContracts) > 0 && errors.As(err, &missing) {
+			return fmt.Errorf("%w; result-chtype does not supply types to unresolved nested scopes or aliases used in other clauses", err)
+		}
 		return err
 	}
 	if err := resolveParams(query, statements[0], scope, scopes); err != nil {
@@ -145,6 +147,9 @@ func resolveQueryWithUncheckedSettings(query *Query, schema *Schema, unchecked [
 			return fmt.Errorf("duplicate result annotation for %q", result.SQLName)
 		}
 		resultOverrides[result.SQLName] = result
+	}
+	if err := resolveResultContracts(query, selectQuery, scope, scopes); err != nil {
+		return err
 	}
 	if err := ensureTopLevelQueryResults(selectQuery, scope, scopes, resultOverrides, true); err != nil {
 		return err
@@ -169,6 +174,7 @@ func resolveQueryWithUncheckedSettings(query *Query, schema *Schema, unchecked [
 		// from it, and the wrap that the driver applies depends on the column,
 		// not on the Go spelling.
 		result.CHType = inferred
+		_, result.Asserted = query.resultContracts[itemName]
 		if result.GoName == "" {
 			result.GoName = exportedIdentifier(result.SQLName)
 		}
@@ -1236,6 +1242,10 @@ func ensureTopLevelQueryResults(selectQuery *clickhouse.SelectQuery, scope query
 			}
 			inferred, err := inferSelectItemType(item, scope)
 			if err != nil {
+				var missing *unregisteredFunctionError
+				if item.Alias != nil && errors.As(err, &missing) && validateAssertedFunction(item.Expr, scope) == nil {
+					err = fmt.Errorf("%w; this output can declare a runtime-checked -- result-chtype: %s ClickHouseType contract", err, item.Alias.Name)
+				}
 				result, ok := overrides[name]
 				if !ok {
 					result = Result{GoName: exportedIdentifier(name), SQLName: name}
@@ -2196,6 +2206,13 @@ func addProjectionAliases(selectQuery *clickhouse.SelectQuery, scope *queryScope
 		}
 		inferred, err := inferSelectItemType(item, *scope)
 		if err != nil {
+			var missing *unregisteredFunctionError
+			if errors.As(err, &missing) && validateAssertedFunction(item.Expr, *scope) == nil {
+				// Leave the expression available for normal alias expansion.
+				// A later clause using it must still resolve its own type;
+				// only the final output may have a result contract.
+				continue
+			}
 			return fmt.Errorf("selected expression %s: %w", name, err)
 		}
 		scope.projectionAliases[name] = inferred

@@ -90,8 +90,8 @@ func TestUntypeableArgumentRefusesInsteadOfGuessing(t *testing.T) {
 		if !strings.Contains(err.Error(), "unknownFunctionWithNoRule") {
 			t.Errorf("refusal for %q = %v, want the cause to name the construct", expr, err)
 		}
-		if !strings.Contains(err.Error(), "-- result:") {
-			t.Errorf("refusal for %q = %v, want the message to point at the -- result: override", expr, err)
+		if !strings.Contains(err.Error(), "not ClickHouse type inference") {
+			t.Errorf("refusal for %q = %v, want an honest explanation of Go overrides", expr, err)
 		}
 	}
 }

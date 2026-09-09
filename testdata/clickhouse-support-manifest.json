@@ -2147,7 +2147,7 @@
       "name": "abs",
       "status": "supported_measured",
       "semantic_family": "dedicated-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2203,7 +2203,7 @@
       "name": "addDays",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2211,7 +2211,7 @@
       "name": "addHours",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2243,7 +2243,7 @@
       "name": "addMinutes",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2251,7 +2251,7 @@
       "name": "addMonths",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2267,7 +2267,7 @@
       "name": "addQuarters",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2275,7 +2275,7 @@
       "name": "addSeconds",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2291,7 +2291,7 @@
       "name": "addWeeks",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2299,7 +2299,7 @@
       "name": "addYears",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2379,7 +2379,7 @@
       "name": "and",
       "status": "supported_measured",
       "semantic_family": "context-dependent-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2387,7 +2387,7 @@
       "name": "any",
       "status": "supported_measured",
       "semantic_family": "first-argument-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2403,7 +2403,7 @@
       "name": "anyLast",
       "status": "supported_measured",
       "semantic_family": "first-argument-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2451,7 +2451,7 @@
       "name": "argMax",
       "status": "supported_measured",
       "semantic_family": "first-argument-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2459,7 +2459,7 @@
       "name": "argMin",
       "status": "supported_measured",
       "semantic_family": "first-argument-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2467,7 +2467,7 @@
       "name": "array",
       "status": "supported_measured",
       "semantic_family": "parametric-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2483,7 +2483,7 @@
       "name": "arrayAll",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2491,7 +2491,7 @@
       "name": "arrayAvg",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2515,7 +2515,7 @@
       "name": "arrayCount",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2523,7 +2523,7 @@
       "name": "arrayCumSum",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2531,7 +2531,7 @@
       "name": "arrayCumSumNonNegative",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2547,7 +2547,7 @@
       "name": "arrayDistinct",
       "status": "supported_measured",
       "semantic_family": "dedicated-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2563,7 +2563,7 @@
       "name": "arrayElement",
       "status": "supported_measured",
       "semantic_family": "dedicated-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2619,7 +2619,7 @@
       "name": "arrayExists",
       "status": "supported_measured",
       "semantic_family": "predicate-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2627,7 +2627,7 @@
       "name": "arrayFill",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2635,7 +2635,7 @@
       "name": "arrayFilter",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2643,7 +2643,7 @@
       "name": "arrayFirst",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2651,7 +2651,7 @@
       "name": "arrayFirstIndex",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2659,7 +2659,7 @@
       "name": "arrayFirstOrNull",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2675,7 +2675,7 @@
       "name": "arrayFold",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2707,7 +2707,7 @@
       "name": "arrayLast",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2715,7 +2715,7 @@
       "name": "arrayLastIndex",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2723,7 +2723,7 @@
       "name": "arrayLastOrNull",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2747,7 +2747,7 @@
       "name": "arrayMap",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2755,7 +2755,7 @@
       "name": "arrayMax",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2763,7 +2763,7 @@
       "name": "arrayMin",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2779,7 +2779,7 @@
       "name": "arrayPartialReverseSort",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2795,7 +2795,7 @@
       "name": "arrayPartialSort",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2819,7 +2819,7 @@
       "name": "arrayProduct",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2875,7 +2875,7 @@
       "name": "arrayResize",
       "status": "supported_measured",
       "semantic_family": "parametric-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2891,7 +2891,7 @@
       "name": "arrayReverseFill",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2899,7 +2899,7 @@
       "name": "arrayReverseSort",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2907,7 +2907,7 @@
       "name": "arrayReverseSplit",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2971,7 +2971,7 @@
       "name": "arraySlice",
       "status": "supported_measured",
       "semantic_family": "first-argument-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2979,7 +2979,7 @@
       "name": "arraySort",
       "status": "supported_measured",
       "semantic_family": "first-argument-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2987,7 +2987,7 @@
       "name": "arraySplit",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -2995,7 +2995,7 @@
       "name": "arrayStringConcat",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -3003,7 +3003,7 @@
       "name": "arraySum",
       "status": "supported_measured",
       "semantic_family": "dedicated-lambda",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -3083,7 +3083,7 @@
       "name": "assumeNotNull",
       "status": "supported_measured",
       "semantic_family": "dedicated-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -3115,7 +3115,7 @@
       "name": "avg",
       "status": "supported_measured",
       "semantic_family": "fixed-result-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -3619,7 +3619,7 @@
       "name": "ceil",
       "status": "supported_measured",
       "semantic_family": "first-argument-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -3683,7 +3683,7 @@
       "name": "cityHash64",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -3731,7 +3731,7 @@
       "name": "concat",
       "status": "supported_measured",
       "semantic_family": "common-supertype-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -3835,7 +3835,7 @@
       "name": "count",
       "status": "supported_measured",
       "semantic_family": "fixed-result-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -4131,7 +4131,7 @@
       "name": "dateDiff",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -4299,7 +4299,7 @@
       "name": "denseRank",
       "status": "supported_measured",
       "semantic_family": "fixed-result-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -4827,7 +4827,7 @@
       "name": "empty",
       "status": "supported_measured",
       "semantic_family": "predicate-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -5019,7 +5019,7 @@
       "name": "equals",
       "status": "supported_measured",
       "semantic_family": "predicate-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -5379,7 +5379,7 @@
       "name": "floor",
       "status": "supported_measured",
       "semantic_family": "first-argument-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -5891,7 +5891,7 @@
       "name": "greater",
       "status": "supported_measured",
       "semantic_family": "predicate-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -5899,7 +5899,7 @@
       "name": "greaterOrEquals",
       "status": "supported_measured",
       "semantic_family": "predicate-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -5907,7 +5907,7 @@
       "name": "greatest",
       "status": "supported_measured",
       "semantic_family": "common-supertype-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -5915,7 +5915,7 @@
       "name": "groupArray",
       "status": "supported_measured",
       "semantic_family": "dedicated-parametric-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -5979,7 +5979,7 @@
       "name": "groupBitAnd",
       "status": "supported_measured",
       "semantic_family": "dedicated-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -5987,7 +5987,7 @@
       "name": "groupBitOr",
       "status": "supported_measured",
       "semantic_family": "dedicated-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -5995,7 +5995,7 @@
       "name": "groupBitXor",
       "status": "supported_measured",
       "semantic_family": "dedicated-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -6051,7 +6051,7 @@
       "name": "groupUniqArray",
       "status": "supported_measured",
       "semantic_family": "dedicated-parametric-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -6387,7 +6387,7 @@
       "name": "has",
       "status": "supported_measured",
       "semantic_family": "predicate-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -6499,7 +6499,7 @@
       "name": "hex",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -6899,7 +6899,7 @@
       "name": "isNotNull",
       "status": "supported_measured",
       "semantic_family": "predicate-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -6907,7 +6907,7 @@
       "name": "isNull",
       "status": "supported_measured",
       "semantic_family": "predicate-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7067,7 +7067,7 @@
       "name": "lag",
       "status": "supported_measured",
       "semantic_family": "first-argument-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7075,7 +7075,7 @@
       "name": "lagInFrame",
       "status": "supported_measured",
       "semantic_family": "first-argument-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7099,7 +7099,7 @@
       "name": "lead",
       "status": "supported_measured",
       "semantic_family": "first-argument-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7107,7 +7107,7 @@
       "name": "leadInFrame",
       "status": "supported_measured",
       "semantic_family": "first-argument-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7115,7 +7115,7 @@
       "name": "least",
       "status": "supported_measured",
       "semantic_family": "common-supertype-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7163,7 +7163,7 @@
       "name": "length",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7179,7 +7179,7 @@
       "name": "less",
       "status": "supported_measured",
       "semantic_family": "predicate-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7187,7 +7187,7 @@
       "name": "lessOrEquals",
       "status": "supported_measured",
       "semantic_family": "predicate-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7275,7 +7275,7 @@
       "name": "lower",
       "status": "supported_measured",
       "semantic_family": "dedicated-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7331,7 +7331,7 @@
       "name": "map",
       "status": "supported_measured",
       "semantic_family": "parametric-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7443,7 +7443,7 @@
       "name": "mapKeys",
       "status": "supported_measured",
       "semantic_family": "parametric-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7507,7 +7507,7 @@
       "name": "mapValues",
       "status": "supported_measured",
       "semantic_family": "parametric-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7531,7 +7531,7 @@
       "name": "max",
       "status": "supported_measured",
       "semantic_family": "first-argument-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7595,7 +7595,7 @@
       "name": "min",
       "status": "supported_measured",
       "semantic_family": "first-argument-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -7939,7 +7939,7 @@
       "name": "negate",
       "status": "supported_measured",
       "semantic_family": "dedicated-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -8219,7 +8219,7 @@
       "name": "notEmpty",
       "status": "supported_measured",
       "semantic_family": "predicate-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -8227,7 +8227,7 @@
       "name": "notEquals",
       "status": "supported_measured",
       "semantic_family": "predicate-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -8307,7 +8307,7 @@
       "name": "now",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -8315,7 +8315,7 @@
       "name": "now64",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -8339,7 +8339,7 @@
       "name": "nth_value",
       "status": "supported_measured",
       "semantic_family": "first-argument-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -8347,7 +8347,7 @@
       "name": "ntile",
       "status": "supported_measured",
       "semantic_family": "fixed-result-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -8355,7 +8355,7 @@
       "name": "nullIf",
       "status": "supported_measured",
       "semantic_family": "dedicated-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -8507,7 +8507,7 @@
       "name": "or",
       "status": "supported_measured",
       "semantic_family": "context-dependent-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -8803,7 +8803,7 @@
       "name": "percentRank",
       "status": "supported_measured",
       "semantic_family": "fixed-result-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -9099,7 +9099,7 @@
       "name": "quantile",
       "status": "supported_measured",
       "semantic_family": "dedicated-parametric-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -9579,7 +9579,7 @@
       "name": "rank",
       "status": "supported_measured",
       "semantic_family": "fixed-result-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -9995,7 +9995,7 @@
       "name": "reverse",
       "status": "supported_measured",
       "semantic_family": "dedicated-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -10051,7 +10051,7 @@
       "name": "round",
       "status": "supported_measured",
       "semantic_family": "first-argument-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -10067,7 +10067,7 @@
       "name": "roundBankers",
       "status": "supported_measured",
       "semantic_family": "first-argument-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -10115,7 +10115,7 @@
       "name": "row_number",
       "status": "supported_measured",
       "semantic_family": "fixed-result-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -10827,7 +10827,7 @@
       "name": "substring",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -10859,7 +10859,7 @@
       "name": "subtractDays",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -10867,7 +10867,7 @@
       "name": "subtractHours",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -10899,7 +10899,7 @@
       "name": "subtractMinutes",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -10907,7 +10907,7 @@
       "name": "subtractMonths",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -10923,7 +10923,7 @@
       "name": "subtractQuarters",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -10931,7 +10931,7 @@
       "name": "subtractSeconds",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -10947,7 +10947,7 @@
       "name": "subtractWeeks",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -10955,7 +10955,7 @@
       "name": "subtractYears",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -10963,7 +10963,7 @@
       "name": "sum",
       "status": "supported_measured",
       "semantic_family": "dedicated-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11019,7 +11019,7 @@
       "name": "sumWithOverflow",
       "status": "supported_measured",
       "semantic_family": "dedicated-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11315,7 +11315,7 @@
       "name": "toDate",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11323,7 +11323,7 @@
       "name": "toDate32",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11339,7 +11339,7 @@
       "name": "toDate32OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11347,7 +11347,7 @@
       "name": "toDate32OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11363,7 +11363,7 @@
       "name": "toDateOrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11371,7 +11371,7 @@
       "name": "toDateOrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11379,7 +11379,7 @@
       "name": "toDateTime",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11395,7 +11395,7 @@
       "name": "toDateTime64",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11411,7 +11411,7 @@
       "name": "toDateTime64OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11419,7 +11419,7 @@
       "name": "toDateTime64OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11435,7 +11435,7 @@
       "name": "toDateTimeOrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11443,7 +11443,7 @@
       "name": "toDateTimeOrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11483,7 +11483,7 @@
       "name": "toDecimal128",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11499,7 +11499,7 @@
       "name": "toDecimal128OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11507,7 +11507,7 @@
       "name": "toDecimal128OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11515,7 +11515,7 @@
       "name": "toDecimal256",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11531,7 +11531,7 @@
       "name": "toDecimal256OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11539,7 +11539,7 @@
       "name": "toDecimal256OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11547,7 +11547,7 @@
       "name": "toDecimal32",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11563,7 +11563,7 @@
       "name": "toDecimal32OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11571,7 +11571,7 @@
       "name": "toDecimal32OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11579,7 +11579,7 @@
       "name": "toDecimal64",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11595,7 +11595,7 @@
       "name": "toDecimal64OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11603,7 +11603,7 @@
       "name": "toDecimal64OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11619,7 +11619,7 @@
       "name": "toFixedString",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11627,7 +11627,7 @@
       "name": "toFloat32",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11643,7 +11643,7 @@
       "name": "toFloat32OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11651,7 +11651,7 @@
       "name": "toFloat32OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11659,7 +11659,7 @@
       "name": "toFloat64",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11675,7 +11675,7 @@
       "name": "toFloat64OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11683,7 +11683,7 @@
       "name": "toFloat64OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11715,7 +11715,7 @@
       "name": "toIPv4OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11723,7 +11723,7 @@
       "name": "toIPv4OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11747,7 +11747,7 @@
       "name": "toIPv6OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11755,7 +11755,7 @@
       "name": "toIPv6OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11779,7 +11779,7 @@
       "name": "toInt128",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11795,7 +11795,7 @@
       "name": "toInt128OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11803,7 +11803,7 @@
       "name": "toInt128OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11811,7 +11811,7 @@
       "name": "toInt16",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11827,7 +11827,7 @@
       "name": "toInt16OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11835,7 +11835,7 @@
       "name": "toInt16OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11843,7 +11843,7 @@
       "name": "toInt256",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11859,7 +11859,7 @@
       "name": "toInt256OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11867,7 +11867,7 @@
       "name": "toInt256OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11875,7 +11875,7 @@
       "name": "toInt32",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11891,7 +11891,7 @@
       "name": "toInt32OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11899,7 +11899,7 @@
       "name": "toInt32OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11907,7 +11907,7 @@
       "name": "toInt64",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11923,7 +11923,7 @@
       "name": "toInt64OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11931,7 +11931,7 @@
       "name": "toInt64OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11939,7 +11939,7 @@
       "name": "toInt8",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11955,7 +11955,7 @@
       "name": "toInt8OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -11963,7 +11963,7 @@
       "name": "toInt8OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12243,7 +12243,7 @@
       "name": "toStartOfDay",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12267,7 +12267,7 @@
       "name": "toStartOfHour",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12283,7 +12283,7 @@
       "name": "toStartOfInterval",
       "status": "supported_measured",
       "semantic_family": "context-dependent-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12307,7 +12307,7 @@
       "name": "toStartOfMinute",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12371,7 +12371,7 @@
       "name": "toString",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12443,7 +12443,7 @@
       "name": "toTimezone",
       "status": "supported_measured",
       "semantic_family": "context-dependent-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12459,7 +12459,7 @@
       "name": "toUInt128",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12475,7 +12475,7 @@
       "name": "toUInt128OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12483,7 +12483,7 @@
       "name": "toUInt128OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12491,7 +12491,7 @@
       "name": "toUInt16",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12507,7 +12507,7 @@
       "name": "toUInt16OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12515,7 +12515,7 @@
       "name": "toUInt16OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12523,7 +12523,7 @@
       "name": "toUInt256",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12539,7 +12539,7 @@
       "name": "toUInt256OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12547,7 +12547,7 @@
       "name": "toUInt256OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12555,7 +12555,7 @@
       "name": "toUInt32",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12571,7 +12571,7 @@
       "name": "toUInt32OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12579,7 +12579,7 @@
       "name": "toUInt32OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12587,7 +12587,7 @@
       "name": "toUInt64",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12603,7 +12603,7 @@
       "name": "toUInt64OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12611,7 +12611,7 @@
       "name": "toUInt64OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12619,7 +12619,7 @@
       "name": "toUInt8",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12635,7 +12635,7 @@
       "name": "toUInt8OrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12643,7 +12643,7 @@
       "name": "toUInt8OrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12675,7 +12675,7 @@
       "name": "toUUIDOrNull",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12683,7 +12683,7 @@
       "name": "toUUIDOrZero",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12745,26 +12745,26 @@
     {
       "kind": "function",
       "name": "toYYYYMM",
-      "status": "not_measured",
-      "semantic_family": "unclassified-function",
-      "evidence": "clickhouse-api-inventory/observed-only",
-      "test_witness": "internal/engine/support_manifest_test.go:TestPinnedSupportManifestCoversInventory"
+      "status": "supported_measured",
+      "semantic_family": "conversion-scalar",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
+      "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
       "kind": "function",
       "name": "toYYYYMMDD",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
       "kind": "function",
       "name": "toYYYYMMDDhhmmss",
-      "status": "not_measured",
-      "semantic_family": "unclassified-function",
-      "evidence": "clickhouse-api-inventory/observed-only",
-      "test_witness": "internal/engine/support_manifest_test.go:TestPinnedSupportManifestCoversInventory"
+      "status": "supported_measured",
+      "semantic_family": "conversion-scalar",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
+      "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
       "kind": "function",
@@ -12795,7 +12795,7 @@
       "name": "today",
       "status": "supported_measured",
       "semantic_family": "conversion-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12899,7 +12899,7 @@
       "name": "trimLeft",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12907,7 +12907,7 @@
       "name": "trimRight",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -12915,7 +12915,7 @@
       "name": "trunc",
       "status": "supported_measured",
       "semantic_family": "first-argument-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -13003,7 +13003,7 @@
       "name": "tuple",
       "status": "supported_measured",
       "semantic_family": "parametric-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -13035,7 +13035,7 @@
       "name": "tupleElement",
       "status": "supported_measured",
       "semantic_family": "context-dependent-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -13171,7 +13171,7 @@
       "name": "uniq",
       "status": "supported_measured",
       "semantic_family": "fixed-result-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -13179,7 +13179,7 @@
       "name": "uniqCombined",
       "status": "supported_measured",
       "semantic_family": "fixed-result-parametric-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -13187,7 +13187,7 @@
       "name": "uniqCombined64",
       "status": "supported_measured",
       "semantic_family": "fixed-result-parametric-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -13195,7 +13195,7 @@
       "name": "uniqExact",
       "status": "supported_measured",
       "semantic_family": "fixed-result-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -13203,7 +13203,7 @@
       "name": "uniqHLL12",
       "status": "supported_measured",
       "semantic_family": "fixed-result-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -13211,7 +13211,7 @@
       "name": "uniqTheta",
       "status": "supported_measured",
       "semantic_family": "fixed-result-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -13251,7 +13251,7 @@
       "name": "upper",
       "status": "supported_measured",
       "semantic_family": "dedicated-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -13499,7 +13499,7 @@
       "name": "xor",
       "status": "supported_measured",
       "semantic_family": "context-dependent-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -13620,7 +13620,7 @@
       "alias_to": "dateDiff",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -14277,7 +14277,7 @@
       "alias_to": "dateDiff",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -14286,7 +14286,7 @@
       "alias_to": "denseRank",
       "status": "supported_measured",
       "semantic_family": "fixed-result-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -14349,7 +14349,7 @@
       "alias_to": "any_respect_nulls",
       "status": "supported_measured",
       "semantic_family": "first-argument-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -14358,7 +14358,7 @@
       "alias_to": "any",
       "status": "supported_measured",
       "semantic_family": "first-argument-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -14367,7 +14367,7 @@
       "alias_to": "any_respect_nulls",
       "status": "supported_measured",
       "semantic_family": "first-argument-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -14457,7 +14457,7 @@
       "alias_to": "anyLast_respect_nulls",
       "status": "supported_measured",
       "semantic_family": "first-argument-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -14466,7 +14466,7 @@
       "alias_to": "anyLast",
       "status": "supported_measured",
       "semantic_family": "first-argument-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -14475,7 +14475,7 @@
       "alias_to": "anyLast_respect_nulls",
       "status": "supported_measured",
       "semantic_family": "first-argument-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -14565,7 +14565,7 @@
       "alias_to": "quantile",
       "status": "supported_measured",
       "semantic_family": "dedicated-parametric-aggregate",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -14844,7 +14844,7 @@
       "alias_to": "percentRank",
       "status": "supported_measured",
       "semantic_family": "fixed-result-window",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -15087,7 +15087,7 @@
       "alias_to": "toTimezone",
       "status": "supported_measured",
       "semantic_family": "context-dependent-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -15105,7 +15105,7 @@
       "alias_to": "trimBoth",
       "status": "supported_measured",
       "semantic_family": "fixed-result-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {
@@ -15114,7 +15114,7 @@
       "alias_to": "trunc",
       "status": "supported_measured",
       "semantic_family": "first-argument-scalar",
-      "evidence": "clickhouse-function-probe-evidence/sha256:24391a07190f4df19698347d695e85e2587d35ab9625eff09100b8235ddeade4",
+      "evidence": "clickhouse-function-probe-evidence/sha256:a1c813f3f8ebdb38d1d96b257b7e6388c495f34434d9d3617fb10fab8eebe210",
       "test_witness": "internal/engine/function_probe_live_test.go:TestFunctionProbeCatalogAgainstClickHouse"
     },
     {

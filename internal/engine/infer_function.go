@@ -595,7 +595,7 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 			function.Name.Name, argumentType.String(), pinTypeHint,
 		)
 	}
-	return CHType{}, fmt.Errorf("function %s has no registered type rule; %s", function.Name.Name, pinTypeHint)
+	return CHType{}, &unregisteredFunctionError{name: function.Name.Name}
 }
 
 // isStarArgument reports whether an argument is the bare star of

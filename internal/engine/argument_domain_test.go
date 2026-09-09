@@ -566,7 +566,7 @@ func TestArgumentDomainRefusalMessageHelps(t *testing.T) {
 		t.Fatal("sum(s) must be a refusal")
 	}
 	message := err.Error()
-	for _, want := range []string{"sum", "String", "an integer", "-- result:"} {
+	for _, want := range []string{"sum", "String", "an integer", "not ClickHouse type inference"} {
 		if !strings.Contains(message, want) {
 			t.Errorf("refusal message does not contain %q: %s", want, message)
 		}

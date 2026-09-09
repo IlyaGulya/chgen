@@ -180,6 +180,7 @@ Use an annotation when you want another type or field name:
 | --- | --- |
 | `-- param: GoName [GoType]` | Set one parameter type. |
 | `-- result: GoName SQLAlias [GoType]` | Set one result field. |
+| `-- result-chtype: SQLAlias ClickHouseType` | Assert one output's CH type, checked at runtime. |
 | `-- result-capacity: SliceParameter` | Pre-allocate a `:many` result slice. |
 | `-- chgen:unchecked-setting name` | Explicitly accept an unmodelled setting for one query; the caller verifies type safety. |
 
@@ -258,6 +259,17 @@ form.
 - [SQL support limits](docs/front-end-gaps.md)
 
 ## Development
+
+Enable the tracked pre-commit hook once per clone:
+
+```bash
+git config --local core.hooksPath .githooks
+```
+
+The hook runs `gofmt` against staged Go sources and rejects unformatted code.
+It does not rewrite files or stage unrelated changes. To format the whole tree,
+run `gofmt -w .`, review the diff, and stage the intended changes. CI also checks
+formatting independently of local hooks.
 
 Run the project checks before you send a change:
 

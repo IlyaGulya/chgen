@@ -73,6 +73,57 @@ that rule takes effect automatically. Other unknown settings still fail.
 The annotation does not bypass SQL parsing, column resolution, unsupported
 functions, DDL restrictions, or any non-SETTINGS validation.
 
+## Explicit ClickHouse result contracts
+
+`-- result:` controls Go field names and representation; it does not bypass
+ClickHouse type inference. Starting with v0.1.8, an unregistered function can
+declare its output contract separately:
+
+```sql
+-- name: ReadMonths :many
+-- result-chtype: month UInt32
+-- result: Month month uint32
+SELECT clientMonthFunction(occurred_at) AS month
+FROM events;
+```
+
+The `-- result:` line is optional. The CH contract supplies the generated Go
+type when no Go override is given. The function remains unregistered: chgen
+does not claim to have proved its semantics. The SQL is not cast or rewritten.
+The generated method checks server column names and the asserted types before
+scanning, even for empty results. A mismatch or missing metadata is an error;
+rows are closed normally. No extra server query is issued.
+
+Contracts apply to unique explicit output aliases in an ordinary outer SELECT
+(:one or :many). They must be in the query header. Duplicate, unused, ambiguous,
+and misplaced contracts are errors. A contract cannot contradict an inferred
+type, drop Nullable, introduce an unsupported Go mapping, or bypass an invalid
+known function call. Type syntax may contain spaces, for example
+`Nullable(DateTime64(3, 'UTC'))`.
+
+When inference is unavailable, v0.1.8 accepts direct unregistered function
+calls, including nested unregistered calls with independently valid arguments.
+It does not use a final output contract to guess the operand types of a known
+function or operator. Parsing, column resolution and parameter validation still
+run. An input parameter without inferable type still needs `-- param:`; a result
+contract does not type inputs. Types unavailable inside CTEs, subqueries or
+aliases used by other clauses are not supplied by an outer result contract.
+Star expansion, set-operation contracts, unknown parametric functions and
+contracts on :exec remain unsupported. Independently typed ORDER BY expressions
+are permitted.
+
+Runtime type comparison ignores inter-token whitespace, but preserves wrappers,
+parameters, quoted contents and token boundaries. It does not assume type
+aliases or timezone spellings are equivalent. Unannotated queries retain their
+existing generated behavior.
+
+The numeric date-key functions `toYYYYMM`, `toYYYYMMDD`, and
+`toYYYYMMDDhhmmss` need no contracts: their measured one-argument forms return
+UInt32, UInt32, and UInt64 respectively, with measured wrapper propagation.
+Their optional timezone form remains outside the registry's one-argument
+boundary. A bare NULL produces Nullable(Nothing) on the server and has no Go
+result representation; it must not be advertised as a typed integer result.
+
 ## Named parameters
 
 Use `chgen.arg('GoName')` to declare a query parameter:

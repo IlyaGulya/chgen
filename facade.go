@@ -137,6 +137,7 @@ type Query struct {
 
 	batchInsert      bool
 	batchInsertTable string
+	assertedResults  map[string]bool
 }
 
 // Config is the parsed chgen.yaml file. All paths are resolved against the
@@ -405,6 +406,12 @@ func fromEngineQuery(value engine.Query) Query {
 		result.Results = make([]Result, len(value.Results))
 		for index, item := range value.Results {
 			result.Results[index] = Result{GoName: item.GoName, SQLName: item.SQLName, GoType: item.GoType, CHType: fromEngineCHType(item.CHType)}
+			if item.Asserted {
+				if result.assertedResults == nil {
+					result.assertedResults = make(map[string]bool)
+				}
+				result.assertedResults[item.SQLName] = true
+			}
 		}
 	}
 	if value.ExternalParams != nil {
@@ -447,7 +454,13 @@ func toEngineQuery(value Query) engine.Query {
 	if value.Results != nil {
 		result.Results = make([]engine.Result, len(value.Results))
 		for index, item := range value.Results {
-			result.Results[index] = engine.Result{GoName: item.GoName, SQLName: item.SQLName, GoType: item.GoType, CHType: toEngineCHType(item.CHType)}
+			result.Results[index] = engine.Result{
+				GoName:   item.GoName,
+				SQLName:  item.SQLName,
+				GoType:   item.GoType,
+				CHType:   toEngineCHType(item.CHType),
+				Asserted: value.assertedResults[item.SQLName],
+			}
 		}
 	}
 	if value.ExternalParams != nil {

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+scratch=$(mktemp -d)
+trap 'rm -f "$scratch/staged.go" "$scratch/diff" "$scratch/paths"; rmdir "$scratch"' EXIT
+
+# Inspect the index, not the working tree: partially staged files must stay
+# partially staged. Never silently add unrelated edits to the commit.
+git diff --cached --name-only --diff-filter=ACMR -z -- '*.go' > "$scratch/paths"
+failed=0
+while IFS= read -r -d '' path; do
+    git show ":$path" > "$scratch/staged.go"
+    format_status=0
+    gofmt -d "$scratch/staged.go" > "$scratch/diff" || format_status=$?
+    if [[ -s "$scratch/diff" ]]; then
+        printf 'Staged Go source needs gofmt: %s\n' "$path" >&2
+        failed=1
+    elif [[ "$format_status" != 0 ]]; then
+        printf 'Cannot format staged Go source: %s\n' "$path" >&2
+        failed=1
+    fi
+done < "$scratch/paths"
+
+if [[ "$failed" != 0 ]]; then
+    echo 'Run gofmt on the listed files, review and stage the formatting, then commit again.' >&2
+    exit 1
+fi

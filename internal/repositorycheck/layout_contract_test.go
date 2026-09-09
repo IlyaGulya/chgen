@@ -524,7 +524,12 @@ func validateLayoutSnapshot(value layoutSnapshot) error {
 	if value.hasInvalidRootTest {
 		return fmt.Errorf("a root test uses a build tag or a package other than chgen_test")
 	}
-	wantRepositoryFiles := []string{"layout_contract_test.go", "release_readiness_test.go", "repository_test.go"}
+	wantRepositoryFiles := []string{
+		"hooks_test.go",
+		"layout_contract_test.go",
+		"release_readiness_test.go",
+		"repository_test.go",
+	}
 	if len(value.repositoryFiles) != len(wantRepositoryFiles) || !sameRequiredValues(value.repositoryFiles, wantRepositoryFiles) {
 		return fmt.Errorf("repository check files = %v, want %v", value.repositoryFiles, wantRepositoryFiles)
 	}
@@ -1569,6 +1574,7 @@ func projectExtractionIsInvalid(root string) bool {
 		"internal/project/inputs_test.go",
 		"internal/project/run.go",
 		"internal/project/run_test.go",
+		"internal/repositorycheck/hooks_test.go",
 		"internal/repositorycheck/layout_contract_test.go",
 		"internal/repositorycheck/release_readiness_test.go",
 		"internal/repositorycheck/repository_test.go",
@@ -1599,6 +1605,7 @@ func projectExtractionIsInvalid(root string) bool {
 
 func expectedRepositoryTestFunctions() []string {
 	return strings.Fields(`
+		hooks_test.go:TestPreCommitChecksStagedFormatting
 		layout_contract_test.go:TestArtifactPathScannerRejectsRelativeRepositoryRead
 		layout_contract_test.go:TestCommandTargetScannerDistinguishesDotAndEngine
 		layout_contract_test.go:TestInternalPackageDocumentationMatchesOwnership

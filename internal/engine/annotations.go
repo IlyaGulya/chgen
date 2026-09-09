@@ -10,7 +10,9 @@ import (
 // physical catalog and the external catalog of its package. schema is never
 // nil: ParseQueryFiles, the only caller, refuses a call without a catalog.
 func parseQueriesInFile(file, input string, schema *Schema, externalSchema *Schema) ([]Query, error) {
-	lines := strings.Split(strings.ReplaceAll(input, "\r\n", "\n"), "\n")
+	input = strings.ReplaceAll(input, "\r\n", "\n")
+	lines := strings.Split(input, "\n")
+	contractLines := resultContractCommentLines(input)
 	var builders []*queryBuilder
 	var current *queryBuilder
 
@@ -25,6 +27,26 @@ func parseQueriesInFile(file, input string, schema *Schema, externalSchema *Sche
 
 	for lineNumber, line := range lines {
 		trimmed := strings.TrimSpace(line)
+		if contractLines[lineNumber+1] {
+			if current == nil || current.bodyStarted {
+				return nil, fmt.Errorf("%s:%d: %s must appear in a query header", file, lineNumber+1, resultCHTypeDirective)
+			}
+			if current.query.Command == CommandExec {
+				return nil, fmt.Errorf("%s:%d: %s is not allowed on :exec", file, lineNumber+1, resultCHTypeDirective)
+			}
+			alias, contract, err := parseResultTypeContract(trimmed, lineNumber+1)
+			if err != nil {
+				return nil, fmt.Errorf("%s:%d: %w", file, lineNumber+1, err)
+			}
+			if current.query.resultContracts == nil {
+				current.query.resultContracts = make(map[string]resultTypeContract)
+			}
+			if _, exists := current.query.resultContracts[alias]; exists {
+				return nil, fmt.Errorf("%s:%d: duplicate result-chtype for %q", file, lineNumber+1, alias)
+			}
+			current.query.resultContracts[alias] = contract
+			continue
+		}
 		if strings.HasPrefix(trimmed, "-- name:") {
 			finish()
 			query, err := parseNameAnnotation(trimmed)

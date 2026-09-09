@@ -679,7 +679,45 @@ var functionSemanticSpecs = map[string]functionSpec{
 	//	toYYYYMMDD(lcd)   LowCardinality(UInt32)
 	//
 	// String, Int32, Decimal, UUID, and Array(Date) all give Code 43.
-	"toyyyymmdd": {family: semanticFamilyConversion, rule: fixedFunctionType("UInt32"), class: wrapperTransparent, strategy: argsIndependent, domain: &dateArgumentDomain, gen: scalarCall("toYYYYMMDD", 1), resultMode: resultRuleGeneric, domainMode: argumentDomainRestricted, domainArgs: []int{0}, parameterPolicy: parameterResultCurated, evidence: registryMeasurementEvidence},
+	"toyyyymm": {
+		family:          semanticFamilyConversion,
+		rule:            fixedFunctionType("UInt32"),
+		class:           wrapperTransparent,
+		strategy:        argsIndependent,
+		domain:          &dateArgumentDomain,
+		gen:             scalarCall("toYYYYMM", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        registryMeasurementEvidence,
+	},
+	"toyyyymmdd": {
+		family:          semanticFamilyConversion,
+		rule:            fixedFunctionType("UInt32"),
+		class:           wrapperTransparent,
+		strategy:        argsIndependent,
+		domain:          &dateArgumentDomain,
+		gen:             scalarCall("toYYYYMMDD", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        registryMeasurementEvidence,
+	},
+	"toyyyymmddhhmmss": {
+		family:          semanticFamilyConversion,
+		rule:            fixedFunctionType("UInt64"),
+		class:           wrapperTransparent,
+		strategy:        argsIndependent,
+		domain:          &dateArgumentDomain,
+		gen:             scalarCall("toYYYYMMDDhhmmss", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        registryMeasurementEvidence,
+	},
 
 	// The addXxx/subtractXxx date-arithmetic family is routed to
 	// inferTemporalShiftType before the generic rule lookup, exactly as

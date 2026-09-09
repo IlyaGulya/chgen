@@ -17,6 +17,23 @@ func TestFacadeVersionMatchesEngine(t *testing.T) {
 	}
 }
 
+func TestFacadePreservesAssertedResults(t *testing.T) {
+	query := engine.Query{
+		Name: "Read",
+		Results: []engine.Result{{
+			GoName:   "Value",
+			SQLName:  "value",
+			GoType:   "uint32",
+			CHType:   engine.CHType{Name: "UInt32"},
+			Asserted: true,
+		}},
+	}
+	got := toEngineQuery(fromEngineQuery(query))
+	if !got.Results[0].Asserted {
+		t.Fatal("facade dropped runtime result type enforcement")
+	}
+}
+
 func TestConfigConversionKeepsPublicOwnership(t *testing.T) {
 	source := &project.Config{
 		Path:    "chgen.yaml",

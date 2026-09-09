@@ -19,8 +19,8 @@ func TestPinnedFunctionEvidenceIsValid(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(measurements) != 232 {
-		t.Fatalf("function evidence has %d measured functions, want 232", len(measurements))
+	if len(measurements) != 234 {
+		t.Fatalf("function evidence has %d measured functions, want 234", len(measurements))
 	}
 	data, err := os.ReadFile(testFunctionEvidencePath)
 	if err != nil {

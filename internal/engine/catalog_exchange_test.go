@@ -7,7 +7,13 @@ import (
 )
 
 func TestCatalogExchangeDefinitions(t *testing.T) {
-	c := catalogsFromDDL(t, "CREATE TABLE a (id UInt64) ENGINE=MergeTree ORDER BY id; CREATE TABLE b (id String, version UInt64) ENGINE=ReplacingMergeTree(version) ORDER BY (id, version);")
+	c := catalogsFromDDL(t, `
+CREATE TABLE a (id UInt64)
+ENGINE = MergeTree ORDER BY id;
+
+CREATE TABLE b (id String, version UInt64)
+ENGINE = ReplacingMergeTree(version) ORDER BY (id, version);
+`)
 	a, b := c.Physical.Tables["a"], c.Physical.Tables["b"]
 	a.Name, b.Name = "b", "a"
 	if err := applySchemaSource(c, "swap.sql", "-- before\nexchange /* hint */ TABLES `a` AND \"b\" ON CLUSTER 'cluster';"); err != nil {
@@ -35,7 +41,10 @@ func TestCatalogExchangeDefinitions(t *testing.T) {
 }
 
 func TestCatalogExchangeRefusals(t *testing.T) {
-	for _, test := range []struct{ sql, want string }{
+	for _, test := range []struct {
+		sql  string
+		want string
+	}{
 		{"EXCHANGE TABLES absent AND a", "unknown table"},
 		{"EXCHANGE TABLES a AND absent", "unknown table"},
 		{"EXCHANGE TABLES a AND a", "distinct names"},
@@ -52,7 +61,12 @@ func TestCatalogExchangeRefusals(t *testing.T) {
 		{"EXCHANGE TABLES a AND b ON CLUSTER", "expected EXCHANGE TABLES"},
 	} {
 		t.Run(test.sql, func(t *testing.T) {
-			c := catalogsFromDDL(t, "CREATE TABLE a (id UInt64); CREATE TABLE b (id String);\n-- chgen:external\nCREATE TABLE ext (id String);")
+			c := catalogsFromDDL(t, `
+CREATE TABLE a (id UInt64);
+CREATE TABLE b (id String);
+-- chgen:external
+CREATE TABLE ext (id String);
+`)
 			a, b := c.Physical.Tables["a"], c.Physical.Tables["b"]
 			err := applySchemaSource(c, "swap.sql", "\n"+test.sql)
 			if err == nil || !strings.Contains(err.Error(), test.want) || !strings.Contains(err.Error(), "swap.sql:2:") {
@@ -66,7 +80,12 @@ func TestCatalogExchangeRefusals(t *testing.T) {
 }
 
 func TestSchemaExchangeNormalizationBoundary(t *testing.T) {
-	const sql = "-- EXCHANGE TABLES x AND y;\nCREATE TABLE a (id String DEFAULT 'EXCHANGE TABLES x AND y;');\nEXCHANGE\nTABLES a\nAND b;\nRENAME TABLE b TO c;"
+	const sql = `-- EXCHANGE TABLES x AND y;
+CREATE TABLE a (id String DEFAULT 'EXCHANGE TABLES x AND y;');
+EXCHANGE
+TABLES a
+AND b;
+RENAME TABLE b TO c;`
 	got, positions, err := normalizeSchemaExchanges(sql)
 	if err != nil {
 		t.Fatal(err)

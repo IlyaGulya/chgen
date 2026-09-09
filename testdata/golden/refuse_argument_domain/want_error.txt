@@ -1,1 +1,1 @@
-line 4: query SumLabels: result Total (total): function sum does not accept an argument of type String; ClickHouse needs an integer, a float, a Decimal or an Enum here; give the result an alias and pin its type with a `-- result: GoName SQLAlias GoType` annotation
+line 4: query SumLabels: result Total (total): function sum does not accept an argument of type String; ClickHouse needs an integer, a float, a Decimal or an Enum here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference
