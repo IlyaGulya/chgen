@@ -235,10 +235,10 @@ jobs:
       - name: Verify numeric date-key family against ClickHouse
         run: go test -tags fuzzoracle -run '^(TestNumericDateKeysAgainstClickHouse|TestNullableOracleRegressionsAgainstClickHouse)$' -count=1 -v ./internal/engine
 
-      - name: Verify generated result contracts with supported drivers
+      - name: Verify generated result contracts and empty aggregates with supported drivers
         env:
           CHGEN_CONTRACT_NATIVE: localhost:9000
-        run: go test -run '^TestResultContractGeneratedRuntime$' -count=1 -v ./internal/engine
+        run: go test -run '^(TestResultContractGeneratedRuntime|TestEmptyAggregateGeneratedRuntime)$' -count=1 -v ./internal/engine
 
       - name: Run the type oracle over every seed of the fixed seed set
         # One report per seed, all against the ONE server this job started,

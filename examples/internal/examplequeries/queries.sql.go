@@ -20,6 +20,8 @@ import (
 )
 
 // ErrNoRows is returned by a :one query when ClickHouse returns no row.
+// An aggregate over empty input can still return a row. Use -OrNull aggregates
+// for NULL values, or HAVING count() > 0 when absence should produce ErrNoRows.
 var ErrNoRows = errors.New("no rows")
 
 // Queries is the generated ClickHouse query set. The target database is a
@@ -292,7 +294,7 @@ func chgenGuardDateTime64Nano(value time.Time, label string) error {
 	return chgenGuardDateTime64Range(value, label, "DateTime64(9)", chgenDateTime64NanoMinUnix, chgenDateTime64NanoMaxUnix, chgenDateTime64NanoMaxNanosecond)
 }
 
-// chgenCheckScannedTime rejects a DateTime64 that the driver could not carry.
+// chgenCheckDateTime64ScanRange detects an out-of-range DateTime64 scan.
 // clickhouse-go converts every DateTime64 through int64 nanoseconds. A stored
 // instant after 2262-04-11T23:47:16.854775807Z can arrive as an unrelated
 // earlier time with no error. Measured: a stored 2299-12-31 arrives as
@@ -300,7 +302,10 @@ func chgenGuardDateTime64Nano(value time.Time, label string) error {
 //
 // The arriving value does not identify the original instant. This check can
 // only refuse the invalid scan. It cannot repair the value.
-func chgenCheckScannedTime(value time.Time, label string) error {
+// It does not detect empty aggregates or missing source rows. Unix epoch is
+// valid, including the default returned by min/max over empty non-null input.
+// Use minOrNull/maxOrNull in SQL when an empty aggregate must become nil.
+func chgenCheckDateTime64ScanRange(value time.Time, label string) error {
 	if value.Unix() < chgenReadableMinUnix {
 		return fmt.Errorf(
 			"%s: the scanned DateTime64 %s is before %s, which means the driver wrapped a stored value that is beyond %s; the value cannot be recovered",
@@ -394,7 +399,7 @@ func (q *Queries) ListOrders(ctx context.Context, arg ListOrdersParams) ([]ListO
 		if err := rows.Scan(&row.OrderID, &row.CustomerID, &row.Country, &row.Status, &row.ItemCount, &row.TotalAmount, &row.DiscountCode, &row.TagList, &row.Attributes, &row.PlacedAt); err != nil {
 			return nil, fmt.Errorf("ListOrders scan: %w", err)
 		}
-		if err := chgenCheckScannedTime(row.PlacedAt, "PlacedAt"); err != nil {
+		if err := chgenCheckDateTime64ScanRange(row.PlacedAt, "PlacedAt"); err != nil {
 			return nil, fmt.Errorf("ListOrders: %w", err)
 		}
 		result = append(result, row)
@@ -530,7 +535,7 @@ func (q *Queries) DrainOrderEvents(ctx context.Context, arg DrainOrderEventsPara
 		if err := rows.Scan(&row.OrderID, &row.EventType, &row.OccurredAt); err != nil {
 			return nil, fmt.Errorf("DrainOrderEvents scan: %w", err)
 		}
-		if err := chgenCheckScannedTime(row.OccurredAt, "OccurredAt"); err != nil {
+		if err := chgenCheckDateTime64ScanRange(row.OccurredAt, "OccurredAt"); err != nil {
 			return nil, fmt.Errorf("DrainOrderEvents: %w", err)
 		}
 		result = append(result, row)
@@ -579,7 +584,7 @@ func (q *Queries) ListCustomerActivity(ctx context.Context, arg ListCustomerActi
 		if err := rows.Scan(&row.CustomerID, &row.LastSeenAt, &row.P95Spend); err != nil {
 			return nil, fmt.Errorf("ListCustomerActivity scan: %w", err)
 		}
-		if err := chgenCheckScannedTime(row.LastSeenAt, "LastSeenAt"); err != nil {
+		if err := chgenCheckDateTime64ScanRange(row.LastSeenAt, "LastSeenAt"); err != nil {
 			return nil, fmt.Errorf("ListCustomerActivity: %w", err)
 		}
 		result = append(result, row)
@@ -1011,7 +1016,7 @@ func (q *Queries) ListOrderEventPayloads(ctx context.Context, arg ListOrderEvent
 		if err := rows.Scan(&row.OrderID, &row.Payload, &row.OccurredAt); err != nil {
 			return nil, fmt.Errorf("ListOrderEventPayloads scan: %w", err)
 		}
-		if err := chgenCheckScannedTime(row.OccurredAt, "OccurredAt"); err != nil {
+		if err := chgenCheckDateTime64ScanRange(row.OccurredAt, "OccurredAt"); err != nil {
 			return nil, fmt.Errorf("ListOrderEventPayloads: %w", err)
 		}
 		result = append(result, row)

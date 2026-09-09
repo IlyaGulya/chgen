@@ -343,7 +343,7 @@ func chgenScanCheckStatements(shape temporalShape, expr, label string, depth int
 			emit("}")
 		}
 	default:
-		call := fmt.Sprintf("chgenCheckScannedTime(%s, %s)", expr, strconv.Quote(label))
+		call := fmt.Sprintf("chgenCheckDateTime64ScanRange(%s, %s)", expr, strconv.Quote(label))
 		emit(fmt.Sprintf("if err := %s; err != nil {", call))
 		emit("\t" + errReturn("err"))
 		emit("}")

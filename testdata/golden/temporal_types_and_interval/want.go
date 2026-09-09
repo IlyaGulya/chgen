@@ -17,6 +17,8 @@ import (
 )
 
 // ErrNoRows is returned by a :one query when ClickHouse returns no row.
+// An aggregate over empty input can still return a row. Use -OrNull aggregates
+// for NULL values, or HAVING count() > 0 when absence should produce ErrNoRows.
 var ErrNoRows = errors.New("no rows")
 
 // Queries is the generated ClickHouse query set. The target database is a
@@ -159,7 +161,7 @@ func chgenGuardDateTime64Nano(value time.Time, label string) error {
 	return chgenGuardDateTime64Range(value, label, "DateTime64(9)", chgenDateTime64NanoMinUnix, chgenDateTime64NanoMaxUnix, chgenDateTime64NanoMaxNanosecond)
 }
 
-// chgenCheckScannedTime rejects a DateTime64 that the driver could not carry.
+// chgenCheckDateTime64ScanRange detects an out-of-range DateTime64 scan.
 // clickhouse-go converts every DateTime64 through int64 nanoseconds. A stored
 // instant after 2262-04-11T23:47:16.854775807Z can arrive as an unrelated
 // earlier time with no error. Measured: a stored 2299-12-31 arrives as
@@ -167,7 +169,10 @@ func chgenGuardDateTime64Nano(value time.Time, label string) error {
 //
 // The arriving value does not identify the original instant. This check can
 // only refuse the invalid scan. It cannot repair the value.
-func chgenCheckScannedTime(value time.Time, label string) error {
+// It does not detect empty aggregates or missing source rows. Unix epoch is
+// valid, including the default returned by min/max over empty non-null input.
+// Use minOrNull/maxOrNull in SQL when an empty aggregate must become nil.
+func chgenCheckDateTime64ScanRange(value time.Time, label string) error {
 	if value.Unix() < chgenReadableMinUnix {
 		return fmt.Errorf(
 			"%s: the scanned DateTime64 %s is before %s, which means the driver wrapped a stored value that is beyond %s; the value cannot be recovered",
@@ -233,14 +238,14 @@ func (q *Queries) ReadTemporalColumns(ctx context.Context, arg ReadTemporalColum
 	if err := rows.Scan(&result.Day, &result.WideDay, &result.Second, &result.SecondUtc, &result.Milli, &result.MicroUtc, &result.NullableMilli); err != nil {
 		return result, fmt.Errorf("ReadTemporalColumns scan: %w", err)
 	}
-	if err := chgenCheckScannedTime(result.Milli, "Milli"); err != nil {
+	if err := chgenCheckDateTime64ScanRange(result.Milli, "Milli"); err != nil {
 		return result, fmt.Errorf("ReadTemporalColumns: %w", err)
 	}
-	if err := chgenCheckScannedTime(result.MicroUtc, "MicroUtc"); err != nil {
+	if err := chgenCheckDateTime64ScanRange(result.MicroUtc, "MicroUtc"); err != nil {
 		return result, fmt.Errorf("ReadTemporalColumns: %w", err)
 	}
 	if result.NullableMilli != nil {
-		if err := chgenCheckScannedTime((*result.NullableMilli), "NullableMilli"); err != nil {
+		if err := chgenCheckDateTime64ScanRange((*result.NullableMilli), "NullableMilli"); err != nil {
 			return result, fmt.Errorf("ReadTemporalColumns: %w", err)
 		}
 	}
@@ -290,7 +295,7 @@ func (q *Queries) ReadIntervalResults(ctx context.Context, arg ReadIntervalResul
 	if err := rows.Scan(&result.DayPlusDay, &result.DayPlusHour, &result.SecondPlusMonth, &result.MilliMinusSecond, &result.StartOfHour); err != nil {
 		return result, fmt.Errorf("ReadIntervalResults scan: %w", err)
 	}
-	if err := chgenCheckScannedTime(result.MilliMinusSecond, "MilliMinusSecond"); err != nil {
+	if err := chgenCheckDateTime64ScanRange(result.MilliMinusSecond, "MilliMinusSecond"); err != nil {
 		return result, fmt.Errorf("ReadIntervalResults: %w", err)
 	}
 	return result, nil

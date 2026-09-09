@@ -39,7 +39,12 @@ func TestResultContractGeneratedRuntime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fixture, err := os.ReadFile(moduleRootPath("internal", "engine", "testdata", "resultcontracts", "runtime_test.go"))
+	runGeneratedRuntimeFixture(t, generated, "resultcontracts")
+}
+
+func runGeneratedRuntimeFixture(t *testing.T, generated []byte, fixtureName string) {
+	t.Helper()
+	fixture, err := os.ReadFile(moduleRootPath("internal", "engine", "testdata", fixtureName, "runtime_test.go"))
 	if err != nil {
 		t.Fatal(err)
 	}

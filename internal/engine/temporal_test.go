@@ -413,7 +413,7 @@ INSERT INTO keyed (rowid, v) VALUES (chgen.arg('Rowid'), chgen.arg('V'))`, schem
 	}
 }
 
-// Scanned DateTime64 results pass through chgenCheckScannedTime. The driver
+// Scanned DateTime64 results pass through chgenCheckDateTime64ScanRange. The driver
 // converts DateTime64 through int64 nanoseconds, so a stored 2299-12-31
 // arrives as 1715-06-12 with no error (measured, driver v2.47.0). The wrap is
 // not reversible from the arriving value alone, so the cell becomes an
@@ -422,11 +422,11 @@ func TestGenerateScanCheckForTemporalResults(t *testing.T) {
 	text := generateTemporalTestOutput(t, `-- name: ReadEvents :many
 SELECT rowid AS rowid, dt3 AS dt3, dts AS dts, dtm AS dtm, seen AS seen FROM events`)
 	for _, want := range []string{
-		`chgenCheckScannedTime(row.Dt3, "Dt3")`,
+		`chgenCheckDateTime64ScanRange(row.Dt3, "Dt3")`,
 		"for _, chgenV0 := range row.Dts",
 		"for chgenK0, chgenV0 := range row.Dtm",
 		"if row.Seen != nil",
-		`chgenCheckScannedTime((*row.Seen), "Seen")`,
+		`chgenCheckDateTime64ScanRange((*row.Seen), "Seen")`,
 		"2262-04-11T23:47:16.854775807Z",
 		"chgenReadableMaxNanosecond = int64(854775807)",
 	} {
@@ -439,7 +439,7 @@ SELECT rowid AS rowid, dt3 AS dt3, dts AS dts, dtm AS dtm, seen AS seen FROM eve
 	}
 	one := generateTemporalTestOutput(t, `-- name: ReadOne :one
 SELECT dt3 AS dt3 FROM events LIMIT 1`)
-	if !strings.Contains(one, `chgenCheckScannedTime(result.Dt3, "Dt3")`) {
+	if !strings.Contains(one, `chgenCheckDateTime64ScanRange(result.Dt3, "Dt3")`) {
 		t.Errorf(":one output missing the scan check:\n%s", one)
 	}
 }
@@ -450,7 +450,7 @@ SELECT dt3 AS dt3 FROM events LIMIT 1`)
 func TestGenerateNoScanCheckForNarrowTemporals(t *testing.T) {
 	text := generateTemporalTestOutput(t, `-- name: ReadNarrow :many
 SELECT d AS d, d32 AS d32, dt AS dt FROM events`)
-	if strings.Contains(text, "chgenCheckScannedTime") {
+	if strings.Contains(text, "chgenCheckDateTime64ScanRange") {
 		t.Errorf("Date, Date32 and DateTime need no read-side check:\n%s", text)
 	}
 }
@@ -498,7 +498,7 @@ INSERT INTO events (rowid, dt3) VALUES (chgen.arg('Rowid'), chgen.arg('Dt3'))`)
 func TestGenerateOmitsTemporalHelpersWhenUnused(t *testing.T) {
 	text := generateTemporalTestOutput(t, `-- name: ReadIDs :many
 SELECT rowid AS rowid FROM events`)
-	for _, unwanted := range []string{"chgenGuardDate", "chgenCheckScannedTime", "chgenDateMaxUnix"} {
+	for _, unwanted := range []string{"chgenGuardDate", "chgenCheckDateTime64ScanRange", "chgenDateMaxUnix"} {
 		if strings.Contains(text, unwanted) {
 			t.Errorf("generated output should not contain %q when no temporal is used:\n%s", unwanted, text)
 		}

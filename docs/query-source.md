@@ -32,6 +32,49 @@ The command after the name selects the generated method result:
 See [Type mappings and generated API](type-mappings.md) for the exact method,
 row, parameter, interface, and mock types.
 
+### Empty aggregate input is not an empty result
+
+A global aggregate (without `GROUP BY`) can return one row even when no source
+rows match. For a non-Nullable DateTime64 column, `min` and `max` return a
+non-Nullable timestamp at Unix epoch on empty input. A genuine epoch timestamp
+has exactly the same value and type. `:one` therefore cannot turn this into
+`ErrNoRows`, and changing only the Go field to a pointer would not produce nil.
+
+Use explicit nullable aggregates when absence must be represented in the row:
+
+```sql
+-- name: FoldPayloadTimeOrderedSourceSpan :one
+SELECT minOrNull(occurred_at) AS min_occurred_at,
+       maxOrNull(occurred_at) AS max_occurred_at
+FROM source_spans
+WHERE scope = chgen.arg('Scope');
+```
+
+For `occurred_at DateTime64(3, 'UTC')`, both results are
+`Nullable(DateTime64(3, 'UTC'))` and generate `*time.Time` fields. Empty input
+produces nil; a real epoch timestamp produces a non-nil pointer. No result-type
+annotation is needed. The same explicit `-OrNull` choice applies to supported
+`sum`, `avg`, `argMin`, and `argMax` forms. See the
+[ClickHouse -OrNull contract](https://clickhouse.com/docs/reference/functions/aggregate-functions/combinators#-ornull).
+
+Alternatively, keep `min`/`max` and add `HAVING count() > 0` to suppress the
+global aggregate row on empty input. Then `:one` returns `ErrNoRows`. A `:many`
+method follows the same SQL: a global aggregate yields one row; suppressing it
+with HAVING yields an empty slice.
+
+An ordinary `GROUP BY scope` emits no group for a missing scope, but GROUP BY
+alone does not guarantee that every aggregate consumed a value. For example,
+`minIfOrNull(value, condition)` can return NULL inside an existing group when
+the condition matches no rows. Nullability follows the SQL expression, not
+simply the presence or absence of GROUP BY.
+
+Generated `chgenCheckDateTime64ScanRange` checks for driver range overflow; it
+is **not an absence check**. It accepts Unix epoch and remains enabled for
+aggregates, which can also return timestamps outside the driver's range. This
+was named `chgenCheckScannedTime` before v0.1.9. chgen never rewrites `min` into
+`minOrNull` or treats epoch as NULL. Updating chgen alone does not change the
+empty-input behavior of an existing SQL query.
+
 ## Unchecked SETTINGS
 
 `optimize_read_in_order` and `max_threads` are built-in settings. For example,

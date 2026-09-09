@@ -17,6 +17,8 @@ import (
 )
 
 // ErrNoRows is returned by a :one query when ClickHouse returns no row.
+// An aggregate over empty input can still return a row. Use -OrNull aggregates
+// for NULL values, or HAVING count() > 0 when absence should produce ErrNoRows.
 var ErrNoRows = errors.New("no rows")
 
 // Queries is the generated ClickHouse query set. The target database is a
