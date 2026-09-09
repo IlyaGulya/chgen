@@ -1,150 +1,96 @@
 {
   "version": 3,
   "clickhouse_version": "25.8.29.51",
-  "note": "Refresh current-combined-v1 after the measured semantic roster expansion.",
+  "note": "v0.1.8 date-key profile expansion; nullable-count and geometry regressions fixed and measured on all four seeds; no new accepted signatures",
   "cells": {
-    "current-combined-v1/seed-1/n-4480": {
+    "current-combined-v1/seed-1/n-4484": {
       "population": {
         "schema_version": 1,
         "profile_id": "current-combined-v1",
-        "profile_hash": "a51c478847cadffed810dfb781afcbb2fa07b4b5792029d2e029b239c0759b01"
+        "profile_hash": "83fb76e1441f73697fb5604aaa0463e4e9393ff5a3cc21594b88c407cd304171"
       },
       "seed": 1,
-      "generated_expressions": 4480,
+      "generated_expressions": 4484,
       "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
       "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
-      "server_run": 1787664866,
-      "server_uptime_s": 2057,
-      "mismatch_signatures": [
-        "registry-fn-addDays: chgen=Date32 ch=Nullable(Date32)",
-        "registry-fn-addHours: chgen=DateTime('UTC') ch=Nullable(DateTime('UTC'))",
-        "registry-fn-addMinutes: chgen=DateTime ch=Nullable(DateTime)",
-        "registry-fn-addMonths: chgen=Date ch=Nullable(Date)",
-        "registry-fn-subtractHours: chgen=DateTime ch=Nullable(DateTime)",
-        "registry-fn-subtractMonths: chgen=DateTime ch=Nullable(DateTime)",
-        "registry-fn-subtractQuarters: chgen=DateTime64(6, 'UTC') ch=Nullable(DateTime64(6, 'UTC'))",
-        "registry-fn-subtractSeconds: chgen=DateTime64(3) ch=Nullable(DateTime64(3))",
-        "registry-fn-subtractWeeks: chgen=DateTime('UTC') ch=Nullable(DateTime('UTC'))",
-        "registry-fn-subtractYears: chgen=Date ch=Nullable(Date)"
-      ],
+      "server_run": 1788929453,
+      "server_uptime_s": 1866,
+      "mismatch_signatures": [],
       "blind43_signatures": [
-        "registry-fn-arraySlice: chgen=Array(String)",
         "registry-fn-greaterOrEquals: chgen=UInt8",
-        "registry-fn-lessOrEquals: chgen=UInt8",
-        "registry-fn-toDate32: chgen=Date32",
+        "registry-fn-hex: chgen=String",
+        "registry-fn-less: chgen=UInt8",
         "registry-fn-toDateTime64: chgen=DateTime64(2)",
-        "registry-fn-toFloat32: chgen=Float32",
-        "registry-fn-toInt16: chgen=Int16"
+        "registry-fn-toFloat32: chgen=Float32"
       ]
     },
-    "current-combined-v1/seed-42/n-4480": {
+    "current-combined-v1/seed-42/n-4484": {
       "population": {
         "schema_version": 1,
         "profile_id": "current-combined-v1",
-        "profile_hash": "a51c478847cadffed810dfb781afcbb2fa07b4b5792029d2e029b239c0759b01"
+        "profile_hash": "83fb76e1441f73697fb5604aaa0463e4e9393ff5a3cc21594b88c407cd304171"
       },
       "seed": 42,
-      "generated_expressions": 4480,
+      "generated_expressions": 4484,
       "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
       "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
-      "server_run": 1787664865,
-      "server_uptime_s": 2186,
+      "server_run": 1788929453,
+      "server_uptime_s": 1956,
       "mismatch_signatures": [
-        "registry-fn-addDays: chgen=DateTime64(6, 'UTC') ch=Nullable(DateTime64(6, 'UTC'))",
-        "registry-fn-addHours: chgen=DateTime ch=Nullable(DateTime)",
-        "registry-fn-addQuarters: chgen=Date ch=Nullable(Date)",
-        "registry-fn-addWeeks: chgen=DateTime64(3) ch=Nullable(DateTime64(3))",
-        "registry-fn-addWeeks: chgen=DateTime64(6, 'UTC') ch=Nullable(DateTime64(6, 'UTC'))",
-        "registry-fn-addYears: chgen=DateTime ch=Nullable(DateTime)",
-        "registry-fn-assumeNotNull: chgen=MultiPolygon ch=Array(Array(Array(Tuple(Float64, Float64))))",
-        "registry-fn-subtractHours: chgen=DateTime ch=Nullable(DateTime)",
-        "registry-fn-subtractMonths: chgen=Date32 ch=Nullable(Date32)",
-        "registry-fn-subtractWeeks: chgen=DateTime64(3) ch=Nullable(DateTime64(3))"
+        "registry-fn-assumeNotNull: chgen=MultiPolygon ch=Array(Array(Array(Tuple(Float64, Float64))))"
       ],
       "blind43_signatures": [
-        "registry-fn-arrayCumSumNonNegative: chgen=Array(Int64)",
-        "registry-fn-arrayResize: chgen=Array(IntervalWeek)",
-        "registry-fn-arrayResize: chgen=Array(Nullable(Int32))",
+        "registry-fn-arrayResize: chgen=Array(String)",
         "registry-fn-arraySlice: chgen=Array(Int64)",
-        "registry-fn-arraySum: chgen=Int64",
-        "registry-fn-greater: chgen=Nullable(UInt8)",
-        "registry-fn-greater: chgen=UInt8",
-        "registry-fn-lessOrEquals: chgen=UInt8",
-        "registry-fn-nullIf: chgen=Nullable(Ring)",
-        "registry-fn-toInt64: chgen=Int64",
-        "registry-fn-toUInt8: chgen=UInt8"
-      ]
-    },
-    "current-combined-v1/seed-7/n-4477": {
-      "population": {
-        "schema_version": 1,
-        "profile_id": "current-combined-v1",
-        "profile_hash": "a51c478847cadffed810dfb781afcbb2fa07b4b5792029d2e029b239c0759b01"
-      },
-      "seed": 7,
-      "generated_expressions": 4477,
-      "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
-      "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
-      "server_run": 1787664866,
-      "server_uptime_s": 2121,
-      "mismatch_signatures": [
-        "registry-fn-addHours: chgen=DateTime64(6, 'UTC') ch=Nullable(DateTime64(6, 'UTC'))",
-        "registry-fn-addMonths: chgen=DateTime('UTC') ch=Nullable(DateTime('UTC'))",
-        "registry-fn-addQuarters: chgen=Date ch=Nullable(Date)",
-        "registry-fn-addSeconds: chgen=DateTime ch=Nullable(DateTime)",
-        "registry-fn-addSeconds: chgen=DateTime64(3) ch=Nullable(DateTime64(3))",
-        "registry-fn-addYears: chgen=Date ch=Nullable(Date)",
-        "registry-fn-subtractDays: chgen=DateTime ch=Nullable(DateTime)",
-        "registry-fn-subtractHours: chgen=DateTime64(3) ch=Nullable(DateTime64(3))",
-        "registry-fn-subtractMonths: chgen=DateTime ch=Nullable(DateTime)",
-        "registry-fn-subtractQuarters: chgen=Date ch=Nullable(Date)",
-        "registry-fn-subtractWeeks: chgen=Date ch=Nullable(Date)",
-        "registry-fn-subtractWeeks: chgen=Date32 ch=Nullable(Date32)",
-        "registry-fn-subtractYears: chgen=DateTime ch=Nullable(DateTime)"
-      ],
-      "blind43_signatures": [
-        "registry-fn-arrayResize: chgen=Array(Int16)",
         "registry-fn-equals: chgen=UInt8",
-        "registry-fn-greater: chgen=Nullable(UInt8)",
         "registry-fn-greaterOrEquals: chgen=UInt8",
         "registry-fn-hex: chgen=String",
         "registry-fn-lessOrEquals: chgen=UInt8",
         "registry-fn-notEquals: chgen=UInt8",
         "registry-fn-toFloat64: chgen=Float64",
-        "registry-fn-toInt16: chgen=Int16",
-        "registry-fn-toInt32: chgen=Int32",
-        "registry-fn-toUInt64: chgen=UInt64"
+        "registry-fn-toInt32: chgen=Int32"
       ]
     },
-    "current-combined-v1/seed-99/n-4480": {
+    "current-combined-v1/seed-7/n-4481": {
       "population": {
         "schema_version": 1,
         "profile_id": "current-combined-v1",
-        "profile_hash": "a51c478847cadffed810dfb781afcbb2fa07b4b5792029d2e029b239c0759b01"
+        "profile_hash": "83fb76e1441f73697fb5604aaa0463e4e9393ff5a3cc21594b88c407cd304171"
       },
-      "seed": 99,
-      "generated_expressions": 4480,
+      "seed": 7,
+      "generated_expressions": 4481,
       "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
       "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
-      "server_run": 1787664865,
-      "server_uptime_s": 2233,
-      "mismatch_signatures": [
-        "registry-fn-addHours: chgen=DateTime ch=Nullable(DateTime)",
-        "registry-fn-addQuarters: chgen=DateTime ch=Nullable(DateTime)",
-        "registry-fn-addQuarters: chgen=DateTime64(3) ch=Nullable(DateTime64(3))",
-        "registry-fn-addSeconds: chgen=DateTime64(3) ch=Nullable(DateTime64(3))",
-        "registry-fn-argMaxIf: chgen=Nullable(Array(Array(Tuple(Float64, Float64)))) ch=Array(Array(Tuple(Float64, Float64)))",
-        "registry-fn-greatest: chgen=Ring ch=Array(Tuple(Float64, Float64))",
-        "registry-fn-subtractDays: chgen=DateTime64(3) ch=Nullable(DateTime64(3))",
-        "registry-fn-subtractSeconds: chgen=DateTime ch=Nullable(DateTime)",
-        "registry-fn-subtractYears: chgen=Date32 ch=Nullable(Date32)"
-      ],
+      "server_run": 1788929453,
+      "server_uptime_s": 1915,
+      "mismatch_signatures": [],
       "blind43_signatures": [
+        "registry-fn-equals: chgen=UInt8",
         "registry-fn-greater: chgen=UInt8",
         "registry-fn-hex: chgen=String",
-        "registry-fn-less: chgen=UInt8",
+        "registry-fn-toFloat32: chgen=Float32",
+        "registry-fn-toInt16: chgen=Int16"
+      ]
+    },
+    "current-combined-v1/seed-99/n-4484": {
+      "population": {
+        "schema_version": 1,
+        "profile_id": "current-combined-v1",
+        "profile_hash": "83fb76e1441f73697fb5604aaa0463e4e9393ff5a3cc21594b88c407cd304171"
+      },
+      "seed": 99,
+      "generated_expressions": 4484,
+      "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
+      "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
+      "server_run": 1788929452,
+      "server_uptime_s": 2005,
+      "mismatch_signatures": [],
+      "blind43_signatures": [
+        "registry-fn-equals: chgen=UInt8",
+        "registry-fn-hex: chgen=String",
         "registry-fn-lessOrEquals: chgen=UInt8",
-        "registry-fn-toFloat64: chgen=Float64",
+        "registry-fn-toDateTime: chgen=DateTime",
+        "registry-fn-toFloat32: chgen=Float32",
         "registry-fn-toInt8: chgen=Int8",
         "registry-fn-toUInt16: chgen=UInt16"
       ]
@@ -155,7 +101,7 @@
       "population": {
         "schema_version": 1,
         "profile_id": "current-combined-v1",
-        "profile_hash": "a51c478847cadffed810dfb781afcbb2fa07b4b5792029d2e029b239c0759b01"
+        "profile_hash": "83fb76e1441f73697fb5604aaa0463e4e9393ff5a3cc21594b88c407cd304171"
       },
       "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
       "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
@@ -165,7 +111,7 @@
         42,
         99
       ],
-      "server_run": 1787664865,
+      "server_run": 1788929452,
       "mismatch_signatures": [
         "registry-fn-addDays: chgen=Date ch=Nullable(Date)",
         "registry-fn-addDays: chgen=Date32 ch=Nullable(Date32)",

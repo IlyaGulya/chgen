@@ -2,9 +2,11 @@ package engine
 
 import (
 	"fmt"
+	"go/version"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -41,8 +43,14 @@ func TestResultContractGeneratedRuntime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, version := range []string{"v2.42.0", "v2.47.0"} {
-		t.Run(version, func(t *testing.T) {
+	drivers := []string{"v2.42.0"}
+	// v2.47.0 requires Go 1.25. The minimum-Go job must keep toolchain
+	// downloads disabled and exercise its supported v2.42.0 pairing.
+	if version.Compare(runtime.Version(), "go1.25") >= 0 {
+		drivers = append(drivers, "v2.47.0")
+	}
+	for _, driverVersion := range drivers {
+		t.Run(driverVersion, func(t *testing.T) {
 			dir := newGeneratedCompileModule(t)
 			for name, data := range map[string][]byte{"queries.go": generated, "runtime_test.go": fixture} {
 				if err := os.WriteFile(filepath.Join(dir, name), data, 0o644); err != nil {
@@ -50,7 +58,7 @@ func TestResultContractGeneratedRuntime(t *testing.T) {
 				}
 			}
 			for _, args := range [][]string{
-				{"mod", "edit", "-require=github.com/ClickHouse/clickhouse-go/v2@" + version},
+				{"mod", "edit", "-require=github.com/ClickHouse/clickhouse-go/v2@" + driverVersion},
 				{"test", "-mod=mod", "-count=1", "-v", "."},
 			} {
 				command := exec.Command("go", args...)

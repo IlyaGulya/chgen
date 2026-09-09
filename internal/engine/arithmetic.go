@@ -927,6 +927,9 @@ func canBeInsideNullable(base CHType) bool {
 	switch strings.ToLower(base.Name) {
 	case "array", "map", "tuple", "aggregatefunction", "dynamic", "variant":
 		return false
+	case "point", "ring", "linestring", "polygon", "multilinestring", "multipolygon":
+		// Geometry aliases are tuples or arrays, neither legal in Nullable.
+		return false
 	default:
 		return true
 	}

@@ -909,9 +909,8 @@ var temporalShiftFunctions = map[string]bool{
 }
 
 // inferTemporalShiftType types one addXxx or subtractXxx call. The
-// argument expressions are not needed beyond the first (the shift COUNT
-// is a plain number and never changes the result shape), so this reads
-// only args[0].
+// first argument determines the temporal shape; a nullable shift count
+// also makes the result nullable.
 //
 // Measured domain: Date, Date32, DateTime and DateTime64 only
 // (addSubtractTemporalArgumentDomain in argument_domain.go). A String
@@ -946,6 +945,13 @@ func inferTemporalShiftType(name, displayName string, args []clickhouse.Expr, sc
 	}
 	lowCardinality := branchArgumentLowCardinality(valueType)
 	nullable := branchArgumentNullable(valueType)
+	if len(args) > 1 {
+		countType, err := inferExprType(args[1], scope)
+		if err != nil && !errors.Is(err, errPlaceholderResultType) {
+			return CHType{}, fmt.Errorf("function %s shift count: %w", displayName, err)
+		}
+		nullable = nullable || branchArgumentNullable(countType)
+	}
 	argumentZone := dateTimeTimezoneParams(base)
 
 	var result CHType

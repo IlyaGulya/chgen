@@ -233,7 +233,7 @@ jobs:
         run: go test -tags fuzzoracle -run '^TestCatalogExchangeAgainstClickHouse$' -count=1 -v ./internal/engine
 
       - name: Verify numeric date-key family against ClickHouse
-        run: go test -tags fuzzoracle -run '^TestNumericDateKeysAgainstClickHouse$' -count=1 -v ./internal/engine
+        run: go test -tags fuzzoracle -run '^(TestNumericDateKeysAgainstClickHouse|TestNullableOracleRegressionsAgainstClickHouse)$' -count=1 -v ./internal/engine
 
       - name: Verify generated result contracts with supported drivers
         env:
