@@ -28,6 +28,13 @@ func Generate(packageName string, queries []Query) ([]byte, error) {
 		if strings.Contains(query.SQL, "`") {
 			return nil, fmt.Errorf("query %s contains a backtick and cannot be embedded as a raw Go string", query.Name)
 		}
+		if query.Composition != nil {
+			for _, variant := range query.Composition.Variants {
+				if strings.Contains(variant.SQL, "`") {
+					return nil, fmt.Errorf("query %s variant contains a backtick and cannot be embedded as a raw Go string", query.Name)
+				}
+			}
+		}
 		scalarNames := make(map[string]struct{}, len(query.Params))
 		for _, param := range query.Params {
 			scalarNames[param.GoName] = struct{}{}
@@ -44,6 +51,9 @@ func Generate(packageName string, queries []Query) ([]byte, error) {
 	}
 	externalTables, err := collectExternalTableTypes(queries)
 	if err != nil {
+		return nil, err
+	}
+	if err := validateCompositionSymbols(queries, externalTables); err != nil {
 		return nil, err
 	}
 
@@ -290,7 +300,9 @@ var generatedTemplate = template.Must(template.New("chgen").Funcs(template.FuncM
 	"quoteSQL": func(sql string) string {
 		return strings.TrimSpace(sql)
 	},
-	"quoteGo": strconv.Quote,
+	"quoteGo":           strconv.Quote,
+	"compositionParams": renderCompositionParams,
+	"compositionSetup":  renderCompositionSetup,
 	"batchInsert": func(query Query) bool {
 		return query.batchInsert
 	},
@@ -657,6 +669,9 @@ type {{.Name}}Row struct {
 }
 {{- end}}
 
+{{- if .Composition}}
+{{compositionParams .}}
+{{- else}}
 // {{.Name}}Params contains the positional arguments for {{.Name}}.
 type {{.Name}}Params struct {
 {{- range .Params}}
@@ -668,6 +683,7 @@ type {{.Name}}Params struct {
 }
 
 const {{$sqlName}}SQL = {{printf "%c" 96}}{{quoteSQL .SQL}}{{printf "%c" 96}}
+{{- end}}
 {{- if batchInsert .}}
 
 // {{$sqlName}}BatchSQL is the prefix that PrepareBatch takes. The native batch
@@ -721,6 +737,9 @@ func (q *Queries) {{.Name}}(ctx context.Context, arg {{.Name}}Params) ({{.Name}}
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	{{- if .Composition}}
+{{compositionSetup . "result"}}
+	{{- else}}
 	{{- if .ExternalParams}}
 	externalTables := make([]*ext.Table, 0, {{len .ExternalParams}})
 	{{- range $index, $external := .ExternalParams}}
@@ -735,7 +754,8 @@ func (q *Queries) {{.Name}}(ctx context.Context, arg {{.Name}}Params) ({{.Name}}
 {{- with paramGuards .}}
 {{.}}
 {{- end}}
-	rows, err := q.conn.Query(ctx, {{$sqlName}}SQL{{range paramArgs .}}, {{.}}{{end}})
+	{{- end}}
+	rows, err := q.conn.Query(ctx, {{if .Composition}}querySQL, queryArgs...{{else}}{{$sqlName}}SQL{{range paramArgs .}}, {{.}}{{end}}{{end}})
 	if err != nil {
 		return result, fmt.Errorf("{{.Name}} query: %w", err)
 	}
@@ -763,6 +783,9 @@ func (q *Queries) {{.Name}}(ctx context.Context, arg {{.Name}}Params) ([]{{.Name
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	{{- if .Composition}}
+{{compositionSetup . "nil"}}
+	{{- else}}
 	{{- if .ExternalParams}}
 	externalTables := make([]*ext.Table, 0, {{len .ExternalParams}})
 	{{- range $index, $external := .ExternalParams}}
@@ -777,7 +800,8 @@ func (q *Queries) {{.Name}}(ctx context.Context, arg {{.Name}}Params) ([]{{.Name
 {{- with paramGuards .}}
 {{.}}
 {{- end}}
-	rows, err := q.conn.Query(ctx, {{$sqlName}}SQL{{range paramArgs .}}, {{.}}{{end}})
+	{{- end}}
+	rows, err := q.conn.Query(ctx, {{if .Composition}}querySQL, queryArgs...{{else}}{{$sqlName}}SQL{{range paramArgs .}}, {{.}}{{end}}{{end}})
 	if err != nil {
 		return nil, fmt.Errorf("{{.Name}} query: %w", err)
 	}
@@ -785,7 +809,7 @@ func (q *Queries) {{.Name}}(ctx context.Context, arg {{.Name}}Params) ([]{{.Name
 	{{- with contractCheck . "nil"}}
 {{.}}
 	{{- end}}
-	result := make([]{{.Name}}Row, 0{{if .ResultCapacity}}, len(arg.{{.ResultCapacity}}){{end}})
+	result := make([]{{.Name}}Row, 0{{if .ResultCapacity}}, {{if .Composition}}queryCapacity{{else}}len(arg.{{.ResultCapacity}}){{end}}{{end}})
 	var row {{.Name}}Row
 	for rows.Next() {
 		row = {{.Name}}Row{}

@@ -51,7 +51,7 @@ func (e *unregisteredFunctionError) Error() string {
 func (e *unregisteredFunctionError) Diagnostic() diagnostic.Detail {
 	return diagnostic.Detail{
 		Code: "function-rule-missing", Status: diagnostic.Unknown, Stage: "inference",
-		Hint: "chgen has no type rule for this function. Use chgen describe with a concrete SELECT on a test server to discover types. A direct outer SELECT call can use -- result-chtype: Alias ClickHouseType after verification; nested scopes and known operators with unknown operands cannot use that escape hatch. -- result: only changes Go mapping.",
+		Hint: "chgen has no type rule for this function. Use chgen describe with a concrete SELECT on a test server to discover types. After verification, put chgen.assumeType(call, 'ClickHouseType') on each unknown call to supply its type within a CTE or a larger expression. A direct outer SELECT call can also use -- result-chtype: Alias ClickHouseType. Contracts do not override known errors; -- result: only changes Go mapping.",
 	}
 }
 

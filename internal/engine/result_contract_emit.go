@@ -21,7 +21,8 @@ func renderResultContractCheck(query Query, empty string) string {
 		return ""
 	}
 	var source strings.Builder
-	source.WriteString("\t// Client-asserted result types are checked before scanning, including empty results.\n")
+	source.WriteString("\t// Check output metadata before scanning, including empty results.\n")
+	source.WriteString("\t// This cannot prove intermediate type assertions or predicate semantics.\n")
 	fmt.Fprintf(&source, "\tif err := chgenCheckResultContract(rows, []string{")
 	for _, result := range query.Results {
 		fmt.Fprintf(&source, "%q,", result.SQLName)

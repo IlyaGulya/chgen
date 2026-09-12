@@ -514,6 +514,7 @@ func validateLayoutSnapshot(value layoutSnapshot) error {
 	wantTests := []string{
 		"api_contract_test.go",
 		"check_test.go",
+		"composition_test.go",
 		"cursor_query_test.go",
 		"oracle_regression_test.go",
 		"facade_test.go",

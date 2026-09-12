@@ -147,6 +147,14 @@ func validGoValueType(goType string) bool {
 }
 
 func validateQuery(query Query) error {
+	if query.Composition != nil {
+		for _, variant := range query.Composition.Variants {
+			if err := validateQueryFields(variant); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 	return validateQueryFields(query)
 }
 

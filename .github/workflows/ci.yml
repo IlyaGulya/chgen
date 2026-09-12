@@ -238,7 +238,7 @@ jobs:
       - name: Verify generated contracts, cursor queries and oracle regressions
         env:
           CHGEN_CONTRACT_NATIVE: localhost:9000
-        run: go test -run '^(TestResultContractGeneratedRuntime|TestEmptyAggregateGeneratedRuntime|TestCursorQueriesGeneratedRuntime|TestOracleRegressionBoundaryAgainstClickHouse|TestDescribeLiveContractRoundTrip)$' -count=1 -v . ./internal/engine
+        run: go test -run '^(TestResultContractGeneratedRuntime|TestEmptyAggregateGeneratedRuntime|TestCursorQueriesGeneratedRuntime|TestOracleRegressionBoundaryAgainstClickHouse|TestDescribeLiveContractRoundTrip|TestScopedContractsGeneratedRuntime|TestComposedPaginationGeneratedRuntime)$' -count=1 -v . ./internal/engine
 
       - name: Run the type oracle over every seed of the fixed seed set
         # One report per seed, all against the ONE server this job started,

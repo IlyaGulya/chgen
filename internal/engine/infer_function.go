@@ -15,6 +15,13 @@ func inferFunctionType(function *clickhouse.FunctionExpr, scope queryScope) (CHT
 
 func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, window bool) (CHType, error) {
 	name := strings.ToLower(function.Name.Name)
+	if name == expressionContractFunction {
+		result, asserted, err := inferExpressionContract(function, scope)
+		if err == nil && scope.expressionContracts != nil {
+			scope.expressionContracts[function] = asserted
+		}
+		return result, err
+	}
 	args := functionArgs(function)
 	if higherOrder, known := higherOrderArrayFunctions[name]; known && function.Name.Name != higherOrder.spelling {
 		return CHType{}, fmt.Errorf("function %s does not match the measured case-sensitive spelling %s; %s", function.Name.Name, higherOrder.spelling, pinTypeHint)
@@ -1982,7 +1989,11 @@ func inferHigherOrderArrayType(name, displayName string, args []clickhouse.Expr,
 	// ClickHouse lambda parameter names are case-sensitive. Keep exact
 	// lookup in this child scope. A miss continues to the parent scope,
 	// where captured scalar aliases keep their existing lookup rules.
-	lambdaScope := queryScope{scalars: make(map[string]CHType, len(params)), exactScalarNames: true}
+	lambdaScope := queryScope{
+		scalars:             make(map[string]CHType, len(params)),
+		exactScalarNames:    true,
+		expressionContracts: scope.expressionContracts,
+	}
 	if signature.allowOuterCapture {
 		lambdaScope.parent = &scope
 	}

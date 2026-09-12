@@ -52,6 +52,11 @@ SELECT id, arrayElement(a,n) AS value FROM nullable_index_events ORDER BY id;
 	if err != nil {
 		t.Fatal(err)
 	}
+	runGeneratedRuntime(t, "cursorqueries", generated, fixture)
+}
+
+func runGeneratedRuntime(t *testing.T, packageName string, generated, fixture []byte) {
+	t.Helper()
 	drivers := []string{"v2.42.0"}
 	if version.Compare(runtime.Version(), "go1.25") >= 0 {
 		drivers = append(drivers, "v2.47.0")
@@ -59,7 +64,7 @@ SELECT id, arrayElement(a,n) AS value FROM nullable_index_events ORDER BY id;
 	for _, driver := range drivers {
 		t.Run(driver, func(t *testing.T) {
 			dir := t.TempDir()
-			mod := "module example.com/cursorqueries\n\ngo 1.24\n\nrequire github.com/ClickHouse/clickhouse-go/v2 " + driver + "\n"
+			mod := "module example.com/" + packageName + "\n\ngo 1.24\n\nrequire github.com/ClickHouse/clickhouse-go/v2 " + driver + "\n"
 			for name, data := range map[string][]byte{"go.mod": []byte(mod), "queries.go": generated, "runtime_test.go": fixture} {
 				if err := os.WriteFile(filepath.Join(dir, name), data, 0o600); err != nil {
 					t.Fatal(err)

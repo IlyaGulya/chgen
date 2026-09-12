@@ -73,11 +73,13 @@ type Query struct {
 	Results        []Result
 	ResultCapacity string
 	SQL            string
+	Composition    *QueryComposition
 	// NamedParamNames contains one source chgen.arg name for each placeholder.
-	NamedParamNames   []string
-	resultContracts   map[string]resultTypeContract
-	unverifiedResults []string
-	uncheckedSettings []string
+	NamedParamNames       []string
+	resultContracts       map[string]resultTypeContract
+	unverifiedResults     []string
+	unverifiedExpressions []string
+	uncheckedSettings     []string
 
 	// batchInsert marks a fixed INSERT ... VALUES whose tuple is bare
 	// placeholders only. Such a statement goes through the native
@@ -105,6 +107,7 @@ type queryBuilder struct {
 	sqlLines          []string
 	bodyStarted       bool
 	uncheckedSettings []string
+	tableChoices      []TableChoice
 	// sqlLine is the 1-based line number of the first SQL body line. The raw
 	// placeholder check uses it to point at the offending source line.
 	sqlLine int

@@ -1,6 +1,8 @@
 package chgen
 
 import (
+	"maps"
+
 	"github.com/IlyaGulya/chgen/internal/diagnostic"
 	"github.com/IlyaGulya/chgen/internal/engine"
 	"github.com/IlyaGulya/chgen/internal/project"
@@ -139,6 +141,19 @@ type Query struct {
 	batchInsert      bool
 	batchInsertTable string
 	assertedResults  map[string]bool
+	composition      *queryComposition
+}
+
+type queryComposition struct {
+	options  []string
+	tables   []queryTableChoice
+	owners   map[string]string
+	variants []Query
+}
+
+type queryTableChoice struct {
+	name   string
+	tables []string
 }
 
 // Config is the parsed chgen.yaml file. All paths are resolved against the
@@ -450,6 +465,16 @@ func fromEngineQuery(value engine.Query) Query {
 		NamedParamNames: cloneStrings(value.NamedParamNames),
 	}
 	result.batchInsert, result.batchInsertTable = engine.QueryBatchState(value)
+	if value.Composition != nil {
+		result.composition = &queryComposition{
+			options:  cloneStrings(value.Composition.Options),
+			owners:   maps.Clone(value.Composition.Owners),
+			variants: fromEngineQueries(value.Composition.Variants),
+		}
+		for _, table := range value.Composition.Tables {
+			result.composition.tables = append(result.composition.tables, queryTableChoice{name: table.Name, tables: cloneStrings(table.Tables)})
+		}
+	}
 	if value.Params != nil {
 		result.Params = make([]Param, len(value.Params))
 		for index, item := range value.Params {
@@ -503,6 +528,16 @@ func toEngineQuery(value Query) engine.Query {
 		result.Params = make([]engine.Param, len(value.Params))
 		for index, item := range value.Params {
 			result.Params[index] = engine.Param{GoName: item.GoName, GoType: item.GoType, CHType: toEngineCHType(item.CHType)}
+		}
+	}
+	if value.composition != nil {
+		result.Composition = &engine.QueryComposition{
+			Options:  cloneStrings(value.composition.options),
+			Owners:   maps.Clone(value.composition.owners),
+			Variants: toEngineQueries(value.composition.variants),
+		}
+		for _, table := range value.composition.tables {
+			result.Composition.Tables = append(result.Composition.Tables, engine.TableChoice{Name: table.name, Tables: cloneStrings(table.tables)})
 		}
 	}
 	if value.Results != nil {

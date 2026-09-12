@@ -15,6 +15,7 @@ func parseQueriesInFile(file, input string, schema *Schema, externalSchema *Sche
 	input = strings.ReplaceAll(input, "\r\n", "\n")
 	lines := strings.Split(input, "\n")
 	contractLines := resultContractCommentLines(input)
+	compositionLines := compositionCommentLines(input)
 	var builders []*queryBuilder
 	var current *queryBuilder
 
@@ -29,6 +30,9 @@ func parseQueriesInFile(file, input string, schema *Schema, externalSchema *Sche
 
 	for lineNumber, line := range lines {
 		trimmed := strings.TrimSpace(line)
+		if compositionLines[lineNumber+1] && isCompositionControlLine(trimmed) && (current == nil || !current.bodyStarted) {
+			return nil, fmt.Errorf("%s:%d: composition blocks must appear inside the SQL body", file, lineNumber+1)
+		}
 		if contractLines[lineNumber+1] {
 			if current == nil || current.bodyStarted {
 				return nil, fmt.Errorf("%s:%d: %s must appear in a query header", file, lineNumber+1, resultCHTypeDirective)
@@ -61,6 +65,9 @@ func parseQueriesInFile(file, input string, schema *Schema, externalSchema *Sche
 			continue
 		}
 		if current == nil {
+			if compositionLines[lineNumber+1] && strings.HasPrefix(trimmed, "-- chgen:table") {
+				return nil, fmt.Errorf("%s:%d: chgen:table must follow a -- name annotation", file, lineNumber+1)
+			}
 			if strings.HasPrefix(trimmed, uncheckedSettingDirective) {
 				return nil, fmt.Errorf("%s:%d: %s must follow a -- name annotation", file, lineNumber+1, uncheckedSettingDirective)
 			}
@@ -68,6 +75,17 @@ func parseQueriesInFile(file, input string, schema *Schema, externalSchema *Sche
 				continue
 			}
 			return nil, fmt.Errorf("line %d: SQL appears before a -- name annotation", lineNumber+1)
+		}
+		if compositionLines[lineNumber+1] && strings.HasPrefix(trimmed, "-- chgen:table") {
+			if current.bodyStarted {
+				return nil, fmt.Errorf("%s:%d: chgen:table must appear in a query header", file, lineNumber+1)
+			}
+			choice, err := parseTableChoice(trimmed)
+			if err != nil {
+				return nil, fmt.Errorf("%s:%d: %w", file, lineNumber+1, err)
+			}
+			current.tableChoices = append(current.tableChoices, choice)
+			continue
 		}
 
 		if !current.bodyStarted && strings.HasPrefix(trimmed, uncheckedSettingDirective) {
@@ -122,42 +140,62 @@ func parseQueriesInFile(file, input string, schema *Schema, externalSchema *Sche
 
 	queries := make([]Query, 0, len(builders))
 	for _, builder := range builders {
-		wrap := func(err error) error {
-			err = diagnostic.With(err, diagnostic.Detail{File: builder.query.File, Line: builder.query.Line, Query: builder.query.Name})
-			var externalErr *externalReferenceError
-			if errors.As(err, &externalErr) {
-				return fmt.Errorf("%s:%d: %w", builder.query.File, builder.query.Line, err)
-			}
-			return fmt.Errorf("%s:%d: query %s: %w", builder.query.File, builder.query.Line, builder.query.Name, err)
-		}
-		if err := rejectRawPlaceholders(builder.query, builder.sqlLine); err != nil {
+		query, err := resolveComposedQuery(builder, schema, externalSchema)
+		if err != nil {
 			return nil, err
 		}
-		normalizedSQL, externalParams, err := normalizeExternalTables(builder.query.SQL, externalSchema, schema)
-		if err != nil {
-			return nil, wrap(err)
-		}
-		builder.query.SQL = normalizedSQL
-		builder.query.ExternalParams = externalParams
-		normalizedSQL, namedParamNames, err := normalizeNamedArgs(builder.query.SQL)
-		if err != nil {
-			return nil, wrap(err)
-		}
-		builder.query.SQL = normalizedSQL
-		builder.query.NamedParamNames = namedParamNames
-		if err := validateQueryFields(builder.query); err != nil {
-			return nil, wrap(err)
-		}
-		querySchema, err := schemaForQuery(schema, externalParams, externalSchema)
-		if err != nil {
-			return nil, wrap(err)
-		}
-		if err := resolveQueryWithUncheckedSettings(&builder.query, querySchema, builder.uncheckedSettings); err != nil {
-			return nil, wrap(err)
-		}
-		queries = append(queries, builder.query)
+		queries = append(queries, query)
 	}
 	return queries, nil
+}
+
+func resolveBuiltQuery(builder *queryBuilder, schema, externalSchema *Schema) (Query, error) {
+	wrap := func(err error) error {
+		err = diagnostic.With(err, diagnostic.Detail{File: builder.query.File, Line: builder.query.Line, Query: builder.query.Name})
+		var externalErr *externalReferenceError
+		if errors.As(err, &externalErr) {
+			return fmt.Errorf("%s:%d: %w", builder.query.File, builder.query.Line, err)
+		}
+		return fmt.Errorf("%s:%d: query %s: %w", builder.query.File, builder.query.Line, builder.query.Name, err)
+	}
+	if err := rejectRawPlaceholders(builder.query, builder.sqlLine); err != nil {
+		return Query{}, err
+	}
+	normalizedSQL, externalParams, err := normalizeExternalTables(builder.query.SQL, externalSchema, schema)
+	if err != nil {
+		return Query{}, wrap(err)
+	}
+	builder.query.SQL = normalizedSQL
+	builder.query.ExternalParams = externalParams
+	normalizedSQL, namedParamNames, err := normalizeNamedArgs(builder.query.SQL)
+	if err != nil {
+		return Query{}, wrap(err)
+	}
+	builder.query.SQL = normalizedSQL
+	builder.query.NamedParamNames = namedParamNames
+	runtimeSQL, err := rewriteExpressionContracts(builder.query.SQL, true)
+	if err != nil {
+		return Query{}, wrap(err)
+	}
+	builder.query.SQL, err = rewriteExpressionContracts(builder.query.SQL, false)
+	if err != nil {
+		return Query{}, wrap(err)
+	}
+	if builder.query.Command == CommandExec && builder.query.SQL != runtimeSQL {
+		return Query{}, wrap(fmt.Errorf("chgen.assumeType is supported only in :one and :many queries"))
+	}
+	if err := validateQueryFields(builder.query); err != nil {
+		return Query{}, wrap(err)
+	}
+	querySchema, err := schemaForQuery(schema, externalParams, externalSchema)
+	if err != nil {
+		return Query{}, wrap(err)
+	}
+	if err := resolveQueryWithUncheckedSettings(&builder.query, querySchema, builder.uncheckedSettings); err != nil {
+		return Query{}, wrap(err)
+	}
+	builder.query.SQL = runtimeSQL
+	return builder.query, nil
 }
 
 // rejectRawPlaceholders fails a schema-aware query whose source contains a
@@ -249,39 +287,43 @@ func normalizeNamedArgs(sql string) (string, []string, error) {
 const namedArgPrefix = "chgen.arg"
 
 func parseNamedArgAt(sql string, start int) (string, int, bool, error) {
-	if len(sql)-start < len(namedArgPrefix) || !strings.EqualFold(sql[start:start+len(namedArgPrefix)], namedArgPrefix) {
+	return parseNamedMacroAt(sql, start, namedArgPrefix)
+}
+
+func parseNamedMacroAt(sql string, start int, prefix string) (string, int, bool, error) {
+	if len(sql)-start < len(prefix) || !strings.EqualFold(sql[start:start+len(prefix)], prefix) {
 		return "", start, false, nil
 	}
 	if start > 0 && (isSQLIdentifierByte(sql[start-1]) || sql[start-1] == '.') {
 		return "", start, false, nil
 	}
 
-	index := start + len(namedArgPrefix)
+	index := start + len(prefix)
 	index = skipSQLWhitespace(sql, index)
 	if index >= len(sql) || sql[index] != '(' {
-		return "", start, true, fmt.Errorf("invalid chgen.arg at byte %d: expected opening parenthesis", start)
+		return "", start, true, fmt.Errorf("invalid %s at byte %d: expected opening parenthesis", prefix, start)
 	}
 	index = skipSQLWhitespace(sql, index+1)
 	if index >= len(sql) || sql[index] != '\'' {
-		return "", start, true, fmt.Errorf("invalid chgen.arg at byte %d: expected a single-quoted name", start)
+		return "", start, true, fmt.Errorf("invalid %s at byte %d: expected a single-quoted name", prefix, start)
 	}
 	nameStart := index + 1
 	index++
 	closing := strings.IndexByte(sql[index:], '\'')
 	if closing < 0 {
-		return "", start, true, fmt.Errorf("invalid chgen.arg at byte %d: expected closing quote", start)
+		return "", start, true, fmt.Errorf("invalid %s at byte %d: expected closing quote", prefix, start)
 	}
 	index += closing
 	name := sql[nameStart:index]
 	if !isGoIdentifier(name) {
-		return "", start, true, fmt.Errorf("invalid chgen.arg name %q", name)
+		return "", start, true, fmt.Errorf("invalid %s name %q", prefix, name)
 	}
 	if index >= len(sql) || sql[index] != '\'' {
-		return "", start, true, fmt.Errorf("invalid chgen.arg(%q): expected closing quote", name)
+		return "", start, true, fmt.Errorf("invalid %s(%q): expected closing quote", prefix, name)
 	}
 	index = skipSQLWhitespace(sql, index+1)
 	if index >= len(sql) || sql[index] != ')' {
-		return "", start, true, fmt.Errorf("invalid chgen.arg(%q): expected closing parenthesis", name)
+		return "", start, true, fmt.Errorf("invalid %s(%q): expected closing parenthesis", prefix, name)
 	}
 	return name, index + 1, true, nil
 }

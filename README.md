@@ -166,6 +166,17 @@ it does not apply migrations, rewrite queries, or prove execution semantics.
 See [Checking and server-assisted discovery](docs/checking.md) for boundaries,
 authentication, exit codes, and the public `Check` / `ExplainError` APIs.
 
+Unknown calls inside CTEs or larger expressions can use local
+`chgen.assumeType(call, 'ClickHouseType')` contracts. Known operators still
+validate their operands; actual assumptions remain `unknown` in `check`.
+See [Expression contracts](docs/expression-contracts.md).
+
+For typed dynamic reads, combine `-- chgen:if Option` blocks with declared
+`-- chgen:table Source table_a table_b` choices. chgen checks every finite
+combination and generates optional parameter structs and table enums.
+See [Query composition](docs/query-composition.md) for a pagination example
+and the deliberate limits.
+
 ## Compatibility
 
 The `chgen` command requires Go 1.24 or later. Generated packages support

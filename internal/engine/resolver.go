@@ -11,23 +11,24 @@ import (
 )
 
 type queryScope struct {
-	tables             []scopedTable
-	scalars            map[string]CHType
-	projectionAliases  map[string]CHType
-	projectionExprs    map[string]clickhouse.Expr
-	aliasExpansion     map[string]bool
-	fromBindingStart   int
-	relations          map[string]Table
-	reservedRelations  map[string]bool
-	reservedScalars    map[string]bool
-	usingTypes         map[string]CHType
-	usingQualified     map[string]CHType
-	arrayJoinTypes     map[string]CHType
-	arrayJoinQualified map[string]CHType
-	exactScalarNames   bool
-	windows            map[string]*clickhouse.WindowExpr
-	scalarSubqueries   map[*clickhouse.SelectQuery]CHType
-	parent             *queryScope
+	tables              []scopedTable
+	scalars             map[string]CHType
+	projectionAliases   map[string]CHType
+	projectionExprs     map[string]clickhouse.Expr
+	aliasExpansion      map[string]bool
+	fromBindingStart    int
+	relations           map[string]Table
+	reservedRelations   map[string]bool
+	reservedScalars     map[string]bool
+	usingTypes          map[string]CHType
+	usingQualified      map[string]CHType
+	arrayJoinTypes      map[string]CHType
+	arrayJoinQualified  map[string]CHType
+	exactScalarNames    bool
+	windows             map[string]*clickhouse.WindowExpr
+	scalarSubqueries    map[*clickhouse.SelectQuery]CHType
+	expressionContracts map[*clickhouse.FunctionExpr]bool
+	parent              *queryScope
 }
 
 type scopedTable struct {
@@ -40,11 +41,12 @@ type scopedTable struct {
 // parent stack. Keeping the resolved scope by node lets parameter inference use
 // the columns visible at the placeholder's actual SELECT level.
 type scopeIndex struct {
-	byNode           map[clickhouse.Expr]queryScope
-	selects          map[*clickhouse.SelectQuery]queryScope
-	scalarSubqueries map[*clickhouse.SelectQuery]CHType
-	resolvingScalar  map[*clickhouse.SelectQuery]bool
-	queryResults     []scopedQueryResult
+	byNode              map[clickhouse.Expr]queryScope
+	selects             map[*clickhouse.SelectQuery]queryScope
+	scalarSubqueries    map[*clickhouse.SelectQuery]CHType
+	resolvingScalar     map[*clickhouse.SelectQuery]bool
+	queryResults        []scopedQueryResult
+	expressionContracts map[*clickhouse.FunctionExpr]bool
 }
 
 type scopedQueryResult struct {
@@ -160,6 +162,9 @@ func resolveQueryWithUncheckedSettings(query *Query, schema *Schema, unchecked [
 	if err := ensureTopLevelQueryResults(selectQuery, scope, scopes, resultOverrides, true); err != nil {
 		return err
 	}
+	if err := collectExpressionContracts(query, statements[0], scope, scopes); err != nil {
+		return err
+	}
 	resolvedResults := make([]Result, 0, len(scopes.queryResults))
 	for _, queryResult := range scopes.queryResults {
 		itemName := queryResult.name
@@ -181,6 +186,9 @@ func resolveQueryWithUncheckedSettings(query *Query, schema *Schema, unchecked [
 		// not on the Go spelling.
 		result.CHType = inferred
 		_, result.Asserted = query.resultContracts[itemName]
+		// Output metadata is a last boundary check, not proof of intermediate
+		// contracts (especially a contract used only by a WHERE predicate).
+		result.Asserted = result.Asserted || len(query.unverifiedExpressions) > 0
 		if result.GoName == "" {
 			result.GoName = exportedIdentifier(result.SQLName)
 		}
@@ -1223,10 +1231,11 @@ func nestedIdentifierName(identifier *clickhouse.NestedIdentifier) string {
 
 func resolveScope(selectQuery *clickhouse.SelectQuery, schema *Schema) (queryScope, *scopeIndex, error) {
 	scopes := &scopeIndex{
-		byNode:           make(map[clickhouse.Expr]queryScope),
-		selects:          make(map[*clickhouse.SelectQuery]queryScope),
-		scalarSubqueries: make(map[*clickhouse.SelectQuery]CHType),
-		resolvingScalar:  make(map[*clickhouse.SelectQuery]bool),
+		byNode:              make(map[clickhouse.Expr]queryScope),
+		selects:             make(map[*clickhouse.SelectQuery]queryScope),
+		scalarSubqueries:    make(map[*clickhouse.SelectQuery]CHType),
+		resolvingScalar:     make(map[*clickhouse.SelectQuery]bool),
+		expressionContracts: make(map[*clickhouse.FunctionExpr]bool),
 	}
 	if !selectQueryHasSetOperation(selectQuery) {
 		scope, err := resolveSelectScope(selectQuery, schema, nil, scopes)
@@ -1429,21 +1438,22 @@ func setQueryLeaves(selectQuery *clickhouse.SelectQuery) ([]*clickhouse.SelectQu
 
 func cteOnlyScope(scope queryScope, parent *queryScope) queryScope {
 	return queryScope{
-		parent:             parent,
-		scalars:            cloneScalarTypes(scope.scalars),
-		exactScalarNames:   true,
-		projectionAliases:  make(map[string]CHType),
-		projectionExprs:    make(map[string]clickhouse.Expr),
-		aliasExpansion:     make(map[string]bool),
-		windows:            make(map[string]*clickhouse.WindowExpr),
-		scalarSubqueries:   scope.scalarSubqueries,
-		relations:          cloneRelations(scope.relations),
-		reservedRelations:  cloneNames(scope.reservedRelations),
-		reservedScalars:    cloneNames(scope.reservedScalars),
-		usingTypes:         make(map[string]CHType),
-		usingQualified:     make(map[string]CHType),
-		arrayJoinTypes:     make(map[string]CHType),
-		arrayJoinQualified: make(map[string]CHType),
+		expressionContracts: scope.expressionContracts,
+		parent:              parent,
+		scalars:             cloneScalarTypes(scope.scalars),
+		exactScalarNames:    true,
+		projectionAliases:   make(map[string]CHType),
+		projectionExprs:     make(map[string]clickhouse.Expr),
+		aliasExpansion:      make(map[string]bool),
+		windows:             make(map[string]*clickhouse.WindowExpr),
+		scalarSubqueries:    scope.scalarSubqueries,
+		relations:           cloneRelations(scope.relations),
+		reservedRelations:   cloneNames(scope.reservedRelations),
+		reservedScalars:     cloneNames(scope.reservedScalars),
+		usingTypes:          make(map[string]CHType),
+		usingQualified:      make(map[string]CHType),
+		arrayJoinTypes:      make(map[string]CHType),
+		arrayJoinQualified:  make(map[string]CHType),
 	}
 }
 
@@ -1645,21 +1655,22 @@ func resolveSelectScope(
 	scopes *scopeIndex,
 ) (queryScope, error) {
 	scope := queryScope{
-		parent:             parent,
-		scalars:            make(map[string]CHType),
-		projectionAliases:  make(map[string]CHType),
-		projectionExprs:    make(map[string]clickhouse.Expr),
-		aliasExpansion:     make(map[string]bool),
-		windows:            make(map[string]*clickhouse.WindowExpr),
-		scalarSubqueries:   scopes.scalarSubqueries,
-		exactScalarNames:   true,
-		relations:          make(map[string]Table),
-		reservedRelations:  make(map[string]bool),
-		reservedScalars:    make(map[string]bool),
-		usingTypes:         make(map[string]CHType),
-		usingQualified:     make(map[string]CHType),
-		arrayJoinTypes:     make(map[string]CHType),
-		arrayJoinQualified: make(map[string]CHType),
+		expressionContracts: scopes.expressionContracts,
+		parent:              parent,
+		scalars:             make(map[string]CHType),
+		projectionAliases:   make(map[string]CHType),
+		projectionExprs:     make(map[string]clickhouse.Expr),
+		aliasExpansion:      make(map[string]bool),
+		windows:             make(map[string]*clickhouse.WindowExpr),
+		scalarSubqueries:    scopes.scalarSubqueries,
+		exactScalarNames:    true,
+		relations:           make(map[string]Table),
+		reservedRelations:   make(map[string]bool),
+		reservedScalars:     make(map[string]bool),
+		usingTypes:          make(map[string]CHType),
+		usingQualified:      make(map[string]CHType),
+		arrayJoinTypes:      make(map[string]CHType),
+		arrayJoinQualified:  make(map[string]CHType),
 	}
 	if parent != nil {
 		for name, table := range parent.relations {

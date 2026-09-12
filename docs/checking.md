@@ -83,8 +83,9 @@ The JSON report records `provenance: server-analysis`, the observed version,
 the SHA-256 of the exact input bytes, and result columns. Simple unique names
 with supported Go mappings get candidate `-- result-chtype:` annotations.
 No annotation is inserted into files automatically. A suggestion is syntax,
-not a guarantee of eligibility: existing outer-output, explicit-alias,
-argument-validation, and nested-scope restrictions still apply.
+not a guarantee of eligibility: outer-result annotations retain their alias
+and argument-validation restrictions. For intermediate calls, use a local
+[expression contract](expression-contracts.md) at the expression instead.
 
 For example, `intDiv(number, toUInt64(2)) AS bucket` over a real UInt64 column
 can acquire a UInt64 contract without a release that adds `intDiv`. This
@@ -116,8 +117,9 @@ witness. Do not accept new mismatch signatures just to make a refactor green.
 
 This increment closes unknown-comparison acceptance, exposes trust and
 refusal reasons, reduces duplicate dispatch/evidence lists, and gives clients
-a bounded discovery path. Remaining work is explicit: scoped intermediate
-expression contracts, typed dynamic-query composition, full diagnostic
-coverage, and broader type-domain modeling. Those need separate semantics and
-tests; neither a global allow-all flag nor automatic SQL rewriting substitutes
-for them.
+a bounded discovery path. Local expression contracts and
+[finite typed composition](query-composition.md) extend these boundaries without
+pretending that client assertions are measured rules. Full diagnostic coverage,
+broader type-domain modeling and general dynamic SQL remain separate work;
+neither a global allow-all flag nor automatic SQL rewriting substitutes for
+their semantics and tests.

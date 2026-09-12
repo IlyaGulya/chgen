@@ -113,6 +113,157 @@ SELECT id AS value FROM events SETTINGS max_threads=1;`)
 	}
 }
 
+func TestScopedExpressionContractFlowsThroughCTE(t *testing.T) {
+	const ddl = "CREATE TABLE events (id UInt64) ENGINE=Memory;"
+	const sql = `-- name: Read :many
+WITH values AS (
+  SELECT chgen.assumeType(intDiv(id, toUInt64(2)), 'UInt64') AS half FROM events
+)
+SELECT toInt64(half) AS value FROM values WHERE half > chgen.arg('After');`
+	config, output := writeCheckProject(t, ddl, sql)
+	report, err := chgen.Check(config)
+	if err != nil || !report.CanGenerate || report.Status != "unknown" {
+		t.Fatalf("report=%+v; err=%v", report, err)
+	}
+	if len(report.Diagnostics) != 1 || report.Diagnostics[0].Code != "expression-type-asserted" {
+		t.Fatalf("lost intermediate assertion provenance: %+v", report.Diagnostics)
+	}
+	queries, err := parsePublicQuery(t, ddl, sql)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if queries[0].Results[0].GoType != "int64" || queries[0].Params[0].GoType != "uint64" {
+		t.Fatalf("contract did not supply the CTE type: %+v", queries[0])
+	}
+	if err := chgen.Run(config); err != nil {
+		t.Fatal(err)
+	}
+	generated, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(generated), "chgen.assumeType") || !strings.Contains(string(generated), "intDiv(id, toUInt64(2))") {
+		t.Fatalf("source contract leaked or changed the SQL expression:\n%s", generated)
+	}
+}
+
+func TestScopedExpressionContractKeepsLexicalScopeAndNullability(t *testing.T) {
+	const ddl = "CREATE TABLE events (id UInt64, n Nullable(UInt64)) ENGINE=Memory;"
+	const sql = `-- name: Read :many
+WITH a AS (SELECT chgen.assumeType(intDiv(id, toUInt64(2)), 'UInt64') AS value FROM events),
+b AS (SELECT chgen.assumeType(intDiv(n, toUInt64(2)), 'Nullable(UInt64)') AS value FROM events)
+SELECT toInt64(a.value) AS plain, toInt64(b.value) AS nullable FROM a CROSS JOIN b;`
+	queries, err := parsePublicQuery(t, ddl, sql)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if queries[0].Results[0].GoType != "int64" || queries[0].Results[1].GoType != "*int64" {
+		t.Fatalf("scopes or nullable wrappers were conflated: %+v", queries[0].Results)
+	}
+	if _, err := chgen.Generate("queries", queries); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestScopedExpressionContractUsesLambdaScope(t *testing.T) {
+	const ddl = "CREATE TABLE events (ids Array(UInt64)) ENGINE=Memory"
+	const sql = `-- name: Read :many
+SELECT arrayMap(x -> chgen.assumeType(intDiv(x, toUInt64(2)), 'UInt64'), ids) AS values FROM events;`
+	config, _ := writeCheckProject(t, ddl, sql)
+	report, err := chgen.Check(config)
+	if err != nil || !report.CanGenerate || report.Status != "unknown" || len(report.Diagnostics) != 1 {
+		t.Fatalf("lost lambda scope or assertion provenance: %+v, %v", report, err)
+	}
+}
+
+func TestScopedExpressionContractAcceptsParameterizedTypes(t *testing.T) {
+	const sql = `-- name: Read :many
+SELECT chgen.assumeType(clientTime(id), 'DateTime64(3, \'UTC\')') AS at FROM events;`
+	queries, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory", sql)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := queries[0].Results[0]; got.CHType.String() != "DateTime64(3, 'UTC')" || got.GoType != "time.Time" {
+		t.Fatalf("parameterized contract: %+v", got)
+	}
+}
+
+func TestScopedExpressionContractCannotHideErrors(t *testing.T) {
+	for _, expr := range []string{
+		"chgen.assumeType(id, 'String')",
+		"chgen.assumeType(toInt64(id, id), 'Int64')",
+		"chgen.assumeType(toInt64(intDiv(id, 2)), 'Int64')",
+		"chgen.assumeType(intDiv(missing, 2), 'UInt64')",
+		"chgen.assumeType(intDiv(anotherUnknown(id), 2), 'UInt64')",
+		"chgen.assumeType(intDiv(id, 2), id)",
+		"chgen.assumeType(intDiv(id, 2), 'UInt64 DEFAULT 1')",
+		"chgen.assumeType(intDiv(id, 2), 'UInt64', 'String')",
+		"chgen.assumeType(intDiv(id, 2))",
+		"__chgen_assume_type(intDiv(id, 2), 'UInt64')",
+		"bitShiftRight(chgen.assumeType(clientFunction(id), 'String'), 1)",
+	} {
+		t.Run(expr, func(t *testing.T) {
+			_, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory", "-- name: Read :many\nSELECT "+expr+" AS value FROM events;")
+			if err == nil {
+				t.Fatal("contract hid an invalid or unresolved expression")
+			}
+		})
+	}
+}
+
+func TestScopedExpressionContractPreservesSQLData(t *testing.T) {
+	const sql = `-- name: Read :many
+SELECT chgen.assumeType(toUInt64(1), 'UInt64') AS value,
+'chgen.assumeType(id, \'String\')' AS text
+/* chgen.assumeType(broken */;`
+	config, _ := writeCheckProject(t, "CREATE TABLE events (id UInt64) ENGINE=Memory", sql)
+	report, err := chgen.Check(config)
+	if err != nil || report.Status != "confirmed" {
+		t.Fatalf("known contract or SQL data became an assumption: %+v, %v", report, err)
+	}
+	queries, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory", sql)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(queries[0].SQL, "'chgen.assumeType(id, \\'String\\')'") || !strings.Contains(queries[0].SQL, "/* chgen.assumeType(broken */") {
+		t.Fatalf("changed quoted data or comments: %s", queries[0].SQL)
+	}
+}
+
+func TestScopedExpressionContractRejectsExec(t *testing.T) {
+	_, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory",
+		"-- name: Write :exec\nINSERT INTO events (id) VALUES (chgen.assumeType(intDiv(toUInt64(4), toUInt64(2)), 'UInt64'));")
+	if err == nil || !strings.Contains(err.Error(), "assumeType is supported only in :one and :many") {
+		t.Fatalf("exec assertions must not silently evade provenance checks: %v", err)
+	}
+}
+
+func TestScopedContractsGeneratedRuntime(t *testing.T) {
+	const ddl = "CREATE TABLE scoped_events (id UInt64, n Nullable(UInt64)) ENGINE=Memory;"
+	const sql = `-- name: Read :many
+WITH values AS (SELECT id, chgen.assumeType(intDiv(n, toUInt64(2)), 'Nullable(UInt64)') AS half FROM scoped_events)
+SELECT id, toInt64(half) AS value FROM values ORDER BY id;
+-- name: WrongContract :many
+SELECT chgen.assumeType(intDiv(id, toUInt64(2)), 'UInt32') AS value
+FROM scoped_events WHERE id > chgen.arg('After');
+-- name: Lambda :many
+SELECT arrayMap(x -> chgen.assumeType(intDiv(x, toUInt64(2)), 'UInt64'), [id]) AS values
+FROM scoped_events ORDER BY id;`
+	queries, err := parsePublicQuery(t, ddl, sql)
+	if err != nil {
+		t.Fatal(err)
+	}
+	generated, err := chgen.Generate("scopedcontracts", queries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture, err := os.ReadFile("testdata/scopedcontracts/runtime_test.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runGeneratedRuntime(t, "scopedcontracts", generated, fixture)
+}
+
 func TestCheckPreservesIOErrorIdentity(t *testing.T) {
 	_, err := chgen.Check(filepath.Join(t.TempDir(), "missing.yaml"))
 	if !errors.Is(err, os.ErrNotExist) {
