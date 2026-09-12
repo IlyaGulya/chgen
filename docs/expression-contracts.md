@@ -20,8 +20,10 @@ not insert a CAST, change nullability, or rewrite query semantics.
 
 Each unknown call needs its own contract. Arguments must have independently
 resolvable types: use an inner contract for another unknown call and a SQL
-CAST for a parameter whose type cannot otherwise be inferred. Known surrounding
-functions and operators still check their argument domains. A contract cannot
+CAST when a parameter needs an explicit SQL operand type. When context cannot
+infer the Go parameter, also declare it with `-- param: Name GoType`; the CAST
+does not supply that declaration. Known surrounding functions and operators
+still check their argument domains. A contract cannot
 override a known result type, illegal arity, missing column, or invalid operation.
 Nullable and LowCardinality wrappers must be specified exactly. Escape quotes
 inside a parameterized type, for example
