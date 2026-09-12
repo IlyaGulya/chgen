@@ -6,10 +6,12 @@ it, and it applies type rules to that tree. The front end is
 the ClickHouse server, thus it can refuse a statement that the server
 accepts.
 
-**Such a refusal is not a chgen defect.** The type rule for the refused
-expression can be complete and correct, and the expression still never
-reaches the resolver. Read this page before you record a parse refusal as a
-defect.
+**Such a refusal is a chgen compatibility limitation, even when the cause is
+upstream.** The type rule can be complete while the expression never reaches
+the resolver. Record the parser boundary separately from type-inference
+defects so we fix the right layer; do not send users away because of which
+dependency contains the gap. `chgen check` labels parser refusals as unknown,
+not as proof that ClickHouse rejects the SQL.
 
 chgen does not implement a general SQL parser. A narrow parser-only
 normalization is permitted only when it keeps every byte offset and line

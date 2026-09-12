@@ -1,6 +1,7 @@
 package chgen
 
 import (
+	"github.com/IlyaGulya/chgen/internal/diagnostic"
 	"github.com/IlyaGulya/chgen/internal/engine"
 	"github.com/IlyaGulya/chgen/internal/project"
 )
@@ -207,6 +208,59 @@ func Generate(packageName string, queries []Query) ([]byte, error) {
 // configPath. One run generates all packages; there is no partial mode.
 func Run(configPath string) error {
 	return project.Run(configPath)
+}
+
+// CheckReport describes offline generation readiness. Confirmed means the
+// project passes chgen's model, not that every SQL behavior is proven or that
+// the queries have been executed against a server.
+type CheckReport struct {
+	Status      string       `json:"status"`
+	CanGenerate bool         `json:"can_generate"`
+	Packages    int          `json:"packages"`
+	Queries     int          `json:"queries"`
+	Diagnostics []Diagnostic `json:"diagnostics"`
+}
+
+// Diagnostic identifies a refusal or an explicit trust boundary. Status is
+// confirmed, invalid, or unknown within the stated Stage, never a claim about
+// all ClickHouse semantics. An unclassified error is conservatively unknown.
+type Diagnostic struct {
+	Code    string `json:"code"`
+	Status  string `json:"status"`
+	Stage   string `json:"stage"`
+	Message string `json:"message"`
+	Hint    string `json:"hint,omitempty"`
+	Package string `json:"package,omitempty"`
+	File    string `json:"file,omitempty"`
+	Line    int    `json:"line,omitempty"`
+	Query   string `json:"query,omitempty"`
+}
+
+// ExplainError extracts structured context without parsing error text. It
+// returns an empty diagnostic for nil. The original error remains usable with
+// errors.Is and errors.As.
+func ExplainError(err error) Diagnostic {
+	return fromDiagnostic(diagnostic.Describe(err))
+}
+
+func fromDiagnostic(d diagnostic.Detail) Diagnostic {
+	return Diagnostic{Code: d.Code, Status: d.Status, Stage: d.Stage, Message: d.Message, Hint: d.Hint,
+		Package: d.Package, File: d.File, Line: d.Line, Query: d.Query}
+}
+
+// Check validates every input and generates every package in memory, using
+// the same validation as Run. It never writes outputs or creates directories.
+func Check(configPath string) (CheckReport, error) {
+	report, err := project.Check(configPath)
+	result := CheckReport{
+		Status: report.Status, CanGenerate: report.CanGenerate,
+		Packages: report.Packages, Queries: report.Queries,
+		Diagnostics: make([]Diagnostic, 0, len(report.Diagnostics)),
+	}
+	for _, d := range report.Diagnostics {
+		result.Diagnostics = append(result.Diagnostics, fromDiagnostic(d))
+	}
+	return result, err
 }
 
 // InferExpressionType infers one expression against one fixture DDL.

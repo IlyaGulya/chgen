@@ -19,8 +19,21 @@ func TestPinnedFunctionEvidenceIsValid(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(measurements) != 236 {
-		t.Fatalf("function evidence has %d measured functions, want 236", len(measurements))
+	catalogData, err := os.ReadFile(testFunctionCatalogPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var catalog evidenceCatalog
+	if err := json.Unmarshal(catalogData, &catalog); err != nil {
+		t.Fatal(err)
+	}
+	if len(catalog.Functions) == 0 || len(measurements) != len(catalog.Functions) {
+		t.Fatalf("function evidence has %d measured functions for %d catalog entries", len(measurements), len(catalog.Functions))
+	}
+	for _, function := range catalog.Functions {
+		if measurement, ok := measurements[strings.ToLower(function.Name)]; !ok || measurement.Family != function.Family {
+			t.Fatalf("function %s lacks evidence for family %s", function.Name, function.Family)
+		}
 	}
 	data, err := os.ReadFile(testFunctionEvidencePath)
 	if err != nil {

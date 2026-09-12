@@ -181,44 +181,22 @@ func TestWrapperPropagation(t *testing.T) {
 // no rule must be a name that inferFunctionType routes elsewhere, and
 // not a forgotten entry.
 func TestSpecWithoutARuleIsRoutedElsewhere(t *testing.T) {
-	// These names have no rule, because their result depends on an
-	// argument EXPRESSION and not only on the argument types.
-	// inferFunctionType sends each of them to its own inference
-	// function before the registry lookup.
-	routedElsewhere := map[string]bool{
-		"fromunixtimestamp64milli": true,
-		"tostartofinterval":        true,
-		"totimezone":               true,
-		"tupleelement":             true,
-		// and, or and xor route to inferLogicOperatorFunctionType,
-		// because the result depends on the argument EXPRESSIONS (a
-		// bare, or for xor a Nullable, Bool argument changes the base
-		// type) and not only on the argument types. See the regression.
-		"and": true,
-		"or":  true,
-		"xor": true,
-	}
-	for name := range higherOrderArrayFunctions {
-		if spec, ok := functionRegistry[name]; ok && spec.rule == nil {
-			routedElsewhere[name] = true
-		}
-	}
 	for name, spec := range functionRegistry {
 		if spec.rule != nil {
 			continue
 		}
-		if !routedElsewhere[name] {
+		_, higherOrder := higherOrderArrayFunctions[name]
+		if expressionFunctionRoutes[name] == nil && !higherOrder {
 			t.Errorf("function %q has a registry spec with no type rule and no route of its own", name)
 		}
 	}
-	for name := range routedElsewhere {
-		spec, ok := functionRegistry[name]
-		if !ok {
+	for name, route := range expressionFunctionRoutes {
+		if _, ok := functionRegistry[name]; !ok {
 			t.Errorf("function %q is named as routed elsewhere but has no registry spec", name)
 			continue
 		}
-		if spec.rule != nil {
-			t.Errorf("function %q is routed elsewhere, so its spec must not carry a rule", name)
+		if route == nil {
+			t.Errorf("function %q has a nil expression route", name)
 		}
 	}
 }
@@ -273,9 +251,8 @@ func TestNoArgumentFunctionsAreIndependent(t *testing.T) {
 // never through the generic rule path (which only ever checks argument
 // zero, too narrow for this variadic family). See the regression.
 func TestEveryDomainHasARule(t *testing.T) {
-	routedElsewhere := map[string]bool{"and": true, "or": true, "xor": true, "fromunixtimestamp64milli": true}
 	for name, spec := range functionRegistry {
-		if spec.domain != nil && spec.rule == nil && !routedElsewhere[name] {
+		if spec.domain != nil && spec.rule == nil && expressionFunctionRoutes[name] == nil {
 			t.Errorf("function %q has an argument domain but no type rule, so the domain is never read", name)
 		}
 	}

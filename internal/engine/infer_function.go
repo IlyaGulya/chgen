@@ -31,20 +31,11 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 		return CHType{}, err
 	}
 	switch name {
-	case "fromunixtimestamp64milli":
-		return inferUnixMillisecondsType(function.Name.Name, args, scope)
 	case "if", "multiif", "coalesce", "ifnull":
 		return inferConditionalFamilyType(name, function.Name.Name, args, scope)
-	case "tupleelement":
-		return inferTupleElementType(function.Name.Name, args, scope)
-	case "tostartofinterval":
-		return inferToStartOfIntervalType(function.Name.Name, args, scope)
-	case "totimezone":
-		return inferToTimeZoneType(function.Name.Name, args, scope)
-	case "todatetime", "todatetime64", "tostartofday", "tostartofhour", "tostartofminute", "now", "now64":
-		return inferTimezoneCarryingType(name, function, args, scope)
-	case "and", "or", "xor":
-		return inferLogicOperatorFunctionType(name, function.Name.Name, args, scope)
+	}
+	if route, ok := expressionFunctionRoutes[name]; ok {
+		return route(function, scope)
 	}
 	if _, isShift := temporalShiftFunctions[name]; isShift {
 		return inferTemporalShiftType(name, function.Name.Name, args, scope)

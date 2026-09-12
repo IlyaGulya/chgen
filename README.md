@@ -139,6 +139,33 @@ git diff --exit-code
 Programs can also import `github.com/IlyaGulya/chgen` and call `LoadConfig`,
 the parse functions, `Generate`, or `Run`.
 
+### Check without generating files
+
+```sh
+go tool chgen check -f chgen.yaml
+go tool chgen check -f chgen.yaml -json
+go tool chgen check -f chgen.yaml -require-confirmed
+```
+
+`check` uses the same offline validation and in-memory generation as `Run`,
+including output collision checks, but never writes files. Reports distinguish
+`confirmed` by the current model, `invalid` contracts/domains, and `unknown`
+coverage. Explicit result assertions and unchecked settings are reported,
+not silently promoted to measured support. `-require-confirmed` lets CI reject
+these trust boundaries. Ordinary generation keeps its existing opt-in behavior.
+
+For concrete SELECTs on an explicitly selected **test** ClickHouse, discover
+result types without adding a chgen function rule:
+
+```sh
+go tool chgen describe -server http://localhost:8123 -sql concrete-select.sql
+```
+
+This prints server-analysis metadata and candidate `-- result-chtype:` lines;
+it does not apply migrations, rewrite queries, or prove execution semantics.
+See [Checking and server-assisted discovery](docs/checking.md) for boundaries,
+authentication, exit codes, and the public `Check` / `ExplainError` APIs.
+
 ## Compatibility
 
 The `chgen` command requires Go 1.24 or later. Generated packages support

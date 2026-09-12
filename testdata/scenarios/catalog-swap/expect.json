@@ -1,0 +1,6 @@
+{
+  "results": {
+    "Read": ["UInt64", "String", "UInt32"],
+    "Span": ["Nullable(DateTime64(3, 'UTC'))", "Nullable(DateTime64(3, 'UTC'))"]
+  }
+}

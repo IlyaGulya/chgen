@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	"github.com/IlyaGulya/chgen/internal/diagnostic"
 )
 
 const externalMarker = "-- chgen:external"
@@ -50,7 +51,10 @@ func applySchemaSource(catalogs *SchemaCatalogs, path, raw string) error {
 	}
 	statements, err := clickhouse.NewParser(parserContent).ParseStmts()
 	if err != nil {
-		return fmt.Errorf("%s: parse schema SQL: %w", path, err)
+		return diagnostic.With(fmt.Errorf("%s: parse schema SQL: %w", path, err), diagnostic.Detail{
+			Code: "schema-parser-refusal", Status: diagnostic.Unknown, Stage: "parser", File: path,
+			Hint: "Verify syntax against ClickHouse. Accepted server SQL is a chgen parser coverage gap; do not hide a migration that may also change modeled columns.",
+		})
 	}
 
 	markers, err := externalMarkerTargets(path, content)
@@ -112,7 +116,10 @@ func applySchemaSource(catalogs *SchemaCatalogs, path, raw string) error {
 			// column definitions to this catalog.
 		default:
 			line := lineOfOffset(content, int(statement.Pos()))
-			return fmt.Errorf("%s:%d: statement is not CREATE TABLE, DROP TABLE/VIEW, RENAME TABLE, EXCHANGE TABLES, or a supported ALTER TABLE; move non-schema SQL out of the schema inputs", path, line)
+			return diagnostic.With(fmt.Errorf("%s:%d: statement is not CREATE TABLE, DROP TABLE/VIEW, RENAME TABLE, EXCHANGE TABLES, or a supported ALTER TABLE; chgen does not model this schema operation", path, line), diagnostic.Detail{
+				Code: "schema-operation-unmodeled", Status: diagnostic.Unknown, Stage: "schema", File: path, Line: line,
+				Hint: "Report this catalog coverage gap. Do not exclude a migration that may also change columns; chgen must classify its effect before it can safely accept it.",
+			})
 		}
 	}
 	return nil

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/IlyaGulya/chgen/internal/diagnostic"
 	"github.com/IlyaGulya/chgen/internal/engine"
 )
 
@@ -29,6 +30,7 @@ type plannedPackage struct {
 	outputInfo      fs.FileInfo
 	mode            fs.FileMode
 	generated       []byte
+	resolvedQueries []engine.Query
 	queries         []expandedInput
 	schema          []expandedInput
 }
@@ -193,17 +195,18 @@ func buildExecutionPlan(config *Config) (*executionPlan, error) {
 		queryFiles := expandedInputPaths(planned.queries)
 		catalogs, err := engine.ParseSchemaCatalogs(schemaFiles)
 		if err != nil {
-			return nil, fmt.Errorf("package %q: %w", planned.name, err)
+			return nil, diagnostic.With(fmt.Errorf("package %q: %w", planned.name, err), diagnostic.Detail{Package: planned.name, Stage: "schema"})
 		}
 		queries, err := engine.ParseQueryFiles(queryFiles, catalogs)
 		if err != nil {
-			return nil, fmt.Errorf("package %q: %w", planned.name, err)
+			return nil, diagnostic.With(fmt.Errorf("package %q: %w", planned.name, err), diagnostic.Detail{Package: planned.name})
 		}
 		generated, err := engine.Generate(planned.name, queries)
 		if err != nil {
-			return nil, fmt.Errorf("package %q: %w", planned.name, err)
+			return nil, diagnostic.With(fmt.Errorf("package %q: %w", planned.name, err), diagnostic.Detail{Package: planned.name, Stage: "generation"})
 		}
 		planned.generated = generated
+		planned.resolvedQueries = queries
 	}
 	return plan, nil
 }

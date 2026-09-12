@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/IlyaGulya/chgen/internal/diagnostic"
 )
 
 // parseQueriesInFile parses the annotated queries of one file against the
@@ -121,6 +123,7 @@ func parseQueriesInFile(file, input string, schema *Schema, externalSchema *Sche
 	queries := make([]Query, 0, len(builders))
 	for _, builder := range builders {
 		wrap := func(err error) error {
+			err = diagnostic.With(err, diagnostic.Detail{File: builder.query.File, Line: builder.query.Line, Query: builder.query.Name})
 			var externalErr *externalReferenceError
 			if errors.As(err, &externalErr) {
 				return fmt.Errorf("%s:%d: %w", builder.query.File, builder.query.Line, err)

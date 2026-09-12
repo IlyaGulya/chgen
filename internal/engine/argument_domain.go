@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	"github.com/IlyaGulya/chgen/internal/diagnostic"
 )
 
 // domainBaseType removes wrappers that do not change an argument domain.
@@ -1386,9 +1387,8 @@ func comparisonClassesOf(base CHType) comparisonClass {
 	}
 }
 
-// comparableBaseTypes reports whether ClickHouse can compare the two
-// base types. A type that the sweep did not cover keeps the pair
-// accepted, because an unknown is not evidence of a refusal.
+// comparableBaseTypes applies the measured pair rules. Unknown domains must
+// be distinguished by comparisonVerdict before this Boolean predicate is used.
 func comparableBaseTypes(left, right CHType) bool {
 	if left.Name == "" || right.Name == "" {
 		return true
@@ -1510,7 +1510,9 @@ func comparableBaseTypes(left, right CHType) bool {
 	leftClasses := comparisonClassesOf(left)
 	rightClasses := comparisonClassesOf(right)
 	if leftClasses == 0 || rightClasses == 0 {
-		return true
+		// Dynamic is a measured domain with value-dependent scalar behavior,
+		// not a license to accept every future unclassified type.
+		return comparisonTypeKnown(left) && comparisonTypeKnown(right)
 	}
 	if leftClasses&rightClasses == 0 {
 		return false
@@ -1861,6 +1863,12 @@ func checkComparableOperandExprs(
 ) error {
 	leftConst := isConstLiteralExpr(leftExpr, scope)
 	rightConst := isConstLiteralExpr(rightExpr, scope)
+	// Literal conversion is measured only for known column domains. A text
+	// literal cannot prove how a future/unclassified column type converts.
+	if !leftConst && left.Name != "" && !comparisonTypeKnown(left) ||
+		!rightConst && right.Name != "" && !comparisonTypeKnown(right) {
+		return checkComparableOperands(displayName, left, right)
+	}
 	if !leftConst && !rightConst {
 		return checkComparableOperands(displayName, left, right)
 	}
@@ -1967,17 +1975,65 @@ func checkHasElementPair(
 // The caller must rule out a constant operand first; see
 // checkComparableOperandExprs.
 //
-// An operand type that inference could not fill in stays accepted, for
-// the same reason as in checkArgumentDomain: an empty type says "not
-// known yet" and not "impossible".
+// An unknown domain refuses inference without claiming the SQL is invalid.
 func checkComparableOperands(displayName string, left, right CHType) error {
-	leftBase, _, _ := splitCHWrappers(left)
-	rightBase, _, _ := splitCHWrappers(right)
-	if comparableBaseTypes(leftBase, rightBase) {
+	// Empty types also occur in expressions containing unbound placeholders.
+	// resolveParams must finish (or refuse) those bindings before generation;
+	// this pass cannot classify the concrete pair yet.
+	if left.Name == "" || right.Name == "" {
 		return nil
 	}
-	return fmt.Errorf(
+	leftBase, _, _ := splitCHWrappers(left)
+	rightBase, _, _ := splitCHWrappers(right)
+	switch comparisonVerdict(leftBase, rightBase) {
+	case diagnostic.Confirmed:
+		return nil
+	case diagnostic.Unknown:
+		return diagnostic.With(fmt.Errorf("%s has no measured comparison domain for %s and %s", displayName, left, right), diagnostic.Detail{
+			Code: "comparison-domain-unmeasured", Status: diagnostic.Unknown, Stage: "inference",
+			Hint: "Verify this operand pair against ClickHouse and add a domain rule. A final-result type contract cannot validate unknown operand types.",
+		})
+	}
+	return diagnostic.With(fmt.Errorf(
 		"%s cannot compare an operand of type %s with an operand of type %s; ClickHouse refuses this pair, because the two types are not in one comparable family; %s",
 		displayName, left.String(), right.String(), pinTypeHint,
-	)
+	), diagnostic.Detail{
+		Code: "comparison-domain-invalid", Status: diagnostic.Invalid, Stage: "inference",
+		Hint: "Use operands in a compatible measured domain. A result contract cannot bypass a known invalid comparison.",
+	})
+}
+
+func comparisonVerdict(left, right CHType) string {
+	if holdsAggregateFunctionState(left) || holdsAggregateFunctionState(right) {
+		return diagnostic.Invalid
+	}
+	if !comparisonTypeKnown(left) || !comparisonTypeKnown(right) {
+		return diagnostic.Unknown
+	}
+	if comparableBaseTypes(left, right) {
+		return diagnostic.Confirmed
+	}
+	return diagnostic.Invalid
+}
+
+func comparisonTypeKnown(value CHType) bool {
+	base, _, _ := splitCHWrappers(withoutGeometryAliases(value))
+	if inner, ok := simpleAggregateWrapperInner(base); ok {
+		return comparisonTypeKnown(inner)
+	}
+	if base.normalizedName() == "dynamic" || holdsAggregateFunctionState(base) {
+		return true
+	}
+	if comparisonClassesOf(base) == 0 {
+		return false
+	}
+	switch base.normalizedName() {
+	case "array", "tuple", "map", "variant":
+		for _, child := range base.Params {
+			if !comparisonTypeKnown(child) {
+				return false
+			}
+		}
+	}
+	return true
 }

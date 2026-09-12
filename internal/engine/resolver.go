@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	"github.com/IlyaGulya/chgen/internal/diagnostic"
 )
 
 type queryScope struct {
@@ -118,6 +119,11 @@ func resolveQueryWithUncheckedSettings(query *Query, schema *Schema, unchecked [
 	}
 	if err := omitUncheckedSettingsForResolution(statements[0], unchecked); err != nil {
 		return err
+	}
+	for _, name := range unchecked {
+		if _, measured := selectSettingRoster[name]; !measured {
+			query.uncheckedSettings = append(query.uncheckedSettings, name)
+		}
 	}
 
 	if query.Command == CommandExec {
@@ -237,6 +243,14 @@ func selectQueryHasSetOperation(selectQuery *clickhouse.SelectQuery) bool {
 }
 
 func parseChgenStatements(sql string, command Command) ([]clickhouse.Expr, error) {
+	statements, err := parseChgenStatementsWithAdapters(sql, command)
+	return statements, diagnostic.With(err, diagnostic.Detail{
+		Code: "query-parser-refusal", Status: diagnostic.Unknown, Stage: "parser",
+		Hint: "Check SQL syntax against your ClickHouse version. If ClickHouse accepts it, this is a chgen parser coverage gap; a type annotation cannot repair parsing.",
+	})
+}
+
+func parseChgenStatementsWithAdapters(sql string, command Command) ([]clickhouse.Expr, error) {
 	statements, err := clickhouse.NewParser(sql).ParseStmts()
 	if err == nil {
 		return statements, err
@@ -2292,7 +2306,10 @@ func validateSettingsClauseWithRoster(settings *clickhouse.SettingsClause, roste
 		}
 		rule, ok := roster[item.Name.Name]
 		if !ok {
-			return fmt.Errorf("SETTINGS name %q is not in the measured resolver roster; after verifying its effect on result types, opt in with %s %s in the query header", item.Name.Name, uncheckedSettingDirective, item.Name.Name)
+			return diagnostic.With(fmt.Errorf("SETTINGS name %q is not in the measured resolver roster; after verifying its effect on result types, opt in with %s %s in the query header", item.Name.Name, uncheckedSettingDirective, item.Name.Name), diagnostic.Detail{
+				Code: "setting-unmeasured", Status: diagnostic.Unknown, Stage: "settings",
+				Hint: fmt.Sprintf("Verify this setting's effect on result types, then opt in with %s %s. Known setting rules still apply; this is not a global bypass.", uncheckedSettingDirective, item.Name.Name),
+			})
 		}
 		switch rule.kind {
 		case selectSettingUnsignedLiteral:

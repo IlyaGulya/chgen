@@ -25,6 +25,12 @@ func main() {
 }
 
 func run(args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "describe" {
+		return runDescribe(args[1:], stdout, stderr)
+	}
+	if len(args) > 0 && args[0] == "check" {
+		return runCheck(args[1:], stdout, stderr)
+	}
 	if len(args) > 0 && args[0] == "init" {
 		return runInit(args[1:], stderr)
 	}
@@ -35,6 +41,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintln(stderr, "Usage: chgen [-f chgen.yaml]")
 		_, _ = fmt.Fprintln(stderr, "       chgen -version")
 		_, _ = fmt.Fprintln(stderr, "       chgen init")
+		_, _ = fmt.Fprintln(stderr, "       chgen check [-f chgen.yaml] [-json] [-require-confirmed]")
+		_, _ = fmt.Fprintln(stderr, "       chgen describe -server URL -sql concrete-select.sql [-database fixture]")
 		_, _ = fmt.Fprintln(stderr)
 		_, _ = fmt.Fprintln(stderr, "The init command creates chgen.yaml, schema.sql, and queries.sql in the current directory.")
 		flags.PrintDefaults()
@@ -60,6 +68,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 	if err := chgen.Run(*configPath); err != nil {
 		_, _ = fmt.Fprintf(stderr, "chgen: %v\n", err)
+		if d := chgen.ExplainError(err); d.Code != "unclassified" {
+			_, _ = fmt.Fprintf(stderr, "[%s/%s] %s\n", d.Status, d.Code, d.Hint)
+		}
 		return 1
 	}
 	return 0

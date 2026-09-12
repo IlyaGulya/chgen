@@ -7,6 +7,7 @@ import (
 	"unicode"
 
 	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	"github.com/IlyaGulya/chgen/internal/diagnostic"
 )
 
 const resultCHTypeDirective = "-- result-chtype:"
@@ -45,6 +46,13 @@ type unregisteredFunctionError struct{ name string }
 
 func (e *unregisteredFunctionError) Error() string {
 	return fmt.Sprintf("function %s has no registered type rule; %s", e.name, pinTypeHint)
+}
+
+func (e *unregisteredFunctionError) Diagnostic() diagnostic.Detail {
+	return diagnostic.Detail{
+		Code: "function-rule-missing", Status: diagnostic.Unknown, Stage: "inference",
+		Hint: "chgen has no type rule for this function. Use chgen describe with a concrete SELECT on a test server to discover types. A direct outer SELECT call can use -- result-chtype: Alias ClickHouseType after verification; nested scopes and known operators with unknown operands cannot use that escape hatch. -- result: only changes Go mapping.",
+	}
 }
 
 func parseResultTypeContract(line string, lineNumber int) (string, resultTypeContract, error) {
@@ -131,7 +139,10 @@ func resolveResultContracts(query *Query, selectQuery *clickhouse.SelectQuery, s
 			}
 		} else {
 			if inferErr == nil && inferred.String() != contract.typeOf.String() {
-				return fmt.Errorf("%s:%d: result-chtype %s asserts %s, inferred %s", query.File, contract.line, name, contract.typeOf, inferred)
+				return diagnostic.With(fmt.Errorf("%s:%d: result-chtype %s asserts %s, inferred %s", query.File, contract.line, name, contract.typeOf, inferred), diagnostic.Detail{
+					Code: "result-contract-conflict", Status: diagnostic.Invalid, Stage: "contract",
+					Hint: "Correct or remove the result-chtype annotation. A contract cannot override a known inferred type.",
+				})
 			}
 			if inferErr != nil {
 				var missing *unregisteredFunctionError
@@ -143,6 +154,7 @@ func resolveResultContracts(query *Query, selectQuery *clickhouse.SelectQuery, s
 				if err := validateAssertedFunction(item.Expr, scope); err != nil {
 					return fmt.Errorf("%s:%d: result-chtype %s: %w", query.File, contract.line, name, err)
 				}
+				query.unverifiedResults = append(query.unverifiedResults, name)
 			}
 			inferred = contract.typeOf
 		}

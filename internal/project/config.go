@@ -41,6 +41,19 @@ type configWire struct {
 	Packages []packageWire `yaml:"packages"`
 }
 
+// Keep the concise diagnostic while retaining the underlying filesystem
+// error for library callers using errors.Is or errors.As.
+type missingConfigError struct {
+	directory string
+	cause     error
+}
+
+func (e *missingConfigError) Error() string {
+	return fmt.Sprintf("chgen.yaml not found in %s; create one or pass -f <path>", e.directory)
+}
+
+func (e *missingConfigError) Unwrap() error { return e.cause }
+
 type packageWire struct {
 	Name    strictString `yaml:"name"`
 	Output  strictString `yaml:"output"`
@@ -127,7 +140,7 @@ func LoadConfig(path string) (*Config, error) {
 			if abs, absErr := filepath.Abs(dir); absErr == nil {
 				dir = abs
 			}
-			return nil, fmt.Errorf("chgen.yaml not found in %s; create one or pass -f <path>", dir)
+			return nil, &missingConfigError{directory: dir, cause: err}
 		}
 		return nil, fmt.Errorf("read config %q: %w", path, err)
 	}

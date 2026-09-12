@@ -157,12 +157,16 @@ func TestFacadeConcreteDTOsAndNestedTypeStrings(t *testing.T) {
 func TestSupportedPackageSurface(t *testing.T) {
 	want := []string{
 		"CHType",
+		"Check",
+		"CheckReport",
 		"Column",
 		"Command",
 		"CommandExec",
 		"CommandMany",
 		"CommandOne",
 		"Config",
+		"Diagnostic",
+		"ExplainError",
 		"ExternalColumn",
 		"ExternalParam",
 		"Generate",

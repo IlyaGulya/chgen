@@ -16,6 +16,12 @@ member. The function probe catalog also records the family, the typed probe
 policy, and its required axes. The catalog is a plan and is not support
 evidence by itself.
 
+Expression-sensitive registry routes live in one executable dispatch table.
+The registry guards consult that dispatch instead of copying the names from a
+switch into test allowlists. Function-evidence coverage is checked against the
+exact catalog names and families, not a manually incremented function count.
+Neither change relaxes the live legal/illegal witness gates.
+
 The function probe catalog records the family and its probe recipe. Its gate
 refuses a missing family, a changed recipe, a missing argument position, and a
 missing legal or illegal boundary. The live gate compares three type answers

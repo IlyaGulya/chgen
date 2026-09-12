@@ -74,8 +74,10 @@ type Query struct {
 	ResultCapacity string
 	SQL            string
 	// NamedParamNames contains one source chgen.arg name for each placeholder.
-	NamedParamNames []string
-	resultContracts map[string]resultTypeContract
+	NamedParamNames   []string
+	resultContracts   map[string]resultTypeContract
+	unverifiedResults []string
+	uncheckedSettings []string
 
 	// batchInsert marks a fixed INSERT ... VALUES whose tuple is bare
 	// placeholders only. Such a statement goes through the native

@@ -513,6 +513,7 @@ func validateLayoutSnapshot(value layoutSnapshot) error {
 	wantProduction := []string{"doc.go", "facade.go"}
 	wantTests := []string{
 		"api_contract_test.go",
+		"check_test.go",
 		"cursor_query_test.go",
 		"oracle_regression_test.go",
 		"facade_test.go",
@@ -1658,7 +1659,7 @@ func packageDocumentation(t *testing.T, root, packagePath string) string {
 
 func expectedPublicNames() []string {
 	return []string{
-		"CHType", "Column", "Command", "CommandExec", "CommandMany", "CommandOne", "Config",
+		"CHType", "Check", "CheckReport", "Column", "Command", "CommandExec", "CommandMany", "CommandOne", "Config", "Diagnostic", "ExplainError",
 		"ExternalColumn", "ExternalParam", "Generate", "InferExpressionType", "InferQueryResultType",
 		"InputEntry", "LoadConfig", "MeasuredCHVersion", "PackageConfig", "Param", "ParseQueryFiles",
 		"ParseSchemaCatalogs", "Query", "Result", "Run", "Schema", "SchemaCatalogs", "Table", "TableEngine",
