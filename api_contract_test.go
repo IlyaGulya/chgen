@@ -5,7 +5,9 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -243,4 +245,195 @@ func TestSupportedPackageSurface(t *testing.T) {
 
 	var _ string = chgen.MeasuredCHVersion
 	var _ = chgen.CHType{}.String
+}
+
+func TestSchemaCatalogsAcceptWaitViewWithoutDefiningTables(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "migration.sql")
+	if err := os.WriteFile(path, []byte("SYSTEM WAIT VIEW v2_runner_group_snapshot_refresh;"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(catalogs.Physical.Tables) != 0 || len(catalogs.External.Tables) != 0 {
+		t.Fatalf("waiting for a view changed the catalogs: %+v", catalogs)
+	}
+}
+
+func TestSchemaCatalogsReplayChangesAroundWaitView(t *testing.T) {
+	for _, wait := range []string{
+		"SYSTEM WAIT VIEW refresh",
+		"system wait view analytics.refresh",
+		"SYSTEM WAIT VIEW `view with spaces`",
+		"SYSTEM WAIT VIEW `database name`.`refresh;view`",
+		`SYSTEM WAIT VIEW "database name"."refresh;view"`,
+		"SYSTEM WAIT VIEW `refresh\\`view`",
+		`SYSTEM WAIT VIEW "refresh\"view"`,
+		"SYSTEM WAIT VIEW `refresh``view`",
+		`SYSTEM WAIT VIEW "refresh""view"`,
+		"SYSTEM /* ; */ WAIT\nVIEW analytics /* qualifier */ . refresh",
+		"/* outer /* nested */ comment */ SYSTEM WAIT VIEW refresh /* outer /* nested */ comment */",
+	} {
+		t.Run(wait, func(t *testing.T) {
+			ddl := "CREATE TABLE events (id UInt64) ENGINE=Memory;\n" + wait + ";\n" +
+				"ALTER TABLE events ADD COLUMN label String;\n" +
+				"-- chgen:external\nCREATE TABLE requested (id UInt64);\n" + wait
+			config, _ := writeCheckProject(t, ddl, "-- name: Read :many\nSELECT id, label FROM events;")
+			path := filepath.Join(filepath.Dir(config), "schema.sql")
+			catalogs, err := chgen.ParseSchemaCatalogs([]string{path})
+			if err != nil {
+				t.Fatal(err)
+			}
+			table := catalogs.Physical.Tables["events"]
+			if len(catalogs.Physical.Tables) != 1 || len(catalogs.External.Tables) != 1 ||
+				catalogs.External.Tables["requested"].Columns["id"].Type.Name != "UInt64" ||
+				!reflect.DeepEqual(table.ColumnOrder, []string{"id", "label"}) ||
+				table.Columns["id"].Type.Name != "UInt64" || table.Columns["label"].Type.Name != "String" ||
+				table.Engine == nil || table.Engine.Name != "Memory" || table.Line != 1 {
+				t.Fatalf("wait changed or hid catalog definitions: %+v; %+v", table, catalogs.External.Tables)
+			}
+			data, err := os.ReadFile(path)
+			if err != nil || string(data) != ddl {
+				t.Fatalf("schema input was modified: %v", err)
+			}
+		})
+	}
+}
+
+func TestSchemaCatalogsDoNotHideInvalidStatementsAroundWaitView(t *testing.T) {
+	for _, sql := range []string{
+		"SYSTEM WAIT VIEW;",
+		"SYSTEM WAIT VIEW db.;",
+		"SYSTEM WAIT VIEW a.b.c;",
+		"SYSTEM WAIT VIEW 'refresh';",
+		"SYSTEM WAIT VIEW 123;",
+		"SYSTEM WAIT VIEW `unclosed;",
+		"SYSTEM WAIT VIEW `escaped\\`",
+		"SYSTEM WAIT VIEW ``;",
+		"SYSTEM WAIT VIEW refresh /* unclosed",
+		"SYSTEM /* outer /* inner */ WAIT VIEW refresh;",
+		"SYSTEM WAIT VIEW refresh SYNC;",
+		"SYSTEM WAIT VIEW IF EXISTS refresh;",
+		"SYSTEM WAIT VIEW a, b;",
+		"SYSTEM WAIT TABLE refresh;",
+		"SYSTEM RELOAD CONFIG;",
+		"SYSTEM WAIT VIEW refresh ALTER TABLE events ADD COLUMN label String;",
+		"SYSTEM WAIT VIEW refresh;\nALTER TABLE events ADD COLUMN;",
+		"ALTER TABLE events ADD COLUMN;\nSYSTEM WAIT VIEW refresh;",
+		"SYSTEM WAIT VIEW refresh;\nALTER TABLE events DROP COLUMN missing;",
+		"SYSTEM WAIT VIEW refresh;\nCREATE DATABASE hidden;",
+		"SYSTEM WAIT VIEW refresh;\nINVALID",
+		"SYSTEM WAIT VIEW refresh;\nALTER",
+		"-- chgen:external\nSYSTEM WAIT VIEW refresh;\nCREATE TABLE requested (id UInt64);",
+	} {
+		t.Run(sql, func(t *testing.T) {
+			config, _ := writeCheckProject(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;\n"+sql,
+				"-- name: Read :many\nSELECT id FROM events;")
+			path := filepath.Join(filepath.Dir(config), "schema.sql")
+			catalogs, err := chgen.ParseSchemaCatalogs([]string{path})
+			if err == nil || catalogs != nil || !strings.Contains(err.Error(), path) {
+				t.Fatalf("invalid migration must fail with its source path: catalogs=%+v, err=%v", catalogs, err)
+			}
+		})
+	}
+}
+
+func TestSchemaWaitViewPreservesSourceLocationsAndQuotedText(t *testing.T) {
+	const ddl = "-- SYSTEM WAIT VIEW not_a_statement;\n" +
+		"SYSTEM WAIT\nVIEW `refresh;view`;\n" +
+		"CREATE TABLE events (id UInt64, label String DEFAULT 'SYSTEM WAIT VIEW text;') ENGINE=Memory;\n" +
+		"SYSTEM WAIT VIEW refresh;\n"
+	config, _ := writeCheckProject(t, ddl, "-- name: Read :many\nSELECT id FROM events;")
+	path := filepath.Join(filepath.Dir(config), "schema.sql")
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if table := catalogs.Physical.Tables["events"]; table.Line != 4 || table.File != path {
+		t.Fatalf("CREATE TABLE location changed: %+v", table)
+	}
+	if err := os.WriteFile(path, []byte(ddl+"ALTER TABLE events DROP COLUMN missing;"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := chgen.ParseSchemaCatalogs([]string{path}); err == nil || !strings.Contains(err.Error(), path+":6:") {
+		t.Fatalf("later ALTER lost its original location: %v", err)
+	}
+}
+
+func TestSchemaCatalogsRemoveTTLStillValidatesTheWholeAlter(t *testing.T) {
+	for _, ddl := range []string{
+		"ALTER TABLE missing REMOVE TTL;",
+		"-- chgen:external\nCREATE TABLE requested (id UInt64);\nALTER TABLE requested REMOVE TTL;",
+		"CREATE TABLE events (id UInt64) ENGINE=Memory;\nALTER TABLE events REMOVE TTL, DROP COLUMN missing;",
+		"CREATE TABLE events (id UInt64) ENGINE=Memory;\nALTER TABLE events REMOVE TTL, RENAME COLUMN id TO other;",
+		"CREATE TABLE events (id UInt64) ENGINE=Memory;\nALTER TABLE events REMOVE;",
+		"CREATE TABLE events (id UInt64) ENGINE=Memory;\nALTER TABLE events REMOVE TTL garbage;",
+	} {
+		t.Run(ddl, func(t *testing.T) {
+			config, _ := writeCheckProject(t, ddl, "-- name: Read :many\nSELECT id FROM events;")
+			path := filepath.Join(filepath.Dir(config), "schema.sql")
+			if catalogs, err := chgen.ParseSchemaCatalogs([]string{path}); err == nil || catalogs != nil || !strings.Contains(err.Error(), path) {
+				t.Fatalf("REMOVE TTL hid an invalid ALTER: %+v, %v", catalogs, err)
+			}
+		})
+	}
+}
+
+func TestSchemaWaitViewCLIUsesTheWholeMigration(t *testing.T) {
+	cli := buildPublicCLI(t)
+	config, output := writeCheckProject(t, `CREATE TABLE events (id UInt64) ENGINE=Memory;
+SYSTEM WAIT VIEW "analytics"."refresh;view";
+ALTER TABLE events ADD COLUMN label String;`, "-- name: Read :many\nSELECT id, label FROM events;")
+	cmd := exec.CommandContext(t.Context(), cli, "-f", config)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("generate: %v\n%s", err, out)
+	}
+	generated, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(generated), "Label string") || !strings.Contains(string(generated), "uint64") {
+		t.Fatalf("generated result lost a column: %s", generated)
+	}
+	path := filepath.Join(filepath.Dir(config), "schema.sql")
+	if err := os.WriteFile(path, []byte("SYSTEM WAIT VIEW refresh;\nALTER TABLE events ADD COLUMN;"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cmd = exec.CommandContext(t.Context(), cli, "-f", config)
+	if out, err := cmd.CombinedOutput(); err == nil || !strings.Contains(string(out), "schema.sql") {
+		t.Fatalf("invalid migration generated successfully or lost its location: %v\n%s", err, out)
+	}
+	if after, err := os.ReadFile(output); err != nil || string(after) != string(generated) {
+		t.Fatalf("failed generation overwrote the last valid output: %v", err)
+	}
+}
+
+func TestSchemaCatalogsRemoveTTLWithoutLosingColumnsOrEngine(t *testing.T) {
+	const ddl = `CREATE TABLE events (id UInt64, occurred_at DateTime)
+ENGINE=ReplacingMergeTree(id) ORDER BY (id, occurred_at)
+TTL occurred_at + INTERVAL 1 DAY;
+ALTER TABLE events REMOVE TTL, ADD COLUMN label String;
+SYSTEM WAIT VIEW refresh;
+ALTER TABLE events MODIFY COLUMN label Nullable(String);`
+	config, output := writeCheckProject(t, ddl, "-- name: Read :many\nSELECT id, label FROM events;")
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(filepath.Dir(config), "schema.sql")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	table := catalogs.Physical.Tables["events"]
+	wantEngine := &chgen.TableEngine{Name: "ReplacingMergeTree", Params: []string{"id"}, OrderBy: []string{"id", "occurred_at"}}
+	if !reflect.DeepEqual(table.Engine, wantEngine) ||
+		!reflect.DeepEqual(table.ColumnOrder, []string{"id", "occurred_at", "label"}) ||
+		table.Columns["label"].Type.Name != "Nullable" || table.Columns["label"].Type.Params[0].Name != "String" {
+		t.Fatalf("REMOVE TTL hid modeled metadata or later ALTER clauses: %+v", table)
+	}
+	cli := buildPublicCLI(t)
+	cmd := exec.CommandContext(t.Context(), cli, "-f", config)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("generate: %v\n%s", err, out)
+	}
+	if generated, err := os.ReadFile(output); err != nil || !strings.Contains(string(generated), "Label *string") {
+		t.Fatalf("generated result lost the post-TTL column type: %v\n%s", err, generated)
+	}
 }

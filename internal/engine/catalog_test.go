@@ -291,7 +291,7 @@ func TestParseSchemaCatalogsUnsupportedAlterClause(t *testing.T) {
 ALTER TABLE orders RENAME COLUMN order_id TO id;
 `)
 	_, err := ParseSchemaCatalogs([]string{path})
-	want := path + ":2: RENAME COLUMN is not supported; supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN; projection operations ADD PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION and index operations ADD INDEX, MATERIALIZE INDEX, DROP INDEX, CLEAR INDEX are ignored"
+	want := path + ":2: RENAME COLUMN is not supported; supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN; projection operations ADD PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION and index operations ADD INDEX, MATERIALIZE INDEX, DROP INDEX, CLEAR INDEX are ignored; REMOVE TTL is ignored"
 	if err == nil || err.Error() != want {
 		t.Fatalf("got %v, want %q", err, want)
 	}

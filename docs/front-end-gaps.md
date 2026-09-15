@@ -41,6 +41,54 @@ Quoted tokens and comments are skipped during recognition. Tests pin those
 boundaries and check the complete exchanged definitions. This adapter does not
 change query SQL, the upstream dependency, or the executable-query grammar.
 
+## Schema-only no-ops: SYSTEM WAIT VIEW and REMOVE TTL (v0.1.13)
+
+Both the CLI and `ParseSchemaCatalogs` accept:
+
+```sql
+SYSTEM WAIT VIEW [database.]view_name;
+ALTER TABLE table_name REMOVE TTL;
+```
+
+The first statement waits for a refresh; it changes neither columns nor the
+engine metadata that chgen models. The view need not be declared in the catalog,
+because views are deliberately not cataloged. Generation does not execute the
+wait. See the [ClickHouse WAIT VIEW documentation](https://clickhouse.com/docs/sql-reference/statements/system#system-wait-view).
+
+The pinned upstream parser cannot parse WAIT VIEW, so a schema-only adapter
+validates its complete grammar, then blanks that statement and its block comments in a
+parser-only copy. It accepts bare names, qualified names, backtick/double-quoted
+names, escaped quotes, whitespace and comments. Original files, byte offsets,
+line numbers and statement separators remain unchanged. Nested block comments
+around WAIT are understood, including rejection of an unclosed outer comment.
+It does not accept
+arbitrary SYSTEM commands, IF EXISTS, multiple names, string literals as names,
+or trailing clauses. Malformed quotes and comments fail. Every other statement
+still goes through the ordinary parser and catalog validation.
+
+The schema parser also adds a final newline and terminator to its internal copy:
+the upstream statement loop otherwise silently drops a final single-token
+statement, such as `ALTER`, at EOF. This suffix moves no source positions and
+does not require migrations to end with a semicolon.
+
+REMOVE TTL already has an upstream AST node. It is classified as an ignored
+catalog clause, not a modeled retention policy. `TableEngine` retains only
+engine name, engine arguments and ORDER BY expressions; removing TTL changes
+none of those. Unknown-table and external-schema checks remain active, and
+other clauses in the same ALTER are still validated and applied. This does not
+enable MODIFY TTL or other unmodeled ALTER operations. See the
+[ClickHouse REMOVE TTL documentation](https://clickhouse.com/docs/sql-reference/statements/alter/ttl#remove-ttl).
+
+Public API and built-CLI regressions cover standalone waits, complete migration
+replay, multiple waits, qualified/quoted names, input immutability, source
+locations, malformed statements and mixed REMOVE TTL/column changes. On
+ClickHouse **25.8.29.51**, the ten accepted WAIT spellings were independently
+checked with EXPLAIN SYNTAX, and invalid string/empty names, unclosed comments,
+IF EXISTS and SYNC suffixes were refused. An isolated live refreshable view
+successfully completed SYSTEM WAIT VIEW. A live ReplacingMergeTree table also
+accepted REMOVE TTL alongside ADD COLUMN, followed by MODIFY COLUMN; SHOW CREATE
+TABLE retained its columns and replacement key without TTL.
+
 ## Open gap: sub-second INTERVAL units
 
 Measured on ClickHouse 25.8.29.51, the server accepts both units:

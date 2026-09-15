@@ -49,7 +49,15 @@ func applySchemaSource(catalogs *SchemaCatalogs, path, raw string) error {
 	if err != nil {
 		return fmt.Errorf("%s:%w", path, err)
 	}
-	statements, err := clickhouse.NewParser(parserContent).ParseStmts()
+	parserContent, err = normalizeSchemaWaitViews(parserContent)
+	if err != nil {
+		return fmt.Errorf("%s:%w", path, err)
+	}
+	// The upstream statement loop checks EOF before dispatching its last
+	// token. A trailing terminator makes it validate even an incomplete final
+	// statement such as "ALTER". The newline also ends any trailing -- comment;
+	// no position within the original source moves.
+	statements, err := clickhouse.NewParser(parserContent + "\n;").ParseStmts()
 	if err != nil {
 		return diagnostic.With(fmt.Errorf("%s: parse schema SQL: %w", path, err), diagnostic.Detail{
 			Code: "schema-parser-refusal", Status: diagnostic.Unknown, Stage: "parser", File: path,
@@ -244,7 +252,7 @@ func applyCatalogRename(catalogs *SchemaCatalogs, path, content string, statemen
 
 const migrationsTableName = "schema_migrations"
 
-var supportedAlterOperations = "supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN; projection operations ADD PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION and index operations ADD INDEX, MATERIALIZE INDEX, DROP INDEX, CLEAR INDEX are ignored"
+var supportedAlterOperations = "supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN; projection operations ADD PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION and index operations ADD INDEX, MATERIALIZE INDEX, DROP INDEX, CLEAR INDEX are ignored; REMOVE TTL is ignored"
 
 func applyCatalogAlter(catalogs *SchemaCatalogs, path, content string, line int, statement *clickhouse.AlterTable) error {
 	if statement.TableIdentifier == nil || statement.TableIdentifier.Table == nil {
