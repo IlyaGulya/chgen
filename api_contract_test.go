@@ -361,6 +361,78 @@ func TestSchemaWaitViewPreservesSourceLocationsAndQuotedText(t *testing.T) {
 	}
 }
 
+func TestSchemaCatalogsIgnoreTableSettingsWithoutChangingModeledMetadata(t *testing.T) {
+	const ddl = `CREATE TABLE events (id UInt64, value String)
+ENGINE=ReplacingMergeTree(value) ORDER BY id;
+ALTER TABLE events MODIFY SETTING max_parts_to_merge_at_once = 4;
+ALTER TABLE events RESET SETTING max_parts_to_merge_at_once;`
+	config, _ := writeCheckProject(t, ddl, "-- name: Read :many\nSELECT id FROM events;")
+	path := filepath.Join(filepath.Dir(config), "schema.sql")
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := chgen.Table{
+		Name: "events", File: path, Line: 1,
+		Columns: map[string]chgen.Column{
+			"id":    {Name: "id", Type: chgen.CHType{Name: "UInt64"}, Insertable: true},
+			"value": {Name: "value", Type: chgen.CHType{Name: "String"}, Insertable: true},
+		},
+		ColumnOrder: []string{"id", "value"},
+		Engine:      &chgen.TableEngine{Name: "ReplacingMergeTree", Params: []string{"value"}, OrderBy: []string{"id"}},
+	}
+	if got := catalogs.Physical.Tables["events"]; !reflect.DeepEqual(got, want) {
+		t.Fatalf("settings changed modeled catalog metadata:\n got: %+v\nwant: %+v", got, want)
+	}
+}
+
+func TestSchemaCatalogsApplyColumnChangesBesideIgnoredTableSettings(t *testing.T) {
+	const ddl = `CREATE TABLE events (id UInt64, label String, obsolete String)
+ENGINE=ReplacingMergeTree(id) ORDER BY id;
+ALTER TABLE events
+	ADD COLUMN created_at DateTime,
+	MODIFY COLUMN label Nullable(String),
+	DROP COLUMN obsolete,
+	MODIFY SETTING max_threads = 4;
+ALTER TABLE events RESET SETTING max_threads;`
+	config, _ := writeCheckProject(t, ddl, "-- name: Read :many\nSELECT id, label, created_at FROM events;")
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(filepath.Dir(config), "schema.sql")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	table := catalogs.Physical.Tables["events"]
+	if !reflect.DeepEqual(table.ColumnOrder, []string{"id", "label", "created_at"}) ||
+		table.Columns["label"].Type.String() != "Nullable(String)" ||
+		table.Columns["created_at"].Type.Name != "DateTime" {
+		t.Fatalf("column operations were lost beside settings: %+v", table)
+	}
+	if table.Engine == nil || table.Engine.Name != "ReplacingMergeTree" ||
+		!reflect.DeepEqual(table.Engine.Params, []string{"id"}) ||
+		!reflect.DeepEqual(table.Engine.OrderBy, []string{"id"}) {
+		t.Fatalf("settings or column operations changed engine metadata: %+v", table.Engine)
+	}
+}
+
+func TestSchemaSettingsCLIGeneratesFromTheWholeMigration(t *testing.T) {
+	const ddl = `CREATE TABLE events (id UInt64) ENGINE=Memory;
+ALTER TABLE events MODIFY SETTING max_threads = 4;
+ALTER TABLE events RESET SETTING max_threads;
+ALTER TABLE events ADD COLUMN created_at DateTime;`
+	config, output := writeCheckProject(t, ddl, "-- name: Read :many\nSELECT id, created_at FROM events;")
+	cli := buildPublicCLI(t)
+	cmd := exec.CommandContext(t.Context(), cli, "-f", config)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("generate: %v\n%s", err, out)
+	}
+	generated, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(generated), "CreatedAt time.Time") {
+		t.Fatalf("generated output missed the column after settings: %s", generated)
+	}
+}
+
 func TestSchemaCatalogsRemoveTTLStillValidatesTheWholeAlter(t *testing.T) {
 	for _, ddl := range []string{
 		"ALTER TABLE missing REMOVE TTL;",

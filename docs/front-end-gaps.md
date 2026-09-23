@@ -89,6 +89,22 @@ successfully completed SYSTEM WAIT VIEW. A live ReplacingMergeTree table also
 accepted REMOVE TTL alongside ADD COLUMN, followed by MODIFY COLUMN; SHOW CREATE
 TABLE retained its columns and replacement key without TTL.
 
+## Ignored ALTER TABLE settings (v0.1.14)
+
+`ALTER TABLE ... MODIFY SETTING name = value` and `ALTER TABLE ... RESET
+SETTING name` are accepted during schema catalog construction. The pinned
+parser already exposes AST nodes for both forms. These clauses do not change
+the columns, engine identity, engine arguments, or replacement keys represented
+by the catalog, so chgen skips them while continuing to validate and apply
+other clauses in the same ALTER. They remain in the migration SQL and are
+executed normally by the migration runner.
+
+The behavior is exercised through `ParseSchemaCatalogs` and the built CLI.
+An isolated ClickHouse **25.8.29.51** accepted a mixed ALTER containing
+ADD/MODIFY/DROP COLUMN followed by MODIFY SETTING, then RESET SETTING;
+`SHOW CREATE TABLE` retained the expected columns and ordering key.
+Unmodeled operations such as `RENAME COLUMN` are still refused.
+
 ## Open gap: sub-second INTERVAL units
 
 Measured on ClickHouse 25.8.29.51, the server accepts both units:

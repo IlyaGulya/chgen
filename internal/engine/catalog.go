@@ -252,7 +252,7 @@ func applyCatalogRename(catalogs *SchemaCatalogs, path, content string, statemen
 
 const migrationsTableName = "schema_migrations"
 
-var supportedAlterOperations = "supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN; projection operations ADD PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION and index operations ADD INDEX, MATERIALIZE INDEX, DROP INDEX, CLEAR INDEX are ignored; REMOVE TTL is ignored"
+var supportedAlterOperations = "supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN; projection operations ADD PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION and index operations ADD INDEX, MATERIALIZE INDEX, DROP INDEX, CLEAR INDEX are ignored; REMOVE TTL is ignored; MODIFY SETTING and RESET SETTING are ignored"
 
 func applyCatalogAlter(catalogs *SchemaCatalogs, path, content string, line int, statement *clickhouse.AlterTable) error {
 	if statement.TableIdentifier == nil || statement.TableIdentifier.Table == nil {

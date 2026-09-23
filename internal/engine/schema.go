@@ -201,10 +201,12 @@ func classifyCatalogAlter(clause clickhouse.AlterTableClause) catalogAlterAction
 	switch clause.(type) {
 	case *clickhouse.AlterTableAddColumn, *clickhouse.AlterTableModifyColumn, *clickhouse.AlterTableDropColumn:
 		return catalogAlterApply
-	case *clickhouse.AlterTableRemoveTTL:
-		// Retention policies are not modeled by TableEngine: removing a TTL
-		// changes neither columns nor replacement keys. Other clauses in the
-		// same ALTER still need to be validated and applied.
+	case *clickhouse.AlterTableRemoveTTL,
+		*clickhouse.AlterTableModifySetting,
+		*clickhouse.AlterTableResetSetting:
+		// Retention policies and table settings are not modeled by TableEngine;
+		// they do not change columns, engine arguments or replacement keys.
+		// Other clauses in the same ALTER still need to be applied.
 		return catalogAlterIgnore
 	case *clickhouse.AlterTableAddProjection,
 		*clickhouse.AlterTableMaterializeProjection,
