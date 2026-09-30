@@ -73,7 +73,10 @@ type Query struct {
 	Results        []Result
 	ResultCapacity string
 	SQL            string
-	Composition    *QueryComposition
+	// UncheckedExec opts a static :exec statement out of parser and catalog
+	// validation. Every parameter must have an explicit Go type.
+	UncheckedExec bool
+	Composition   *QueryComposition
 	// NamedParamNames contains one source chgen.arg name for each placeholder.
 	NamedParamNames       []string
 	resultContracts       map[string]resultTypeContract

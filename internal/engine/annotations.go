@@ -71,6 +71,9 @@ func parseQueriesInFile(file, input string, schema *Schema, externalSchema *Sche
 			if strings.HasPrefix(trimmed, uncheckedSettingDirective) {
 				return nil, fmt.Errorf("%s:%d: %s must follow a -- name annotation", file, lineNumber+1, uncheckedSettingDirective)
 			}
+			if strings.HasPrefix(trimmed, uncheckedExecDirective) {
+				return nil, fmt.Errorf("%s:%d: %s must follow a -- name annotation", file, lineNumber+1, uncheckedExecDirective)
+			}
 			if trimmed == "" || strings.HasPrefix(trimmed, "--") {
 				continue
 			}
@@ -94,6 +97,16 @@ func parseQueriesInFile(file, input string, schema *Schema, externalSchema *Sche
 				return nil, fmt.Errorf("%s:%d: %w", file, lineNumber+1, err)
 			}
 			current.uncheckedSettings = append(current.uncheckedSettings, name)
+			continue
+		}
+		if strings.HasPrefix(trimmed, uncheckedExecDirective) {
+			if trimmed != uncheckedExecDirective {
+				return nil, fmt.Errorf("%s:%d: expected %s with no arguments", file, lineNumber+1, uncheckedExecDirective)
+			}
+			if current.bodyStarted || current.query.Command != CommandExec || current.query.UncheckedExec {
+				return nil, fmt.Errorf("%s:%d: %s is valid once in a :exec query header", file, lineNumber+1, uncheckedExecDirective)
+			}
+			current.query.UncheckedExec = true
 			continue
 		}
 		if !current.bodyStarted && strings.HasPrefix(trimmed, "-- param:") {
@@ -184,12 +197,30 @@ func resolveBuiltQuery(builder *queryBuilder, schema, externalSchema *Schema) (Q
 	if builder.query.Command == CommandExec && builder.query.SQL != runtimeSQL {
 		return Query{}, wrap(fmt.Errorf("chgen.assumeType is supported only in :one and :many queries"))
 	}
-	if err := validateQueryFields(builder.query); err != nil {
-		return Query{}, wrap(err)
+	if !builder.query.UncheckedExec {
+		if err := validateQueryFields(builder.query); err != nil {
+			return Query{}, wrap(err)
+		}
 	}
 	querySchema, err := schemaForQuery(schema, externalParams, externalSchema)
 	if err != nil {
 		return Query{}, wrap(err)
+	}
+	if builder.query.UncheckedExec {
+		if len(builder.uncheckedSettings) != 0 {
+			return Query{}, wrap(fmt.Errorf("%s cannot be combined with %s", uncheckedExecDirective, uncheckedSettingDirective))
+		}
+		if len(builder.query.ExternalParams) != 0 {
+			return Query{}, wrap(fmt.Errorf("%s does not support chgen.external tables", uncheckedExecDirective))
+		}
+		if err := resolveUncheckedExecParams(&builder.query); err != nil {
+			return Query{}, wrap(err)
+		}
+		if err := validateQueryFields(builder.query); err != nil {
+			return Query{}, wrap(err)
+		}
+		builder.query.SQL = runtimeSQL
+		return builder.query, nil
 	}
 	if err := resolveQueryWithUncheckedSettings(&builder.query, querySchema, builder.uncheckedSettings); err != nil {
 		return Query{}, wrap(err)
@@ -198,13 +229,17 @@ func resolveBuiltQuery(builder *queryBuilder, schema, externalSchema *Schema) (Q
 	return builder.query, nil
 }
 
-// rejectRawPlaceholders fails a schema-aware query whose source contains a
-// raw positional `?`. The check runs on the source text, before chgen.arg
-// markers are lowered to `?`, so only author-written placeholders can match.
+// rejectRawPlaceholders fails a read query whose source contains a raw
+// positional `?`. Fixed exec commands may infer its type from the statement.
+// The check runs before chgen.arg markers are lowered to `?`, so only
+// author-written placeholders can match.
 // The scan is lexical: `?` inside strings, quoted identifiers, and comments is
 // data and does not match. Annotation-only parsing (no schema) keeps raw `?`
 // because its ordered -- param annotations name every placeholder explicitly.
 func rejectRawPlaceholders(query Query, sqlLine int) error {
+	if query.Command == CommandExec {
+		return nil
+	}
 	sql := query.SQL
 	line := sqlLine
 	for index := 0; index < len(sql); {

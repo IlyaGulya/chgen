@@ -221,9 +221,12 @@ Use an annotation when you want another type or field name:
 | `-- result-chtype: SQLAlias ClickHouseType` | Assert one output's CH type, checked at runtime. |
 | `-- result-capacity: SliceParameter` | Pre-allocate a `:many` result slice. |
 | `-- chgen:unchecked-setting name` | Explicitly accept an unmodelled setting for one query; the caller verifies type safety. |
+| `-- chgen:unchecked-exec` | Opt in to one static but unparsed `:exec` command; every parameter needs an explicit Go type. |
 
 A computed result expression needs an SQL alias. A direct column does not.
-Raw positional parameters are not allowed in schema-aware query sources.
+Raw positional parameters are allowed in `:exec` commands, with an inferred
+type or an explicit `-- param` annotation; they remain disallowed in `:one`
+and `:many` queries.
 See [Query source format](docs/query-source.md) for all annotations and command
 forms.
 

@@ -162,6 +162,25 @@ func validateQueryFields(query Query) error {
 	if query.SQL == "" {
 		return fmt.Errorf("SQL body is empty")
 	}
+	if query.UncheckedExec {
+		if query.Command != CommandExec {
+			return fmt.Errorf("%s is valid only for :exec", uncheckedExecDirective)
+		}
+		if len(query.Results) != 0 {
+			return fmt.Errorf("%s cannot have -- result annotations", uncheckedExecDirective)
+		}
+		placeholderCount, err := validateUncheckedExecSQL(query.SQL)
+		if err != nil {
+			return err
+		}
+		if len(query.ParamIndexes) != placeholderCount {
+			return fmt.Errorf("SQL has %d positional placeholders but %d parameter mappings", placeholderCount, len(query.ParamIndexes))
+		}
+		if len(query.Params) > placeholderCount {
+			return fmt.Errorf("SQL has %d positional placeholders but %d -- param annotations", placeholderCount, len(query.Params))
+		}
+		return nil
+	}
 	statements, err := parseChgenStatements(query.SQL, query.Command)
 	if err != nil {
 		return fmt.Errorf("parse SQL: %w", err)

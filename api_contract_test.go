@@ -433,6 +433,229 @@ ALTER TABLE events ADD COLUMN created_at DateTime;`
 	}
 }
 
+func TestLightweightDeleteExecPublicContract(t *testing.T) {
+	const ddl = `CREATE TABLE fact_job_metrics_v3 (
+		repository_owner String,
+		repository String,
+		github_workflow_run_id UInt64,
+		github_workflow_run_attempt UInt32,
+		projected_at DateTime64(3, 'UTC')
+	) ENGINE = ReplacingMergeTree ORDER BY (repository_owner, repository, github_workflow_run_id);`
+	const sql = `-- name: DeleteStaleRunJobMetricFacts :exec
+-- param: RunKeys []string
+-- param: RefoldStartedAtUnixMilli int64
+DELETE FROM fact_job_metrics_v3
+WHERE has(chgen.arg('RunKeys'), concat(repository_owner, '/', repository, '#', toString(github_workflow_run_id), '.', toString(github_workflow_run_attempt)))
+  AND toUnixTimestamp64Milli(projected_at) < chgen.arg('RefoldStartedAtUnixMilli')
+SETTINGS lightweight_deletes_sync = 2;`
+	config, _ := writeCheckProject(t, ddl, sql)
+	directory := filepath.Dir(config)
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(directory, "schema.sql")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	queries, err := chgen.ParseQueryFiles([]string{filepath.Join(directory, "queries.sql")}, catalogs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(queries) != 1 || len(queries[0].Params) != 2 ||
+		queries[0].Params[0].GoName != "RunKeys" || queries[0].Params[0].GoType != "[]string" ||
+		queries[0].Params[1].GoName != "RefoldStartedAtUnixMilli" || queries[0].Params[1].GoType != "int64" {
+		t.Fatalf("lightweight delete parameters: %+v", queries)
+	}
+	generated, err := chgen.Generate("querygen", queries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"DELETE FROM fact_job_metrics_v3",
+		"WHERE has(?, concat(repository_owner",
+		"SETTINGS lightweight_deletes_sync = 2",
+		"DeleteStaleRunJobMetricFacts(ctx context.Context, arg DeleteStaleRunJobMetricFactsParams) error",
+	} {
+		if !strings.Contains(string(generated), want) {
+			t.Errorf("generated lightweight delete is missing %q:\n%s", want, generated)
+		}
+	}
+}
+
+func TestLightweightDeleteRejectsUnknownTargetOrPredicateColumn(t *testing.T) {
+	const ddl = `CREATE TABLE facts (id UInt64, repository String) ENGINE = MergeTree ORDER BY id;`
+	for _, test := range []struct {
+		name  string
+		param string
+		query string
+		want  string
+	}{
+		{
+			name:  "target",
+			param: "-- param: ID uint64\n",
+			query: "DELETE FROM missing WHERE id = chgen.arg('ID')",
+			want:  `table "missing" is not present`,
+		},
+		{
+			name:  "nested predicate column",
+			param: "-- param: Keys []string\n",
+			query: "DELETE FROM facts WHERE has(chgen.arg('Keys'), concat(repository, missing))",
+			want:  `column "missing"`,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			config, _ := writeCheckProject(t, ddl, "-- name: Delete :exec\n"+test.param+test.query)
+			directory := filepath.Dir(config)
+			catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(directory, "schema.sql")})
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = chgen.ParseQueryFiles([]string{filepath.Join(directory, "queries.sql")}, catalogs)
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("parse query error = %v, want %q", err, test.want)
+			}
+		})
+	}
+}
+
+func TestLightweightDeleteExecAcceptsPositionalParameters(t *testing.T) {
+	const ddl = `CREATE TABLE events (id UInt64, code String) ENGINE = MergeTree ORDER BY id;`
+	for _, test := range []struct {
+		name   string
+		source string
+		param  chgen.Param
+	}{
+		{
+			name:   "inferred scalar",
+			source: "-- name: Delete :exec\nDELETE FROM events WHERE id = ?",
+			param:  chgen.Param{GoName: "ID", GoType: "uint64"},
+		},
+		{
+			name:   "annotated collection",
+			source: "-- name: Delete :exec\n-- param: Keys []string\nDELETE FROM events WHERE has(?, code)",
+			param:  chgen.Param{GoName: "Keys", GoType: "[]string"},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			config, _ := writeCheckProject(t, ddl, test.source)
+			directory := filepath.Dir(config)
+			catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(directory, "schema.sql")})
+			if err != nil {
+				t.Fatal(err)
+			}
+			queries, err := chgen.ParseQueryFiles([]string{filepath.Join(directory, "queries.sql")}, catalogs)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(queries) != 1 || len(queries[0].Params) != 1 ||
+				queries[0].Params[0].GoName != test.param.GoName ||
+				queries[0].Params[0].GoType != test.param.GoType {
+				t.Fatalf("positional parameter: %+v, want %+v", queries, test.param)
+			}
+		})
+	}
+}
+
+func TestLightweightDeleteDoesNotLoseSettingsPlaceholders(t *testing.T) {
+	config, _ := writeCheckProject(t,
+		"CREATE TABLE events (id UInt64) ENGINE = MergeTree ORDER BY id;",
+		"-- name: Delete :exec\nDELETE FROM events WHERE id = ? SETTINGS lightweight_deletes_sync = ?;",
+	)
+	directory := filepath.Dir(config)
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(directory, "schema.sql")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = chgen.ParseQueryFiles([]string{filepath.Join(directory, "queries.sql")}, catalogs)
+	if err == nil || !strings.Contains(err.Error(), "2 positional placeholders") {
+		t.Fatalf("SETTINGS placeholder was silently omitted: %v", err)
+	}
+}
+
+func TestUncheckedExecSupportsNewClickHouseCommandsAndReportsTrust(t *testing.T) {
+	config, _ := writeCheckProject(t,
+		"CREATE TABLE events (id UInt64) ENGINE = Memory;",
+		"-- name: WaitRefresh :exec\n-- chgen:unchecked-exec\nSYSTEM WAIT VIEW refresh_view;",
+	)
+	directory := filepath.Dir(config)
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(directory, "schema.sql")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	queries, err := chgen.ParseQueryFiles([]string{filepath.Join(directory, "queries.sql")}, catalogs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	generated, err := chgen.Generate("querygen", queries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(generated), "SYSTEM WAIT VIEW refresh_view;") ||
+		!strings.Contains(string(generated), "WaitRefresh(ctx context.Context, arg WaitRefreshParams) error") {
+		t.Fatalf("unchecked command was not generated as :exec:\n%s", generated)
+	}
+	report, err := chgen.Check(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Status != "unknown" || len(report.Diagnostics) != 1 || report.Diagnostics[0].Code != "exec-unchecked" {
+		t.Fatalf("unchecked execution is invisible to check: %+v", report)
+	}
+}
+
+func TestUncheckedExecBindsExplicitParameters(t *testing.T) {
+	config, _ := writeCheckProject(t,
+		"CREATE TABLE events (id UInt64) ENGINE = MergeTree ORDER BY id;",
+		"-- name: DeleteKnown :exec\n-- chgen:unchecked-exec\n-- param: ID uint64\nDELETE FROM events WHERE id = chgen.arg('ID') OR id = chgen.arg('ID');",
+	)
+	directory := filepath.Dir(config)
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(directory, "schema.sql")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	queries, err := chgen.ParseQueryFiles([]string{filepath.Join(directory, "queries.sql")}, catalogs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(queries) != 1 || len(queries[0].Params) != 1 || queries[0].Params[0].GoType != "uint64" ||
+		!reflect.DeepEqual(queries[0].ParamIndexes, []int{0, 0}) {
+		t.Fatalf("unchecked parameter mapping: %+v", queries)
+	}
+	generated, err := chgen.Generate("querygen", queries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(generated), "id = ? OR id = ?") ||
+		!strings.Contains(string(generated), "arg.ID, arg.ID") {
+		t.Fatalf("unchecked SQL lost its parameter binding:\n%s", generated)
+	}
+}
+
+func TestUncheckedExecRejectsAmbiguousOrMultipleStatements(t *testing.T) {
+	const ddl = "CREATE TABLE events (id UInt64) ENGINE = MergeTree ORDER BY id;"
+	for _, test := range []struct {
+		name string
+		sql  string
+		want string
+	}{
+		{"multiple statements", "-- name: Delete :exec\n-- chgen:unchecked-exec\nDELETE FROM events WHERE id = 1; DROP TABLE events", "exactly one SQL statement"},
+		{"untyped parameter", "-- name: Delete :exec\n-- chgen:unchecked-exec\nDELETE FROM events WHERE id = chgen.arg('ID')", "no inferable ClickHouse type"},
+		{"mixed markers", "-- name: Delete :exec\n-- chgen:unchecked-exec\n-- param: ID uint64\nDELETE FROM events WHERE id = chgen.arg('ID') OR id = ?", "cannot mix"},
+		{"read command", "-- name: Read :many\n-- chgen:unchecked-exec\nSELECT id FROM events", "valid once in a :exec query header"},
+		{"duplicate directive", "-- name: Delete :exec\n-- chgen:unchecked-exec\n-- chgen:unchecked-exec\nDELETE FROM events WHERE id = 1", "valid once in a :exec query header"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			config, _ := writeCheckProject(t, ddl, test.sql)
+			directory := filepath.Dir(config)
+			catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(directory, "schema.sql")})
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = chgen.ParseQueryFiles([]string{filepath.Join(directory, "queries.sql")}, catalogs)
+			if err == nil || !strings.Contains(err.Error(), test.want) {
+				t.Fatalf("error = %v, want %q", err, test.want)
+			}
+		})
+	}
+}
+
 func TestSchemaCatalogsRemoveTTLStillValidatesTheWholeAlter(t *testing.T) {
 	for _, ddl := range []string{
 		"ALTER TABLE missing REMOVE TTL;",

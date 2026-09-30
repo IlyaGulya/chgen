@@ -667,6 +667,19 @@ func resolveExecParams(query *Query, statement clickhouse.Expr, schema *Schema) 
 		}
 		return true
 	})
+	// The parser adapter removes trailing SETTINGS before parsing. Keep the
+	// generated SQL and the resolved argument list in lockstep even when that
+	// clause contains a placeholder we cannot infer from the AST.
+	sqlPlaceholders, err := scanSingleExecSQL(query.SQL, "exec SQL")
+	if err != nil {
+		return err
+	}
+	if sqlPlaceholders != len(placeholders) {
+		return fmt.Errorf("exec SQL has %d positional placeholders but parser resolved %d; placeholders in unsupported trailing clauses are not supported", sqlPlaceholders, len(placeholders))
+	}
+	if len(query.NamedParamNames) != 0 && len(query.NamedParamNames) != len(placeholders) {
+		return fmt.Errorf("exec query cannot mix chgen.arg('Name') with raw positional placeholders")
+	}
 
 	switch exec := statement.(type) {
 	case *clickhouse.InsertStmt:
@@ -796,16 +809,45 @@ func resolveExecParams(query *Query, statement clickhouse.Expr, schema *Schema) 
 				return true
 			})
 		default:
-			return fmt.Errorf("exec query supports INSERT, ALTER TABLE UPDATE, ALTER TABLE DELETE, or ALTER TABLE DROP PARTITION, got %T", exec.AlterExprs[0])
+			return fmt.Errorf("exec query supports INSERT, DELETE FROM, ALTER TABLE UPDATE, ALTER TABLE DELETE, or ALTER TABLE DROP PARTITION, got %T", exec.AlterExprs[0])
 		}
+	case *clickhouse.DeleteClause:
+		table, err := schemaTableForIdentifier(exec.Table, schema)
+		if err != nil {
+			return err
+		}
+		scope := queryScope{tables: []scopedTable{{table: table, alias: table.Name}}}
+		if err := validateExecPredicateColumns(exec.WhereExpr, scope); err != nil {
+			return fmt.Errorf("DELETE WHERE: %w", err)
+		}
+		inferPredicateParams(exec.WhereExpr, scope, inferredTypes, paramNames, collectionParams)
 	default:
-		return fmt.Errorf("exec query supports INSERT, ALTER TABLE UPDATE, ALTER TABLE DELETE, or ALTER TABLE DROP PARTITION, got %T", statement)
+		return fmt.Errorf("exec query supports INSERT, DELETE FROM, ALTER TABLE UPDATE, ALTER TABLE DELETE, or ALTER TABLE DROP PARTITION, got %T", statement)
 	}
 
 	if err := applyNamedParamNames(query, placeholders, paramNames, inferredTypes); err != nil {
 		return err
 	}
 	return finalizeParams(query, placeholders, inferredTypes, paramNames, collectionParams)
+}
+
+// validateExecPredicateColumns checks column references even when a function
+// around a parameter has no inferable type. Function names and type names are
+// separate AST nodes, so only direct column expressions belong to this scope.
+func validateExecPredicateColumns(expression clickhouse.Expr, scope queryScope) error {
+	var invalid error
+	clickhouse.Walk(expression, func(node clickhouse.Expr) bool {
+		column, ok := node.(*clickhouse.ColumnExpr)
+		if !ok {
+			return true
+		}
+		switch column.Expr.(type) {
+		case *clickhouse.Ident, *clickhouse.Path:
+			_, invalid = inferExprType(column.Expr, scope)
+		}
+		return invalid == nil
+	})
+	return invalid
 }
 
 func insertSelectTargetColumns(table Table, names *clickhouse.ColumnNamesExpr) ([]Column, error) {

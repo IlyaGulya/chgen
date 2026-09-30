@@ -28,5 +28,9 @@ func QueryDiagnostics(query Query) []diagnostic.Detail {
 		add("setting-unchecked", "settings", fmt.Sprintf("SETTINGS %s is explicitly excluded from type resolution", name),
 			"The SQL retains this setting. Reverify its effect on result types when upgrading ClickHouse.")
 	}
+	if query.UncheckedExec {
+		add("exec-unchecked", "query", "the :exec SQL uses an explicitly unchecked contract",
+			"Verify this statement and its parameter types against your ClickHouse server; chgen checks only one statement and placeholder bindings.")
+	}
 	return result
 }

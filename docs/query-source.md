@@ -233,8 +233,11 @@ One name must have compatible types at all positions. Numeric coercions and
 `Nullable(T)` versus `T` are compatible. Other incompatible uses stop
 generation.
 
-A raw positional `?` in a query is an error. Use `chgen.arg('GoName')`
-instead. The source scanner does not treat `?` or `chgen.arg` text inside
+A raw positional `?` in a `:one` or `:many` query is an error. Use
+`chgen.arg('GoName')` instead. Fixed `:exec` commands may use positional `?`;
+chgen infers its type from the statement where possible, or requires an
+explicit `-- param: Name GoType` annotation. Do not mix raw `?` with
+`chgen.arg` in one command. The source scanner does not treat `?` or `chgen.arg` text inside
 these regions as a parameter:
 
 - string literals
@@ -407,9 +410,24 @@ A schema-aware `:exec` query supports these fixed command forms:
 - `ALTER TABLE ... UPDATE`
 - `ALTER TABLE ... DELETE`
 - `ALTER TABLE ... DROP PARTITION`
+- `DELETE FROM ... WHERE`, optionally with `ON CLUSTER` and trailing `SETTINGS`
 
 The target table supplies column names and types where the command has a
 column context:
+
+```sql
+-- name: DeleteStaleFacts :exec
+-- param: RunKeys []string
+-- param: RefoldStartedAtUnixMilli int64
+DELETE FROM fact_job_metrics_v3
+WHERE has(chgen.arg('RunKeys'), run_key)
+  AND toUnixTimestamp64Milli(projected_at) < chgen.arg('RefoldStartedAtUnixMilli')
+SETTINGS lightweight_deletes_sync = 2;
+```
+
+The target and referenced columns are checked against the catalog; `SETTINGS`
+is preserved in the generated SQL. Parameters inside the trailing `SETTINGS`
+clause are not supported: generation fails rather than omitting a bind value.
 
 ```sql
 -- name: InsertOrderAudit :exec
@@ -452,6 +470,27 @@ either execution path.
 Use a hand-written batch loader for a multi-row insert. Use a hand-written
 builder for a dynamic aggregate-state fold. These operations have different
 performance or state requirements from a fixed typed query.
+
+### Explicitly unchecked `:exec` commands
+
+When ClickHouse accepts a fixed command that the pinned SQL parser does not,
+put `-- chgen:unchecked-exec` after its `-- name` header. This is an explicit
+opt-in to a narrower contract: chgen accepts exactly one static SQL statement,
+binds `chgen.arg('Name')` markers (or raw positional `?`), and generates the
+usual error-returning `:exec` method. Every parameter needs an explicit
+`-- param: Name GoType` annotation. Chgen does **not** parse the command,
+resolve its table or columns, or prove its server-side validity:
+
+```sql
+-- name: WaitForRefresh :exec
+-- chgen:unchecked-exec
+SYSTEM WAIT VIEW refresh_view;
+```
+
+`chgen check` marks this query as unknown (`exec-unchecked`); strict
+require-confirmed checks still reject it. Use this escape hatch only after
+validating the exact SQL against your ClickHouse deployment. It is unavailable
+for `:one` and `:many` because their result shapes require type checking.
 
 ## Deliberate query limits
 

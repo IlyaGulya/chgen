@@ -135,6 +135,9 @@ type Query struct {
 	Results        []Result
 	ResultCapacity string
 	SQL            string
+	// UncheckedExec opts a static :exec statement out of parser and catalog
+	// validation. Every parameter must have an explicit Go type.
+	UncheckedExec bool
 	// NamedParamNames contains one source chgen.arg name for each placeholder.
 	NamedParamNames []string
 
@@ -462,6 +465,7 @@ func fromEngineQuery(value engine.Query) Query {
 		ParamIndexes:    cloneInts(value.ParamIndexes),
 		ResultCapacity:  value.ResultCapacity,
 		SQL:             value.SQL,
+		UncheckedExec:   value.UncheckedExec,
 		NamedParamNames: cloneStrings(value.NamedParamNames),
 	}
 	result.batchInsert, result.batchInsertTable = engine.QueryBatchState(value)
@@ -522,6 +526,7 @@ func toEngineQuery(value Query) engine.Query {
 		ParamIndexes:    cloneInts(value.ParamIndexes),
 		ResultCapacity:  value.ResultCapacity,
 		SQL:             value.SQL,
+		UncheckedExec:   value.UncheckedExec,
 		NamedParamNames: cloneStrings(value.NamedParamNames),
 	}
 	if value.Params != nil {

@@ -56,6 +56,7 @@ field Query.Params []Param
 field Query.ResultCapacity string
 field Query.Results []Result
 field Query.SQL string
+field Query.UncheckedExec bool
 field Result.CHType CHType
 field Result.GoName string
 field Result.GoType string
