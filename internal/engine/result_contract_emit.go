@@ -7,6 +7,9 @@ import (
 
 func hasResultContracts(queries []Query) bool {
 	for _, query := range queries {
+		if query.wildcardSQL != "" {
+			return true
+		}
 		for _, result := range query.Results {
 			if result.Asserted {
 				return true
@@ -29,7 +32,7 @@ func renderResultContractCheck(query Query, empty string) string {
 	}
 	source.WriteString("}, []string{")
 	for _, result := range query.Results {
-		if result.Asserted {
+		if result.Asserted || query.wildcardSQL != "" {
 			fmt.Fprintf(&source, "%q,", result.CHType.String())
 		} else {
 			source.WriteString(`"",`)

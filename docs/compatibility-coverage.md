@@ -76,3 +76,7 @@ Add complete, source-linked client queries and schemas to the corpus. Use the
 report to identify missing families, then add public-interface regressions and
 generated-runtime witnesses before implementing them. CI publishes the offline
 report; it does not treat absence of mismatches as full compatibility.
+
+Measured family boundaries include [series relations](series-table-evidence.md)
+and [wildcard projections](wildcard-evidence.md). Their runtime witnesses are
+separate from this command's execution stage, which remains not_run.

@@ -16304,18 +16304,30 @@
     {
       "kind": "setting",
       "name": "asterisk_include_alias_columns",
-      "status": "not_measured",
-      "semantic_family": "unclassified-setting",
-      "evidence": "clickhouse-api-inventory/observed-only",
-      "test_witness": "internal/engine/support_manifest_test.go:TestPinnedSupportManifestCoversInventory"
+      "status": "partially_measured",
+      "semantic_family": "wildcard-column-inclusion",
+      "evidence": "docs/wildcard-evidence.md",
+      "test_witness": "server_generation_test.go:TestServerWildcardGeneratedRuntime",
+      "accepted_products": [
+        "SELECT * FROM events SETTINGS asterisk_include_alias_columns=1"
+      ],
+      "refused_products": [
+        "SELECT * FROM events SETTINGS asterisk_include_alias_columns=2"
+      ]
     },
     {
       "kind": "setting",
       "name": "asterisk_include_materialized_columns",
-      "status": "not_measured",
-      "semantic_family": "unclassified-setting",
-      "evidence": "clickhouse-api-inventory/observed-only",
-      "test_witness": "internal/engine/support_manifest_test.go:TestPinnedSupportManifestCoversInventory"
+      "status": "partially_measured",
+      "semantic_family": "wildcard-column-inclusion",
+      "evidence": "docs/wildcard-evidence.md",
+      "test_witness": "server_generation_test.go:TestServerWildcardGeneratedRuntime",
+      "accepted_products": [
+        "SELECT * FROM events SETTINGS asterisk_include_materialized_columns=1"
+      ],
+      "refused_products": [
+        "SELECT * FROM events SETTINGS asterisk_include_materialized_columns=2"
+      ]
     },
     {
       "kind": "setting",

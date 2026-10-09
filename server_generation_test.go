@@ -180,6 +180,38 @@ func TestServerGenerationMixesExplicitPackageAnalyzers(t *testing.T) {
 	}
 }
 
+func TestServerWildcardGeneratedRuntime(t *testing.T) {
+	if os.Getenv("CHGEN_CONTRACT_NATIVE") == "" {
+		t.Skip("requires disposable ClickHouse native endpoint")
+	}
+	queries, err := parsePublicQuery(t,
+		"CREATE TABLE chgen_star_runtime (z UInt64, a String DEFAULT 'value', m UInt64 MATERIALIZED z, x UInt64 ALIAS z) ENGINE=Memory;",
+		`-- name: Plain :many
+SELECT * FROM chgen_star_runtime ORDER BY z;
+-- name: Qualified :many
+SELECT e.* FROM chgen_star_runtime AS e ORDER BY z;
+-- name: Nested :many
+WITH source AS (SELECT * FROM chgen_star_runtime) SELECT source.* FROM source ORDER BY z;
+-- name: Included :many
+WITH source AS (SELECT * FROM chgen_star_runtime) SELECT source.* FROM source ORDER BY z SETTINGS asterisk_include_alias_columns=1, asterisk_include_materialized_columns=1;
+-- name: Series :many
+SELECT * FROM numbers(3);
+-- name: Union :many
+SELECT * FROM chgen_star_runtime UNION ALL SELECT * FROM chgen_star_runtime;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	generated, err := chgen.Generate("wildcard", queries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture, err := os.ReadFile("testdata/wildcard/runtime_test.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runGeneratedRuntime(t, "wildcard", generated, fixture)
+}
+
 func TestServerSeriesGeneratedRuntime(t *testing.T) {
 	if os.Getenv("CHGEN_CONTRACT_NATIVE") == "" {
 		t.Skip("requires disposable ClickHouse native endpoint")

@@ -44,6 +44,7 @@ Public API tests additionally cover CTEs, joins, invalid domains and preservatio
 of SQL through the parameter parser adapter.
 
 These roster entries remain partially_measured. On the unchanged bundled
-107-case syntax corpus, 14 of the 27 query cases now resolve and generate
-locally. Unaliased aggregate results, top-level star expansion and invalid
+107-case syntax corpus, series support initially resolved 14 of 27 query cases.
+With [wildcard projection support](wildcard-evidence.md), 17 now resolve and
+generate locally. Unaliased aggregate results and invalid
 steps remain explicit gaps or refusals; parser acceptance is not runtime proof.

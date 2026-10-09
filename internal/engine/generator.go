@@ -84,6 +84,7 @@ type Query struct {
 	unverifiedExpressions   []string
 	uncheckedSettings       []string
 	serverVersion           string
+	wildcardSQL             string
 	serverParams            []string
 	serverSQLHash           [32]byte
 	serverBindingSQL        string

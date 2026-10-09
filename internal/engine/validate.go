@@ -149,11 +149,17 @@ func validGoValueType(goType string) bool {
 func validateQuery(query Query) error {
 	if query.Composition != nil {
 		for _, variant := range query.Composition.Variants {
+			if err := validateWildcardResolution(variant); err != nil {
+				return err
+			}
 			if err := validateQueryFields(variant); err != nil {
 				return err
 			}
 		}
 		return nil
+	}
+	if err := validateWildcardResolution(query); err != nil {
+		return err
 	}
 	return validateQueryFields(query)
 }
@@ -211,6 +217,17 @@ func validateQueryFields(query Query) error {
 	selectQuery, ok := statements[0].(*clickhouse.SelectQuery)
 	if !ok {
 		return fmt.Errorf("%s query must be a SELECT, got %T", query.Command, statements[0])
+	}
+	if query.wildcardSQL != "" {
+		if query.SQL != query.wildcardSQL {
+			return fmt.Errorf("wildcard SQL changed after catalog resolution; parse the query again")
+		}
+		return validateResultGoNames(query.Results)
+	}
+	for _, item := range selectQuery.SelectItems {
+		if _, star := selectWildcardQualifier(item.Expr); star {
+			return validateResultGoNames(query.Results)
+		}
 	}
 	if len(query.Results) > 0 {
 		if len(query.Results) > len(selectQuery.SelectItems) {

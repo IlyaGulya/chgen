@@ -232,6 +232,8 @@ SETTINGS max_threads = 1,
 
 func TestSettingRosterMutationsFailClosed(t *testing.T) {
 	want := map[string]selectSettingRule{
+		"asterisk_include_alias_columns":              {kind: selectSettingBooleanLiteral},
+		"asterisk_include_materialized_columns":       {kind: selectSettingBooleanLiteral},
 		"do_not_merge_across_partitions_select_final": {kind: selectSettingBooleanLiteral},
 		"log_comment":                                  {kind: selectSettingStringLiteral},
 		"max_block_size":                               {kind: selectSettingUnsignedLiteral, nonZero: true},
@@ -290,6 +292,8 @@ func TestSettingRosterMutationsFailClosed(t *testing.T) {
 
 func TestSettingDeletionChangesResolution(t *testing.T) {
 	queries := map[string]string{
+		"asterisk_include_alias_columns":              "SELECT value FROM settings_source SETTINGS asterisk_include_alias_columns=1",
+		"asterisk_include_materialized_columns":       "SELECT value FROM settings_source SETTINGS asterisk_include_materialized_columns=1",
 		"do_not_merge_across_partitions_select_final": "SELECT value FROM settings_source SETTINGS do_not_merge_across_partitions_select_final = 0",
 		"log_comment":                                  "SELECT value FROM settings_source SETTINGS log_comment = 'roster_probe'",
 		"max_block_size":                               "SELECT value FROM settings_source SETTINGS max_block_size = 131",

@@ -155,6 +155,7 @@ type Query struct {
 	NamedParamNames []string
 
 	batchInsert      bool
+	wildcardSQL      string
 	batchInsertTable string
 	assertedResults  map[string]bool
 	composition      *queryComposition
@@ -490,6 +491,7 @@ func fromEngineQuery(value engine.Query) Query {
 		NamedParamNames: cloneStrings(value.NamedParamNames),
 	}
 	result.batchInsert, result.batchInsertTable = engine.QueryBatchState(value)
+	result.wildcardSQL = engine.QueryWildcardState(value)
 	if value.Composition != nil {
 		result.composition = &queryComposition{
 			options:  cloneStrings(value.Composition.Options),
@@ -585,6 +587,7 @@ func toEngineQuery(value Query) engine.Query {
 		}
 	}
 	engine.SetQueryBatchState(&result, value.batchInsert, value.batchInsertTable)
+	engine.SetQueryWildcardState(&result, value.wildcardSQL)
 	return result
 }
 

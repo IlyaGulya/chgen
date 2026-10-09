@@ -57,7 +57,10 @@ The resolver has an exact measured roster. It includes `log_comment`,
 `max_bytes_before_external_sort`, `max_execution_time`, `max_memory_usage`,
 `max_threads`, `optimize_read_in_order`, both memory overcommit denominator settings,
 `preferred_block_size_bytes`, `use_uncompressed_cache`, and
-`do_not_merge_across_partitions_select_final`. It refuses all other setting
+`do_not_merge_across_partitions_select_final`. Wildcard projections additionally
+model `asterisk_include_alias_columns` and
+`asterisk_include_materialized_columns`; see [wildcard evidence](wildcard-evidence.md).
+It refuses all other setting
 names unless a query explicitly opts in with the
 [`-- chgen:unchecked-setting` annotation](query-source.md#unchecked-settings).
 Setting names are case-sensitive.
@@ -66,7 +69,7 @@ The numeric settings accept unsigned integer literals. `max_block_size` must
 be greater than zero. `log_comment` accepts a string literal. The resolver
 refuses parameters and other literal types. ClickHouse can convert some other
 values, but the resolver does not depend on these implicit conversions.
-The three Boolean settings accept `0`, `1`, `true`, and `false`.
+The five Boolean settings accept `0`, `1`, `true`, and `false`.
 `max_threads` accepts unsigned integer literals, including the existing `0`
 auto-selection form. `optimize_read_in_order=1, max_threads=1` needs no opt-in.
 

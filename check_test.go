@@ -32,6 +32,102 @@ func writeCheckProject(t *testing.T, ddl, sql string) (string, string) {
 	return filepath.Join(dir, "chgen.yaml"), filepath.Join(dir, "generated", "queries.go")
 }
 
+func TestWildcardResultsFollowSourceColumnOrder(t *testing.T) {
+	const ddl = "CREATE TABLE events (z UInt64, a String DEFAULT 'value', m UInt64 MATERIALIZED z, x UInt64 ALIAS z) ENGINE=Memory;"
+	queries, err := parsePublicQuery(t, ddl, "-- name: Read :many\nSELECT * FROM events ORDER BY z;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(queries[0].Results) != 2 || queries[0].Results[0].SQLName != "z" || queries[0].Results[0].GoType != "uint64" || queries[0].Results[1].SQLName != "a" || queries[0].Results[1].GoType != "string" {
+		t.Fatalf("wrong wildcard results: %+v", queries[0].Results)
+	}
+	if queries[0].SQL != "SELECT * FROM events ORDER BY z;" {
+		t.Fatalf("SQL was rewritten: %q", queries[0].SQL)
+	}
+	if _, err := chgen.Generate("queries", queries); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestQualifiedWildcardResolvesThroughNestedScopes(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT e.* FROM events AS e ORDER BY z;",
+		"WITH source AS (SELECT * FROM events) SELECT source.* FROM source ORDER BY z;",
+		"SELECT nested.* FROM (SELECT * FROM events) AS nested ORDER BY z;",
+		"SELECT * FROM numbers(3);",
+	} {
+		queries, err := parsePublicQuery(t, "CREATE TABLE events (z UInt64, a String) ENGINE=Memory;", "-- name: Read :many\n"+sql)
+		if err != nil {
+			t.Fatalf("%s: %v", sql, err)
+		}
+		want := 2
+		if strings.Contains(sql, "numbers") {
+			want = 1
+		}
+		if len(queries[0].Results) != want || queries[0].Results[0].GoType != "uint64" {
+			t.Fatalf("%s: %+v", sql, queries[0].Results)
+		}
+		if _, err := chgen.Generate("queries", queries); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestWildcardInclusionSettingsChangeTheResultShape(t *testing.T) {
+	queries, err := parsePublicQuery(t,
+		"CREATE TABLE events (z UInt64, a String, m UInt64 MATERIALIZED z, x UInt64 ALIAS z) ENGINE=Memory;",
+		"-- name: Read :many\nSELECT * FROM events SETTINGS asterisk_include_materialized_columns=1, asterisk_include_alias_columns=true;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(queries[0].Results) != 4 || queries[0].Results[2].SQLName != "m" || queries[0].Results[3].SQLName != "x" {
+		t.Fatalf("wrong inclusion shape: %+v", queries[0].Results)
+	}
+	if _, err := chgen.Generate("queries", queries); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestWildcardGenerationRejectsStaleOrUnresolvedShapes(t *testing.T) {
+	const ddl = "CREATE TABLE events (z UInt64, a String) ENGINE=Memory;"
+	for _, sql := range []string{
+		"SELECT * FROM events e CROSS JOIN events f;",
+		"SELECT unknown.* FROM events;",
+		"SELECT * EXCEPT(a) FROM events;",
+		"-- result: Missing missing\nSELECT * FROM events;",
+		"SELECT * FROM events SETTINGS asterisk_include_alias_columns=2;",
+	} {
+		if _, err := parsePublicQuery(t, ddl, "-- name: Read :many\n"+sql); err == nil {
+			t.Fatalf("unsupported or inconsistent wildcard accepted: %s", sql)
+		}
+	}
+	queries, err := parsePublicQuery(t, ddl, "-- name: Read :many\nSELECT * FROM events;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	queries[0].SQL = "SELECT * FROM numbers(2);"
+	if _, err := chgen.Generate("queries", queries); err == nil || !strings.Contains(err.Error(), "changed after catalog resolution") {
+		t.Fatalf("stale output shape accepted: %v", err)
+	}
+	if _, err := chgen.Generate("queries", []chgen.Query{{Name: "Read", Command: chgen.CommandMany, SQL: "SELECT * FROM events;"}}); err == nil {
+		t.Fatal("unresolved wildcard generated")
+	}
+}
+
+func TestWildcardGeneratedReadersCheckTheShapeBeforeScan(t *testing.T) {
+	queries, err := parsePublicQuery(t, "CREATE TABLE events (z UInt64) ENGINE=Memory;", "-- name: Read :many\nSELECT * FROM events;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	generated, err := chgen.Generate("queries", queries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(generated), "chgenCheckResultContract(rows,") || !strings.Contains(string(generated), `"UInt64"`) {
+		t.Fatal("wildcard reader does not enforce catalog shape")
+	}
+}
+
 func TestSeriesTableFunctionsResolveAcrossQueryScopes(t *testing.T) {
 	queries, err := parsePublicQuery(t, "", `-- name: Series :many
 WITH series AS (SELECT number AS id FROM numbers(10, 6, 2))

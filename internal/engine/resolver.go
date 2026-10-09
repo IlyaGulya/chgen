@@ -11,24 +11,26 @@ import (
 )
 
 type queryScope struct {
-	tables              []scopedTable
-	scalars             map[string]CHType
-	projectionAliases   map[string]CHType
-	projectionExprs     map[string]clickhouse.Expr
-	aliasExpansion      map[string]bool
-	fromBindingStart    int
-	relations           map[string]Table
-	reservedRelations   map[string]bool
-	reservedScalars     map[string]bool
-	usingTypes          map[string]CHType
-	usingQualified      map[string]CHType
-	arrayJoinTypes      map[string]CHType
-	arrayJoinQualified  map[string]CHType
-	exactScalarNames    bool
-	windows             map[string]*clickhouse.WindowExpr
-	scalarSubqueries    map[*clickhouse.SelectQuery]CHType
-	expressionContracts map[*clickhouse.FunctionExpr]bool
-	parent              *queryScope
+	wildcardAlias        bool
+	wildcardMaterialized bool
+	tables               []scopedTable
+	scalars              map[string]CHType
+	projectionAliases    map[string]CHType
+	projectionExprs      map[string]clickhouse.Expr
+	aliasExpansion       map[string]bool
+	fromBindingStart     int
+	relations            map[string]Table
+	reservedRelations    map[string]bool
+	reservedScalars      map[string]bool
+	usingTypes           map[string]CHType
+	usingQualified       map[string]CHType
+	arrayJoinTypes       map[string]CHType
+	arrayJoinQualified   map[string]CHType
+	exactScalarNames     bool
+	windows              map[string]*clickhouse.WindowExpr
+	scalarSubqueries     map[*clickhouse.SelectQuery]CHType
+	expressionContracts  map[*clickhouse.FunctionExpr]bool
+	parent               *queryScope
 }
 
 type scopedTable struct {
@@ -135,6 +137,11 @@ func resolveQueryWithUncheckedSettings(query *Query, schema *Schema, unchecked [
 	if !ok {
 		return fmt.Errorf("%s query must be a SELECT, got %T", query.Command, statements[0])
 	}
+	for _, item := range selectQuery.SelectItems {
+		if _, star := selectWildcardQualifier(item.Expr); star {
+			query.wildcardSQL = query.SQL
+		}
+	}
 	if err := validateResultContractTargets(query, selectQuery); err != nil {
 		return err
 	}
@@ -201,6 +208,17 @@ func resolveQueryWithUncheckedSettings(query *Query, schema *Schema, unchecked [
 	}
 	if err := validateResultGoNames(resolvedResults); err != nil {
 		return err
+	}
+	if query.wildcardSQL != "" {
+		names := make(map[string]bool)
+		for _, result := range resolvedResults {
+			names[result.SQLName] = true
+		}
+		for name := range resultOverrides {
+			if !names[name] {
+				return fmt.Errorf("result annotation references missing SELECT column %q", name)
+			}
+		}
 	}
 	query.Results = resolvedResults
 	return nil
@@ -1483,22 +1501,24 @@ func setQueryLeaves(selectQuery *clickhouse.SelectQuery) ([]*clickhouse.SelectQu
 
 func cteOnlyScope(scope queryScope, parent *queryScope) queryScope {
 	return queryScope{
-		expressionContracts: scope.expressionContracts,
-		parent:              parent,
-		scalars:             cloneScalarTypes(scope.scalars),
-		exactScalarNames:    true,
-		projectionAliases:   make(map[string]CHType),
-		projectionExprs:     make(map[string]clickhouse.Expr),
-		aliasExpansion:      make(map[string]bool),
-		windows:             make(map[string]*clickhouse.WindowExpr),
-		scalarSubqueries:    scope.scalarSubqueries,
-		relations:           cloneRelations(scope.relations),
-		reservedRelations:   cloneNames(scope.reservedRelations),
-		reservedScalars:     cloneNames(scope.reservedScalars),
-		usingTypes:          make(map[string]CHType),
-		usingQualified:      make(map[string]CHType),
-		arrayJoinTypes:      make(map[string]CHType),
-		arrayJoinQualified:  make(map[string]CHType),
+		wildcardAlias:        scope.wildcardAlias,
+		wildcardMaterialized: scope.wildcardMaterialized,
+		expressionContracts:  scope.expressionContracts,
+		parent:               parent,
+		scalars:              cloneScalarTypes(scope.scalars),
+		exactScalarNames:     true,
+		projectionAliases:    make(map[string]CHType),
+		projectionExprs:      make(map[string]clickhouse.Expr),
+		aliasExpansion:       make(map[string]bool),
+		windows:              make(map[string]*clickhouse.WindowExpr),
+		scalarSubqueries:     scope.scalarSubqueries,
+		relations:            cloneRelations(scope.relations),
+		reservedRelations:    cloneNames(scope.reservedRelations),
+		reservedScalars:      cloneNames(scope.reservedScalars),
+		usingTypes:           make(map[string]CHType),
+		usingQualified:       make(map[string]CHType),
+		arrayJoinTypes:       make(map[string]CHType),
+		arrayJoinQualified:   make(map[string]CHType),
 	}
 }
 
@@ -1722,6 +1742,9 @@ func resolveSelectScope(
 			scope.relations[name] = table
 		}
 	}
+	if err := configureWildcardSettings(selectQuery, parent, &scope); err != nil {
+		return queryScope{}, err
+	}
 	if err := addProjectionAliasExpressions(selectQuery, &scope); err != nil {
 		return queryScope{}, err
 	}
@@ -1741,6 +1764,9 @@ func resolveSelectScope(
 		if err := recordJoinUsingTypes(selectQuery.From.Expr, &scope); err != nil {
 			return queryScope{}, err
 		}
+	}
+	if err := expandSelectWildcards(selectQuery, scope); err != nil {
+		return queryScope{}, err
 	}
 	for name, expression := range scope.projectionExprs {
 		if err := resolveScalarSubqueriesInExpr(expression, schema, &scope, scopes); err != nil {
@@ -2336,6 +2362,8 @@ type selectSettingRule struct {
 const maxExecutionTimeWholeSeconds uint64 = 9_223_372_036_854
 
 var selectSettingRoster = map[string]selectSettingRule{
+	"asterisk_include_alias_columns":              {kind: selectSettingBooleanLiteral},
+	"asterisk_include_materialized_columns":       {kind: selectSettingBooleanLiteral},
 	"do_not_merge_across_partitions_select_final": {kind: selectSettingBooleanLiteral},
 	"log_comment":                                  {kind: selectSettingStringLiteral},
 	"max_block_size":                               {kind: selectSettingUnsignedLiteral, nonZero: true},
