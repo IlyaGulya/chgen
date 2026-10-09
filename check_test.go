@@ -255,12 +255,172 @@ func TestCoverageCLIReportsIndependentStagesAndContinuesAfterRefusal(t *testing.
 	}
 }
 
+func TestCoverageIRPreservesIdentifierSourceRanges(t *testing.T) {
+	cli := buildPublicCLI(t)
+	path := filepath.Join(t.TempDir(), "corpus.json")
+	corpus := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"ranges","family":"binding","source":"client","schema":"CREATE TABLE events (id UInt64) ENGINE=Memory;","sql":"SELECT\n id FROM events\nWHERE id > 1","expected_server":"accept"}]}`
+	if err := os.WriteFile(path, []byte(corpus), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", path).Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var report struct {
+		Cases []struct {
+			IR struct {
+				Select struct {
+					Items []struct {
+						Expr struct{ Span *struct{ Start, End int } }
+					}
+				}
+			}
+		}
+	}
+	if err := json.Unmarshal(out, &report); err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Cases) != 1 || len(report.Cases[0].IR.Select.Items) != 1 {
+		t.Fatalf("missing tree: %s", out)
+	}
+	span := report.Cases[0].IR.Select.Items[0].Expr.Span
+	if span == nil || span.Start != 8 || span.End != 10 {
+		t.Fatalf("identifier range lost: %s", out)
+	}
+}
+
+func TestCoverageReportsParserIndependentColumnBindings(t *testing.T) {
+	cli := buildPublicCLI(t)
+	path := filepath.Join(t.TempDir(), "corpus.json")
+	corpus := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"bound","family":"binding","source":"client","schema":"CREATE TABLE events (id UInt64) ENGINE=Memory;","sql":"SELECT\n id FROM events\nWHERE id > 1","expected_server":"accept"}]}`
+	if err := os.WriteFile(path, []byte(corpus), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", path).Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var report struct {
+		Cases []struct {
+			Stages  map[string]struct{ Status string }
+			Binding *struct {
+				Backend    string
+				References []struct {
+					Table, Column, Type string
+					Span                struct{ Start, End int }
+				}
+			}
+		}
+	}
+	if err := json.Unmarshal(out, &report); err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Cases) != 1 || report.Cases[0].Binding == nil {
+		t.Fatalf("binding observation absent: %s", out)
+	}
+	got := report.Cases[0]
+	if got.Stages["bind"].Status != "passed" || got.Binding.Backend != "sqlir" || len(got.Binding.References) != 2 || got.Binding.References[0].Table != "events" || got.Binding.References[0].Column != "id" || got.Binding.References[0].Type != "UInt64" || got.Binding.References[0].Span.Start != 8 {
+		t.Fatalf("wrong binding: %s", out)
+	}
+}
+
+func TestProductionIRBindingRefusesAnUnknownPredicateColumn(t *testing.T) {
+	_, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;", "-- name: Read :many\nSELECT id FROM events\nWHERE missing > 1;")
+	if err == nil {
+		t.Fatal("unknown predicate column accepted")
+	}
+	detail := chgen.ExplainError(err)
+	if detail.Code != "ir-column-missing" || detail.Status != "invalid" || detail.Stage != "binding" || !strings.Contains(err.Error(), `column "missing"`) {
+		t.Fatalf("production did not use the IR binder: %+v; %v", detail, err)
+	}
+}
+
+func TestQualifiedWildcardSourceRangeUsesUTF8ByteOffsets(t *testing.T) {
+	cli := buildPublicCLI(t)
+	path := filepath.Join(t.TempDir(), "corpus.json")
+	corpus := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"utf8","family":"binding","source":"client","schema":"CREATE TABLE events (id UInt64) ENGINE=Memory;","sql":"SELECT /*λ*/ e.* FROM events e","expected_server":"accept"}]}`
+	if err := os.WriteFile(path, []byte(corpus), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", path).Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var report struct {
+		Cases []struct {
+			IR struct {
+				Select struct {
+					Items []struct {
+						Expr struct {
+							Kind string
+							Span struct{ Start, End int }
+						}
+					}
+				}
+			}
+		}
+	}
+	if err := json.Unmarshal(out, &report); err != nil {
+		t.Fatal(err)
+	}
+	expression := report.Cases[0].IR.Select.Items[0].Expr
+	if expression.Kind != "wildcard" || expression.Span.Start != 14 || expression.Span.End != 17 {
+		t.Fatalf("qualified wildcard range is not a complete UTF-8 byte range: %s", out)
+	}
+}
+
+func TestFrontendStructureComparisonDoesNotConfuseSourceRangesWithSyntax(t *testing.T) {
+	cli := buildPublicCLI(t)
+	dir := t.TempDir()
+	corpus := filepath.Join(dir, "corpus.json")
+	if err := os.WriteFile(corpus, []byte(`{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"source","family":"binding","source":"client","sql":"SELECT number FROM numbers(3)","expected_server":"accept"}]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", corpus).Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var report map[string]any
+	if err := json.Unmarshal(out, &report); err != nil {
+		t.Fatal(err)
+	}
+	report["frontend"] = "spanless-candidate"
+	var removeSpans func(any)
+	removeSpans = func(value any) {
+		switch value := value.(type) {
+		case map[string]any:
+			delete(value, "span")
+			for _, child := range value {
+				removeSpans(child)
+			}
+		case []any:
+			for _, child := range value {
+				removeSpans(child)
+			}
+		}
+	}
+	removeSpans(report)
+	candidate := filepath.Join(dir, "candidate.json")
+	data, err := json.Marshal(report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(candidate, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err = exec.CommandContext(t.Context(), cli, "coverage", "-corpus", corpus, "-candidate", candidate).CombinedOutput()
+	if err != nil || !strings.Contains(string(out), `"status": "matched"`) {
+		t.Fatalf("source provenance changed semantic comparison: %v: %s", err, out)
+	}
+}
+
 func TestCoverageCLIExposesCompleteIRWithoutErasingUnknownProperties(t *testing.T) {
 	cli := buildPublicCLI(t)
 	path := filepath.Join(t.TempDir(), "corpus.json")
 	data := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[
 	{"id":"filter","family":"series","source":"client","sql":"SELECT number AS value FROM numbers(3) WHERE number > 1 ORDER BY number","expected_server":"accept"},
-	{"id":"distinct","family":"series","source":"client","sql":"SELECT DISTINCT number FROM numbers(3)","expected_server":"accept"}]}`
+	{"id":"distinct","family":"series","source":"client","sql":"SELECT DISTINCT number FROM numbers(3)","expected_server":"accept"},
+ {"id":"ties","family":"series","source":"client","sql":"SELECT number FROM numbers(3) ORDER BY number LIMIT 1 WITH TIES","expected_server":"accept"}]}`
 	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -283,7 +443,7 @@ func TestCoverageCLIExposesCompleteIRWithoutErasingUnknownProperties(t *testing.
 	if err := json.Unmarshal(out, &report); err != nil {
 		t.Fatal(err)
 	}
-	if len(report.Cases) != 2 || report.Cases[0].IR == nil || report.Cases[0].IR.Select.Where.Kind != "operator" || report.Cases[0].IR.Select.Where.Value != ">" || report.Cases[0].Stages["lower"].Status != "passed" || report.Cases[1].IR != nil || report.Cases[1].Stages["lower"].Status != "unknown" {
+	if len(report.Cases) != 3 || report.Cases[0].IR == nil || report.Cases[0].IR.Select.Where.Kind != "operator" || report.Cases[0].IR.Select.Where.Value != ">" || report.Cases[0].Stages["lower"].Status != "passed" || report.Cases[1].IR != nil || report.Cases[1].Stages["lower"].Status != "unknown" || report.Cases[2].IR != nil || report.Cases[2].Stages["lower"].Status != "unknown" {
 		t.Fatalf("incomplete IR was claimed as complete: %s", out)
 	}
 }

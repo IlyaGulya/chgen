@@ -111,4 +111,8 @@ func TestSeriesRowsAndTypes(t *testing.T) {
 	if _, err := q.Parameterized(t.Context(), ParameterizedParams{Start: 1, Length: 3, Step: 0}); err == nil {
 		t.Fatal("zero step accepted")
 	}
+	filtered, err := q.BoundFilter(t.Context(), BoundFilterParams{})
+	if err != nil || len(filtered) != 1 || filtered[0].Number != 3 {
+		t.Fatalf("bound filter: %+v, %v", filtered, err)
+	}
 }

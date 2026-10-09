@@ -1,5 +1,6 @@
 // Package sqlir owns the parser-independent SELECT representation used by
-// frontend coverage observations. It carries syntax structure, not inferred type proof.
+// column binding and frontend coverage observations. Syntax structure alone
+// does not carry inferred type or runtime proof.
 package sqlir
 
 type Document struct {
@@ -30,6 +31,7 @@ type Item struct {
 }
 
 type Expr struct {
+	Span  *Span    `json:"span,omitempty"`
 	Kind  string   `json:"kind"`
 	Name  []string `json:"name,omitempty"`
 	Value string   `json:"value,omitempty"`
@@ -37,10 +39,18 @@ type Expr struct {
 }
 
 type Relation struct {
+	Span  *Span    `json:"span,omitempty"`
 	Kind  string   `json:"kind"`
 	Name  []string `json:"name,omitempty"`
 	Call  *Expr    `json:"call,omitempty"`
 	Alias string   `json:"alias,omitempty"`
+}
+
+// Span is a half-open range of UTF-8 byte offsets in the parsed SQL.
+// Source provenance is not inferred from the spelling of an expression.
+type Span struct {
+	Start int `json:"start"`
+	End   int `json:"end"`
 }
 
 type Order struct {

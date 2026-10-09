@@ -8,9 +8,11 @@ import (
 
 	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
 	"github.com/IlyaGulya/chgen/internal/diagnostic"
+	"github.com/IlyaGulya/chgen/internal/sqlir"
 )
 
 type queryScope struct {
+	irBinding            *sqlir.BoundScope
 	wildcardAlias        bool
 	wildcardMaterialized bool
 	tables               []scopedTable
@@ -43,6 +45,8 @@ type scopedTable struct {
 // parent stack. Keeping the resolved scope by node lets parameter inference use
 // the columns visible at the placeholder's actual SELECT level.
 type scopeIndex struct {
+	bindingQuery        *clickhouse.SelectQuery
+	irBinding           *sqlir.BoundScope
 	byNode              map[clickhouse.Expr]queryScope
 	selects             map[*clickhouse.SelectQuery]queryScope
 	scalarSubqueries    map[*clickhouse.SelectQuery]CHType
@@ -145,7 +149,11 @@ func resolveQueryWithUncheckedSettings(query *Query, schema *Schema, unchecked [
 	if err := validateResultContractTargets(query, selectQuery); err != nil {
 		return err
 	}
-	scope, scopes, err := resolveScope(selectQuery, schema)
+	binding, bindErr := bindIRSelect(selectQuery, schema, query.SQL)
+	if bindErr != nil && !errors.Is(bindErr, sqlir.ErrBindingUnmodeled) {
+		return bindErr
+	}
+	scope, scopes, err := resolveScopeWithIRBinding(selectQuery, schema, binding)
 	if err != nil {
 		var missing *unregisteredFunctionError
 		if len(query.resultContracts) > 0 && errors.As(err, &missing) {
@@ -1293,7 +1301,13 @@ func nestedIdentifierName(identifier *clickhouse.NestedIdentifier) string {
 }
 
 func resolveScope(selectQuery *clickhouse.SelectQuery, schema *Schema) (queryScope, *scopeIndex, error) {
+	return resolveScopeWithIRBinding(selectQuery, schema, nil)
+}
+
+func resolveScopeWithIRBinding(selectQuery *clickhouse.SelectQuery, schema *Schema, binding *sqlir.BoundScope) (queryScope, *scopeIndex, error) {
 	scopes := &scopeIndex{
+		bindingQuery:        selectQuery,
+		irBinding:           binding,
 		byNode:              make(map[clickhouse.Expr]queryScope),
 		selects:             make(map[*clickhouse.SelectQuery]queryScope),
 		scalarSubqueries:    make(map[*clickhouse.SelectQuery]CHType),
@@ -1736,6 +1750,9 @@ func resolveSelectScope(
 		usingQualified:      make(map[string]CHType),
 		arrayJoinTypes:      make(map[string]CHType),
 		arrayJoinQualified:  make(map[string]CHType),
+	}
+	if selectQuery == scopes.bindingQuery {
+		scope.irBinding = scopes.irBinding
 	}
 	if parent != nil {
 		for name, table := range parent.relations {
@@ -2970,6 +2987,7 @@ func scopeWithoutRowBindings(scope *queryScope) *queryScope {
 		return nil
 	}
 	copy := *scope
+	copy.irBinding = nil
 	copy.tables = nil
 	copy.usingTypes = nil
 	copy.usingQualified = nil

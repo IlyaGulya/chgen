@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 
 	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
@@ -21,6 +22,7 @@ type CoverageColumn struct {
 }
 
 type SQLCoverage struct {
+	Binding *sqlir.BindingReport     `json:"binding,omitempty"`
 	IR      *sqlir.Document          `json:"ir,omitempty"`
 	Stages  map[string]CoverageStage `json:"stages"`
 	Columns []CoverageColumn         `json:"columns,omitempty"`
@@ -31,7 +33,7 @@ type SQLCoverage struct {
 // Parser-only cases may contain complete upstream scripts, including DDL.
 func InspectSQL(source, schema, sql string, parserOnly bool) SQLCoverage {
 	report := SQLCoverage{Stages: make(map[string]CoverageStage)}
-	for _, stage := range []string{"parse", "lower", "catalog", "resolve", "generate", "server_analysis", "type_comparison", "execution"} {
+	for _, stage := range []string{"parse", "lower", "catalog", "bind", "resolve", "generate", "server_analysis", "type_comparison", "execution"} {
 		report.Stages[stage] = CoverageStage{Status: "not_run"}
 	}
 	record := func(stage string, err error) bool {
@@ -56,13 +58,20 @@ func InspectSQL(source, schema, sql string, parserOnly bool) SQLCoverage {
 		record("resolve", fmt.Errorf("query coverage requires SELECT; use scope parse for scripts or DDL"))
 		return report
 	}
-	ir, lowerErr := lowerSelectIR(query)
+	ir, lowerErr := lowerSQLIR(query, sql)
 	if record("lower", lowerErr) {
 		report.IR = ir
 	}
 	catalogs := &SchemaCatalogs{Physical: &Schema{Tables: make(map[string]Table)}, External: &Schema{Tables: make(map[string]Table)}}
 	if !record("catalog", applySchemaSource(catalogs, source+"/schema", schema)) {
 		return report
+	}
+	bound, bindErr := bindIRSelect(query, catalogs.Physical, sql)
+	if errors.Is(bindErr, sqlir.ErrBindingUnmodeled) {
+		report.Stages["bind"] = CoverageStage{Status: "unknown", Code: "ir-binding-unmodeled", Message: bindErr.Error()}
+	} else if record("bind", bindErr) {
+		binding := bound.Report()
+		report.Binding = &binding
 	}
 	queries, err := parseQueriesInFile(source, "-- name: Read :many\n"+sql, catalogs.Physical, catalogs.External)
 	if !record("resolve", err) {

@@ -239,7 +239,9 @@ SELECT generate_series AS value FROM generateSeries(chgen.arg('Start'),chgen.arg
 -- name: Unlimited :many
 SELECT number FROM numbers() LIMIT 3;
 -- name: Empty :many
-SELECT number FROM numbers(0);`)
+SELECT number FROM numbers(0);
+-- name: BoundFilter :many
+SELECT number FROM numbers(5) WHERE number > 1 AND number < 4 ORDER BY number LIMIT 1 OFFSET 1;`)
 	if err != nil {
 		t.Fatal(err)
 	}

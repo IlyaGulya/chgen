@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/IlyaGulya/chgen/internal/engine"
+	"github.com/IlyaGulya/chgen/internal/sqlir"
 )
 
 // Compare attaches observations from another frontend for this exact corpus.
@@ -67,7 +68,7 @@ func Compare(report *Report, data []byte) error {
 		local.Stages["parse_comparison"] = engine.CoverageStage{Status: status}
 		if local.IR != nil && other.IR != nil {
 			comparable++
-			local.Stages["ir_comparison"] = compareObservation(local.IR, other.IR)
+			local.Stages["ir_comparison"] = compareObservation(irStructure(local.IR), irStructure(other.IR))
 		}
 		if len(local.Columns) > 0 && len(other.Columns) > 0 {
 			local.Stages["frontend_type_comparison"] = compareObservation(local.Columns, other.Columns)
@@ -80,6 +81,30 @@ func Compare(report *Report, data []byte) error {
 	report.Warning += " Frontend comparison checks complete lowered structures and available result vectors, not SQL equivalence, source positions, or runtime values. Unmodeled structures are not compared."
 	report.recount()
 	return nil
+}
+
+// Source ranges describe provenance, not semantic structure. A frontend that
+// cannot supply ranges may still compare its complete syntax tree.
+func irStructure(document *sqlir.Document) any {
+	data, _ := json.Marshal(document)
+	var value any
+	_ = json.Unmarshal(data, &value)
+	removeIRSpans(value)
+	return value
+}
+
+func removeIRSpans(value any) {
+	switch value := value.(type) {
+	case map[string]any:
+		delete(value, "span")
+		for _, child := range value {
+			removeIRSpans(child)
+		}
+	case []any:
+		for _, child := range value {
+			removeIRSpans(child)
+		}
+	}
 }
 
 func compareObservation(left, right any) engine.CoverageStage {

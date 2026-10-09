@@ -23,7 +23,8 @@ complete scripts for parser testing only. Duplicate JSON keys, unknown fields,
 duplicate IDs and trailing JSON are refused.
 
 Reports identify the exact corpus SHA-256 and pinned parser dependency. Stages
-are distinct: `parse`, `catalog`, `resolve` (binding and inference), `generate`,
+are distinct: `parse`, `catalog`, `bind` (the bounded IR binder),
+`resolve` (complete engine binding and inference), `generate`,
 `server_analysis`, and complete ordered `type_comparison`. Unvisited stages
 remain `not_run`. `lower` records whether the entire SELECT can be represented
 in the parser-independent observation tree. Unsupported properties refuse
@@ -55,9 +56,15 @@ The observation tree currently covers ordinary projections, table relations,
 series function calls, relation CTEs, numeric expressions, WHERE, GROUP BY,
 HAVING, ORDER BY and LIMIT/OFFSET. Any unmodeled nonzero parser property rejects
 the entire lowering. This is not a SQL-equivalence proof or a replacement
-frontend: source positions, the production binder and the generator still use
-the existing parser. A matching self-generated report is only a comparison
+frontend. Available source ranges are carried separately and excluded from
+structure comparison. The production [IR binder](ir-binding.md) now owns a
+bounded family of column lookups; other scopes and the generator still use
+the existing engine. A matching self-generated report is only a comparison
 mechanism test, not independent evidence of correctness.
+
+LIMIT WITH TIES is currently refused by lowering even though legacy generation
+supports it: its parser-only adapter must not erase the modifier from an
+observation claiming a complete tree.
 
 ## Bundled corpus
 

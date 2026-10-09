@@ -27,6 +27,13 @@ func irFields(node any, handled ...string) error {
 	return nil
 }
 
+func lowerSQLIR(query *clickhouse.SelectQuery, sql string) (*sqlir.Document, error) {
+	if stripLimitWithTiesModifiers(sql) != sql {
+		return nil, fmt.Errorf("IR adapter does not model LIMIT WITH TIES")
+	}
+	return lowerSelectIR(query)
+}
+
 func lowerSelectIR(query *clickhouse.SelectQuery) (*sqlir.Document, error) {
 	if err := irFields(query, "With", "SelectItems", "From", "Where", "GroupBy", "Having", "OrderBy", "Limit"); err != nil {
 		return nil, err
@@ -174,7 +181,12 @@ func lowerExprListIR(list *clickhouse.ColumnExprList) ([]sqlir.Expr, error) {
 	return values, nil
 }
 
-func lowerExprIR(expression clickhouse.Expr) (sqlir.Expr, error) {
+func lowerExprIR(expression clickhouse.Expr) (result sqlir.Expr, err error) {
+	defer func() {
+		if err == nil && result.Span == nil {
+			result.Span = irSourceSpan(expression)
+		}
+	}()
 	switch expr := expression.(type) {
 	case *clickhouse.ParamExprList:
 		if err := irFields(expr, "Items"); err != nil {
@@ -221,6 +233,9 @@ func lowerExprIR(expression clickhouse.Expr) (sqlir.Expr, error) {
 		}
 		name := []string{expr.Ident.Name}
 		if expr.DotIdent != nil {
+			if _, star := selectWildcardQualifier(expr.DotIdent); star {
+				return sqlir.Expr{Kind: "wildcard", Name: name}, nil
+			}
 			name = append(name, expr.DotIdent.Name)
 		}
 		return sqlir.Expr{Kind: "identifier", Name: name}, nil
@@ -259,7 +274,12 @@ func lowerExprIR(expression clickhouse.Expr) (sqlir.Expr, error) {
 	}
 }
 
-func lowerRelationIR(expression clickhouse.Expr) (sqlir.Relation, error) {
+func lowerRelationIR(expression clickhouse.Expr) (result sqlir.Relation, err error) {
+	defer func() {
+		if err == nil && result.Span == nil {
+			result.Span = irSourceSpan(expression)
+		}
+	}()
 	switch expr := expression.(type) {
 	case *clickhouse.TableIdentifier:
 		if err := irFields(expr, "Database", "Table"); err != nil {
@@ -336,4 +356,19 @@ func lowerRelationIR(expression clickhouse.Expr) (sqlir.Relation, error) {
 	default:
 		return sqlir.Relation{}, fmt.Errorf("IR adapter does not model relation %s", clickhouse.Format(expression))
 	}
+}
+
+func irSourceSpan(expression clickhouse.Expr) *sqlir.Span {
+	start, end := int(expression.Pos()), int(expression.End())
+	// The pinned parser reports an empty range for a bare asterisk.
+	if identifier, ok := expression.(*clickhouse.Ident); ok && identifier.Name == "*" && end == start {
+		end++
+	}
+	if qualified, ok := expression.(*clickhouse.NestedIdentifier); ok && qualified.DotIdent != nil && qualified.DotIdent.Name == "*" && qualified.DotIdent.End() == qualified.DotIdent.Pos() {
+		end++
+	}
+	if start < 0 || end <= start {
+		return nil
+	}
+	return &sqlir.Span{Start: start, End: end}
 }

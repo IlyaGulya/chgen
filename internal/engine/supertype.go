@@ -2196,6 +2196,13 @@ func (scope queryScope) lookupLocalColumn(qualifier, name string) (CHType, error
 }
 
 func (scope queryScope) lookupColumn(qualifier, name string) (CHType, error) {
+	if scope.irBinding != nil {
+		typ, err := scope.irBinding.Lookup(qualifier, name)
+		if err != nil {
+			return CHType{}, err
+		}
+		return parseCHTypeName(typ)
+	}
 	if qualifier == "" {
 		if joined, ok := scope.arrayJoinTypes[name]; ok {
 			return joined, nil
