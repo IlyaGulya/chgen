@@ -23,17 +23,19 @@ func runServerGeneration(args []string, stderr io.Writer, check bool) int {
 	flags := flag.NewFlagSet("chgen "+command, flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	config := flags.String("f", "chgen.yaml", "configuration file")
-	server := flags.String("server", "", "explicit test ClickHouse HTTP(S) endpoint (required)")
+	server := flags.String("server", "", "explicit test ClickHouse HTTP(S) endpoint; mutually exclusive with snapshot-in")
 	database := flags.String("database", "", "existing test database; schema inputs are never applied")
 	params := flags.String("params", "", "JSON native parameter examples by query name")
+	snapshotIn := flags.String("snapshot-in", "", "replay saved analysis contracts without a server")
+	snapshotOut := flags.String("snapshot-out", "", "save analysis contracts alongside generated output")
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
 		}
 		return 2
 	}
-	if flags.NArg() != 0 || *server == "" {
-		_, _ = fmt.Fprintf(stderr, "Usage: chgen %s -f chgen.yaml -server URL [-database fixture] [-params examples.json]\n", command)
+	if flags.NArg() != 0 || (*server == "") == (*snapshotIn == "") || *snapshotIn != "" && *snapshotOut != "" || check && *snapshotOut != "" {
+		_, _ = fmt.Fprintf(stderr, "Usage: chgen %s -f chgen.yaml (-server URL | -snapshot-in contracts.json) [-database fixture] [-params examples.json] [-snapshot-out contracts.json]\n", command)
 		return 2
 	}
 	examples := make(map[string]map[string]string)
@@ -57,18 +59,22 @@ func runServerGeneration(args []string, stderr io.Writer, check bool) int {
 	defer stop()
 	options := describe.Options{Server: *server, Database: *database,
 		User: os.Getenv("CHGEN_DESCRIBE_USER"), Password: os.Getenv("CHGEN_DESCRIBE_PASSWORD")}
-	run := project.RunServer
-	if check {
-		run = project.CheckServer
-	}
-	if err := run(ctx, *config, options, examples, *params); err != nil {
+	if err := project.RunServerWithSnapshot(ctx, *config, options, examples, *params, check, project.ServerSnapshotOptions{Input: *snapshotIn, Output: *snapshotOut}); err != nil {
 		_, _ = fmt.Fprintf(stderr, "chgen: server generation: %v\n", err)
 		return 1
 	}
 	if check {
-		_, _ = fmt.Fprintln(stderr, "Generated server contracts are current. No files were changed.")
+		if *snapshotIn != "" {
+			_, _ = fmt.Fprintln(stderr, "Generated files match saved contracts. No server was contacted and no files were changed.")
+		} else {
+			_, _ = fmt.Fprintln(stderr, "Generated server contracts are current. No files were changed.")
+		}
 		return 0
 	}
-	_, _ = fmt.Fprintln(stderr, "Generated from server analysis. Output metadata is checked before Scan; execution and value semantics are not proved. Re-run analysis after schema, settings, or server changes.")
+	if *snapshotIn != "" {
+		_, _ = fmt.Fprintln(stderr, "Generated from saved server contracts without network access. A snapshot does not verify the current server schema; refresh it after schema, settings, or server changes.")
+	} else {
+		_, _ = fmt.Fprintln(stderr, "Generated from server analysis. Output metadata is checked before Scan; execution and value semantics are not proved. Re-run analysis after schema, settings, or server changes.")
+	}
 	return 0
 }

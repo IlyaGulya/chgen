@@ -5,7 +5,11 @@ Generate type-safe ClickHouse queries for Go from SQL and DDL.
 For SQL outside the offline frontend, [explicit server generation](docs/server-generation.md)
 uses a prepared test ClickHouse database to discover result contracts. It supports
 typed parameters and external tables, checks runtime result metadata before Scan,
-and provides a non-writing `check-server` command. Offline generation remains the default.
+and provides a non-writing `check-server` command. Saved contracts also permit
+reproducible generation without a server. Offline generation remains the default.
+
+The [SQL compatibility corpus](docs/compatibility-coverage.md) measures parsing,
+type resolution, generation, and optional server analysis separately.
 
 ## Quick start
 

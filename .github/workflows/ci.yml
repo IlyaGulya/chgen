@@ -156,6 +156,16 @@ jobs:
         # a server in this job.
         run: ./scripts/verify.sh
 
+      - name: Measure the offline SQL compatibility corpus
+        run: go run ./cmd/chgen coverage -corpus testdata/syntax-corpus.json > "${RUNNER_TEMP}/chgen-syntax-coverage.json"
+
+      - name: Publish SQL compatibility observations
+        uses: actions/upload-artifact@v7
+        with:
+          name: syntax-coverage-offline
+          path: ${{ runner.temp }}/chgen-syntax-coverage.json
+          if-no-files-found: error
+
   # ---------------------------------------------------------- type oracle ---
   type-oracle:
     # This job replaces two versioned grammar cells with one current profile.

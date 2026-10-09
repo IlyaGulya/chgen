@@ -84,7 +84,7 @@ func TestCIUsesCurrentApprovedGitHubActions(t *testing.T) {
 	wantCounts := map[string]int{
 		"actions/checkout@v7":        7,
 		"actions/setup-go@v7":        7,
-		"actions/upload-artifact@v7": 4,
+		"actions/upload-artifact@v7": 5,
 	}
 	gotCounts := make(map[string]int)
 	references, err := ciActionUses(workflow)

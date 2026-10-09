@@ -32,6 +32,84 @@ func writeCheckProject(t *testing.T, ddl, sql string) (string, string) {
 	return filepath.Join(dir, "chgen.yaml"), filepath.Join(dir, "generated", "queries.go")
 }
 
+func TestCoverageCLIReportsIndependentStagesAndContinuesAfterRefusal(t *testing.T) {
+	cli := buildPublicCLI(t)
+	corpus := filepath.Join(t.TempDir(), "corpus.json")
+	data := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[
+	{"id":"good","family":"select","source":"client","sql":"SELECT 1 AS value","expected_server":"accept"},
+	{"id":"bad","family":"invalid","source":"client","sql":"SELECT (","expected_server":"refuse"},
+	{"id":"script","family":"ddl","source":"client","scope":"parse","sql":"CREATE TABLE t (id UInt64) ENGINE=Memory;","expected_server":"unknown"}]}`
+	if err := os.WriteFile(corpus, []byte(data), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", corpus).Output()
+	if err != nil {
+		t.Fatalf("coverage failed: %v\n%s", err, out)
+	}
+	var report struct {
+		Cases []struct {
+			ID     string `json:"id"`
+			Stages map[string]struct {
+				Status string `json:"status"`
+			} `json:"stages"`
+		} `json:"cases"`
+	}
+	if err := json.Unmarshal(out, &report); err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Cases) != 3 || report.Cases[0].Stages["generate"].Status != "passed" || report.Cases[1].Stages["parse"].Status == "passed" || report.Cases[2].Stages["resolve"].Status != "not_run" || report.Cases[0].Stages["execution"].Status != "not_run" {
+		t.Fatalf("misleading stage report: %s", out)
+	}
+}
+
+func TestCoverageCLIRejectsAmbiguousCorpus(t *testing.T) {
+	cli := buildPublicCLI(t)
+	for _, data := range []string{
+		`{"version":1,"version":1,"clickhouse_version":"25.8.29.51","cases":[]}`,
+		`{"version":1,"unknown":true,"clickhouse_version":"25.8.29.51","cases":[]}`,
+		`{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"a","family":"f","source":"s","sql":"SELECT 1","expected_server":"accept"},{"id":"a","family":"f","source":"s","sql":"SELECT 2","expected_server":"accept"}]}`,
+	} {
+		path := filepath.Join(t.TempDir(), "corpus.json")
+		if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", path).CombinedOutput()
+		var exit *exec.ExitError
+		if !errors.As(err, &exit) || exit.ExitCode() != 2 {
+			t.Fatalf("ambiguous corpus accepted: %v\n%s", err, out)
+		}
+	}
+}
+
+func TestCoverageCLIComparesOrderedTypesAndRefusesWrongServerVersion(t *testing.T) {
+	cli := buildPublicCLI(t)
+	path := filepath.Join(t.TempDir(), "corpus.json")
+	if err := os.WriteFile(path, []byte(`{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"a","family":"select","source":"client","sql":"SELECT 1 AS value","expected_server":"accept"}]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var version atomic.Value
+	version.Store("25.8.29.51")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		if strings.Contains(string(body), "SELECT version()") {
+			fmt.Fprintf(w, `{"data":[{"version":%q}]}`, version.Load())
+		} else {
+			io.WriteString(w, `{"data":[{"name":"value","type":"UInt64"}]}`)
+		}
+	}))
+	defer server.Close()
+	out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", path, "-server", server.URL).CombinedOutput()
+	var exit *exec.ExitError
+	if !errors.As(err, &exit) || exit.ExitCode() != 1 || !strings.Contains(string(out), `"status": "mismatch"`) {
+		t.Fatalf("type mismatch not reported: %v\n%s", err, out)
+	}
+	version.Store("26.1")
+	out, err = exec.CommandContext(t.Context(), cli, "coverage", "-corpus", path, "-server", server.URL).CombinedOutput()
+	if !errors.As(err, &exit) || exit.ExitCode() != 2 || !strings.Contains(string(out), "server answers 26.1") {
+		t.Fatalf("wrong server version accepted: %v\n%s", err, out)
+	}
+}
+
 func TestCheckDoesNotWriteGeneratedFiles(t *testing.T) {
 	config, output := writeCheckProject(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;",
 		"-- name: Read :many\nSELECT id FROM events;")

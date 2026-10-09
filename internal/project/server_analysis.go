@@ -9,7 +9,9 @@ import (
 	"github.com/IlyaGulya/chgen/internal/engine"
 )
 
-func analyzeServerQuery(ctx context.Context, options describe.Options, input engine.Query, examples map[string]string, version *string) (engine.Query, error) {
+type serverDescribe func(context.Context, describe.Options, string) (describe.Report, error)
+
+func analyzeServerQuery(ctx context.Context, options describe.Options, input engine.Query, examples map[string]string, version *string, analyze serverDescribe) (engine.Query, error) {
 	if input.Composition != nil {
 		used := make(map[string]bool)
 		variantExamples := make([]map[string]string, len(input.Composition.Variants))
@@ -35,7 +37,7 @@ func analyzeServerQuery(ctx context.Context, options describe.Options, input eng
 		}
 		variants := make([]engine.Query, len(input.Composition.Variants))
 		for i, variant := range input.Composition.Variants {
-			resolved, err := analyzeServerQuery(ctx, options, variant, variantExamples[i], version)
+			resolved, err := analyzeServerQuery(ctx, options, variant, variantExamples[i], version, analyze)
 			if err != nil {
 				return engine.Query{}, fmt.Errorf("composition variant %d: %w", i+1, err)
 			}
@@ -52,7 +54,7 @@ func analyzeServerQuery(ctx context.Context, options describe.Options, input eng
 		}
 		options.ExternalTables = append(options.ExternalTables, describe.ExternalTable{Name: external.WireName, Structure: strings.Join(columns, ", ")})
 	}
-	report, err := describe.NativeQuery(ctx, options, input.SQL)
+	report, err := analyze(ctx, options, input.SQL)
 	if err != nil {
 		return engine.Query{}, err
 	}

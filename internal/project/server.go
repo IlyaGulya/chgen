@@ -14,16 +14,26 @@ import (
 // offline generation, but obtains result contracts from an existing database.
 // Schema inputs are never executed, and their catalog is not used for inference.
 func RunServer(ctx context.Context, configPath string, options describe.Options, examples map[string]map[string]string, examplesPath string) error {
-	return runServer(ctx, configPath, options, examples, examplesPath, false)
+	return runServer(ctx, configPath, options, examples, examplesPath, false, ServerSnapshotOptions{})
 }
 
 // CheckServer reanalyzes all queries and reports stale generated files without
 // creating directories or writing any output.
 func CheckServer(ctx context.Context, configPath string, options describe.Options, examples map[string]map[string]string, examplesPath string) error {
-	return runServer(ctx, configPath, options, examples, examplesPath, true)
+	return runServer(ctx, configPath, options, examples, examplesPath, true, ServerSnapshotOptions{})
 }
 
-func runServer(ctx context.Context, configPath string, options describe.Options, examples map[string]map[string]string, examplesPath string, check bool) error {
+// RunServerWithSnapshot captures or replays server result contracts. Replay
+// performs no network requests and refuses inputs absent from the snapshot.
+func RunServerWithSnapshot(ctx context.Context, configPath string, options describe.Options, examples map[string]map[string]string, examplesPath string, check bool, snapshot ServerSnapshotOptions) error {
+	return runServer(ctx, configPath, options, examples, examplesPath, check, snapshot)
+}
+
+func runServer(ctx context.Context, configPath string, options describe.Options, examples map[string]map[string]string, examplesPath string, check bool, snapshot ServerSnapshotOptions) error {
+	store, err := openServerSnapshot(snapshot, check)
+	if err != nil {
+		return err
+	}
 	config, err := LoadConfig(configPath)
 	if err != nil {
 		return err
@@ -70,7 +80,7 @@ func runServer(ctx context.Context, configPath string, options describe.Options,
 					}
 				}
 				seenExamples[exampleKey] = true
-				query, err := analyzeServerQuery(ctx, options, input, examples[exampleKey], &version)
+				query, err := analyzeServerQuery(ctx, options, input, examples[exampleKey], &version, store.describe)
 				if err != nil {
 					return nil, fmt.Errorf("query %s: %w", input.Name, err)
 				}
@@ -80,6 +90,9 @@ func runServer(ctx context.Context, configPath string, options describe.Options,
 		return queries, nil
 	})
 	if err != nil {
+		return err
+	}
+	if err := store.finish(plan, config.Path, examplesPath); err != nil {
 		return err
 	}
 	for name := range examples {

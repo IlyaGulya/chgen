@@ -8,3 +8,8 @@ ClickHouse source code is available under the Apache License 2.0. See the
 
 ClickHouse is a trademark of its owner. This project is not endorsed by
 ClickHouse, Inc.
+
+`testdata/syntax-corpus.json` includes ClickHouse SQL test inputs under
+Apache-2.0. Each input links to its source commit. The corpus license is
+retained in `testdata/syntax-corpus-LICENSE.txt`; these inputs are not covered
+by chgen's MIT license.

@@ -1,5 +1,37 @@
 # Explicit server generation
 
+## Reproducible generation without a server
+
+Capture result contracts once against a prepared test database, then commit
+the snapshot with the query sources:
+
+```sh
+chgen generate-server -f chgen.yaml -server http://localhost:8123 \
+  -database test_schema -params examples.json -snapshot-out contracts.json
+chgen generate-server -f chgen.yaml -database test_schema \
+  -params examples.json -snapshot-in contracts.json
+chgen check-server -f chgen.yaml -database test_schema \
+  -params examples.json -snapshot-in contracts.json
+```
+
+Replay makes no network requests, supports all finite composition variants,
+and produces the same generated code. Supply the same database and parameter
+examples. Hashes bind each report to normalized SQL, external-table structure,
+database and example values; a separate digest covers configuration, schema
+and query file contents. Changed inputs fail before any generated file is
+replaced. Capture and generated outputs use the same staged commit, with the
+same documented limitation that replacing multiple files is not atomic.
+
+Snapshots store column metadata, ClickHouse version and hashes, not credentials
+or raw parameter values. Treat them as trusted, reviewable build inputs, not
+signed proof. They are **result-contract snapshots**, not complete database
+schema snapshots: replay cannot discover changes on a live server or certify
+SQL value semantics. Refresh with `-server` after database, server or settings
+changes. `-server` and `-snapshot-in` are mutually exclusive; `check-server`
+never writes a snapshot.
+
+## Live analysis
+
 `generate-server` is an opt-in alternative to offline generation. It asks an
 existing ClickHouse test database for result metadata, then generates the same
 typed Go methods with metadata checks before Scan. It never falls back to this
@@ -114,7 +146,7 @@ existing generated files.
   a server time limit, a client deadline, and a bounded response size.
 - The schema paths remain protected inputs, but are neither replayed locally nor
   executed on the server. Prepare the actual test database yourself. This mode
-  does not validate migration replay or capture a schema snapshot.
+  does not validate migration replay or capture schema DDL.
 - Only named `:one` and `:many` SELECT queries are accepted. A lexical guard
   rejects multiple statements, mutations, `INTO`, top-level `FORMAT`, malformed
   quoting, and unhandled dollar-quoted syntax. ClickHouse owns grammar validation.

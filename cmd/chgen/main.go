@@ -25,6 +25,9 @@ func main() {
 }
 
 func run(args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "coverage" {
+		return runCoverage(args[1:], stdout, stderr)
+	}
 	if len(args) > 0 && args[0] == "generate-server" {
 		return runServerGeneration(args[1:], stderr, false)
 	}
@@ -46,6 +49,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	flags.Usage = func() {
 		_, _ = fmt.Fprintln(stderr, "Usage: chgen [-f chgen.yaml]")
 		_, _ = fmt.Fprintln(stderr, "       chgen -version")
+		_, _ = fmt.Fprintln(stderr, "       chgen coverage -corpus corpus.json [-server URL] [-database fixture]")
 		_, _ = fmt.Fprintln(stderr, "       chgen init")
 		_, _ = fmt.Fprintln(stderr, "       chgen check [-f chgen.yaml] [-json] [-require-confirmed]")
 		_, _ = fmt.Fprintln(stderr, "       chgen describe -server URL -sql concrete-select.sql [-database fixture]")

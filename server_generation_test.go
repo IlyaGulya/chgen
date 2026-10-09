@@ -55,6 +55,87 @@ func TestCheckServerDetectsContractDriftWithoutWriting(t *testing.T) {
 	}
 }
 
+func TestServerSnapshotGeneratesWithoutServerAndRejectsChangedInputs(t *testing.T) {
+	cli := buildPublicCLI(t)
+	config, output := writeCheckProject(t, "", "-- name: Read :one\nSELECT 1 AS value;")
+	snapshot := filepath.Join(filepath.Dir(config), "contracts.json")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		if strings.Contains(string(body), "SELECT version()") {
+			io.WriteString(w, `{"data":[{"version":"25.8.29.51"}]}`)
+		} else {
+			io.WriteString(w, `{"data":[{"name":"value","type":"UInt8"}]}`)
+		}
+	}))
+	if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-server", server.URL, "-snapshot-out", snapshot).CombinedOutput(); err != nil {
+		t.Fatalf("capture: %v\n%s", err, out)
+	}
+	server.Close()
+	before, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(output); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-snapshot-in", snapshot).CombinedOutput(); err != nil {
+		t.Fatalf("offline replay: %v\n%s", err, out)
+	}
+	after, err := os.ReadFile(output)
+	if err != nil || !bytes.Equal(before, after) {
+		t.Fatalf("snapshot changed generated code: %v", err)
+	}
+	if out, err := exec.CommandContext(t.Context(), cli, "check-server", "-f", config, "-snapshot-in", snapshot).CombinedOutput(); err != nil {
+		t.Fatalf("offline check: %v\n%s", err, out)
+	}
+	if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-snapshot-in", snapshot, "-database", "different").CombinedOutput(); err == nil || !strings.Contains(string(out), "snapshot has no matching") {
+		t.Fatalf("different database accepted: %v\n%s", err, out)
+	}
+	if err := os.WriteFile(filepath.Join(filepath.Dir(config), "schema.sql"), []byte("CREATE TABLE unrelated (id UInt64) ENGINE=Memory;"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-snapshot-in", snapshot).CombinedOutput(); err == nil || !strings.Contains(string(out), "snapshot inputs are stale") {
+		t.Fatalf("changed migration accepted: %v\n%s", err, out)
+	}
+	if err := os.WriteFile(filepath.Join(filepath.Dir(config), "schema.sql"), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(filepath.Dir(config), "queries.sql"), []byte("-- name: Read :one\nSELECT 2 AS value;"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-snapshot-in", snapshot).CombinedOutput(); err == nil || !strings.Contains(string(out), "snapshot") {
+		t.Fatalf("changed SQL accepted: %v\n%s", err, out)
+	}
+	after, err = os.ReadFile(output)
+	if err != nil || !bytes.Equal(before, after) {
+		t.Fatalf("rejected replay overwrote output: %v", err)
+	}
+}
+
+func TestServerSnapshotRefusesInputAndOutputCollisions(t *testing.T) {
+	cli := buildPublicCLI(t)
+	config, output := writeCheckProject(t, "", "-- name: Read :one\nSELECT 1 AS value;")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		if strings.Contains(string(body), "SELECT version()") {
+			io.WriteString(w, `{"data":[{"version":"25.8.29.51"}]}`)
+		} else {
+			io.WriteString(w, `{"data":[{"name":"value","type":"UInt8"}]}`)
+		}
+	}))
+	defer server.Close()
+	for _, path := range []string{config, filepath.Join(filepath.Dir(config), "queries.sql"), output} {
+		before, _ := os.ReadFile(path)
+		if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-server", server.URL, "-snapshot-out", path).CombinedOutput(); err == nil || !strings.Contains(string(out), "snapshot collides") {
+			t.Fatalf("unsafe snapshot path %s: %v\n%s", path, err, out)
+		}
+		after, _ := os.ReadFile(path)
+		if !bytes.Equal(before, after) {
+			t.Fatalf("snapshot overwrote %s", path)
+		}
+	}
+}
+
 func TestServerGenerationMixesExplicitPackageAnalyzers(t *testing.T) {
 	cli := buildPublicCLI(t)
 	dir := t.TempDir()
@@ -501,12 +582,20 @@ ORDER BY number;`)
 	if err := os.WriteFile(examples, []byte(`{"Read":{"Limit":"5","AfterID":"1"}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-server", endpoint, "-params", examples).CombinedOutput(); err != nil {
+	snapshot := filepath.Join(filepath.Dir(config), "contracts.json")
+	if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-server", endpoint, "-params", examples, "-snapshot-out", snapshot).CombinedOutput(); err != nil {
 		t.Fatalf("composed generation: %v\n%s", err, out)
 	}
 	generated, err := os.ReadFile(output)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-params", examples, "-snapshot-in", snapshot).CombinedOutput(); err != nil {
+		t.Fatalf("composed snapshot replay: %v\n%s", err, out)
+	}
+	replayed, err := os.ReadFile(output)
+	if err != nil || !bytes.Equal(generated, replayed) {
+		t.Fatalf("composed replay changed output: %v", err)
 	}
 	fixture, err := os.ReadFile("testdata/servercomposition/runtime_test.go")
 	if err != nil {
@@ -569,7 +658,8 @@ ORDER BY id;`)
 	if err := os.WriteFile(examples, []byte(`{"Read":{"Keys":"['a']","AfterID":"1","Since":"2026-01-01 00:00:00"}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-server", endpoint, "-database", database, "-params", examples).CombinedOutput(); err != nil {
+	snapshot := filepath.Join(filepath.Dir(config), "contracts.json")
+	if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-server", endpoint, "-database", database, "-params", examples, "-snapshot-out", snapshot).CombinedOutput(); err != nil {
 		t.Fatalf("composed generation: %v\n%s", err, out)
 	}
 	generated, err := os.ReadFile(output)
@@ -579,6 +669,13 @@ ORDER BY id;`)
 	fixture, err := os.ReadFile("testdata/servercompositiontables/runtime_test.go")
 	if err != nil {
 		t.Fatal(err)
+	}
+	if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-database", database, "-params", examples, "-snapshot-in", snapshot).CombinedOutput(); err != nil {
+		t.Fatalf("table/external snapshot replay: %v\n%s", err, out)
+	}
+	replayed, err := os.ReadFile(output)
+	if err != nil || !bytes.Equal(generated, replayed) {
+		t.Fatalf("table/external replay changed output: %v", err)
 	}
 	t.Setenv("CHGEN_COMPOSITION_DATABASE", database)
 	runGeneratedRuntime(t, "servercompositiontables", generated, fixture)
