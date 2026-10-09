@@ -59,11 +59,11 @@ type BindingError struct {
 
 func (e *BindingError) Error() string { return e.Message }
 
-// BindingDomain leaves unmodeled expression and grouping scopes on the legacy
+// BindingDomain leaves unmodeled expression scopes on the legacy
 // path. Eligible relation trees are validated recursively, not partly erased.
 func BindingDomain(document *Document) error {
 	query := document.Select
-	if len(query.From) != 1 || len(query.GroupBy) != 0 || query.Having != nil {
+	if len(query.From) != 1 {
 		return ErrBindingUnmodeled
 	}
 	for _, cte := range query.With {
@@ -82,7 +82,12 @@ func BindingDomain(document *Document) error {
 			return err
 		}
 	}
-	for _, expression := range []*Expr{query.Where, query.Limit, query.Offset} {
+	for _, expression := range query.GroupBy {
+		if err := bindingExprDomain(expression); err != nil {
+			return err
+		}
+	}
+	for _, expression := range []*Expr{query.Where, query.Having, query.Limit, query.Offset} {
 		if expression != nil {
 			if err := bindingExprDomain(*expression); err != nil {
 				return err
@@ -200,9 +205,14 @@ func BindContext(document *Document, context *ScopeContext) (*BoundScope, error)
 			return nil, err
 		}
 	}
-	for index, expression := range []*Expr{query.Where, query.Limit, query.Offset} {
+	for _, expression := range query.GroupBy {
+		if err := scope.bindClause(expression, "GROUP BY expression"); err != nil {
+			return nil, err
+		}
+	}
+	for index, expression := range []*Expr{query.Where, query.Having, query.Limit, query.Offset} {
 		if expression != nil {
-			if err := scope.bindClause(*expression, []string{"WHERE condition", "LIMIT expression", "LIMIT OFFSET expression"}[index]); err != nil {
+			if err := scope.bindClause(*expression, []string{"WHERE condition", "HAVING condition", "LIMIT expression", "LIMIT OFFSET expression"}[index]); err != nil {
 				return nil, err
 			}
 		}

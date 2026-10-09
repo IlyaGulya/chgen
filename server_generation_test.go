@@ -250,7 +250,10 @@ SELECT l.value AS value FROM (SELECT value FROM source) AS l
 INNER JOIN numbers(5) AS r ON l.value = r.number
 WHERE l.value > 1 AND l.value < 4 ORDER BY value LIMIT 1 OFFSET 1;
 -- name: CollisionAlias :many
-SELECT toUInt32(number) AS number FROM numbers(5) WHERE number > 1 AND number < 4 ORDER BY number LIMIT 1 OFFSET 1;`)
+SELECT toUInt32(number) AS number FROM numbers(5) WHERE number > 1 AND number < 4 ORDER BY number LIMIT 1 OFFSET 1;
+-- name: GroupedAliases :many
+SELECT toUInt32(number) AS key, count() AS rows FROM numbers(5)
+GROUP BY key HAVING rows = 1 AND key > 1 ORDER BY key LIMIT 1 OFFSET 1;`)
 	if err != nil {
 		t.Fatal(err)
 	}

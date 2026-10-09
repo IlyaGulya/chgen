@@ -10,7 +10,8 @@ remain in the existing engine.
 The domain covers catalog tables, measured series functions, relation CTEs,
 derived sources and JOIN chains. Each SELECT has its own binding, including
 eligible bodies of CTEs and derived relations. Ordinary and qualified column
-references are resolved in projections, WHERE, ORDER BY, LIMIT and OFFSET;
+references are resolved in projections, WHERE, ordinary GROUP BY, HAVING,
+ORDER BY, LIMIT and OFFSET;
 JOIN conditions see only the sources introduced at that point. The existing
 wildcard expansion preserves column order and inclusion settings.
 
@@ -22,7 +23,7 @@ from the established engine. This is not a parser-independent type inferencer
 or a complete replacement for legacy scope construction.
 
 Column and computed aliases are expanded during binding, including chains,
-forward references and uses in WHERE and ORDER BY. Their observations retain
+forward references and uses in WHERE, GROUP BY, HAVING and ORDER BY. Their observations retain
 the referenced catalog columns and the range of each alias use. The existing
 engine still infers the expression type; the binder does not assign a computed
 alias the type of its input column. Cycles fail with ir-alias-cycle. An active
@@ -35,7 +36,8 @@ that are rebound against a derived query's rows. References to outer scalar
 expressions carry kind scalar rather than pretending to be catalog columns.
 An existing local qualifier prevents lookup from leaking into a parent source.
 
-GROUP BY, HAVING, scalar subquery syntax, lambda scopes, tuple-field paths and
+Special grouping modes such as ROLLUP, CUBE and TOTALS, scalar subquery syntax,
+lambda scopes, tuple-field paths and
 literal-name precedence for NULL, true and false stay
 outside this domain. Queries that cannot lower completely, or fall outside the
 binder domain, keep the legacy resolver. This is an explicit migration boundary,
@@ -52,8 +54,7 @@ The coverage report adds a separate bind stage and a binding observation with
 backend sqlir. Each explicit column reference identifies its catalog table,
 column, ClickHouse type and available source range. Binding success alone does
 not prove expression type rules, valid aggregate placement or executable SQL.
-The unchanged corpus has 24 successful IR binding observations among 27 query
-cases; only 17 of those query cases resolve and generate.
+Coverage reports distinguish binding from successful resolution and generation.
 
 IR expressions and relations retain available parser source ranges as half-open
 UTF-8 byte offsets in the parsed SQL. These are provenance, not semantic tree
@@ -73,11 +74,12 @@ lowering and comparison with a spanless frontend report. Existing unknown-column
 suggestion and clause-validation regressions remain intact.
 
 TestServerSeriesGeneratedRuntime executes generated filters, alias collisions
-and a combined CTE, derived source and JOIN on ClickHouse 25.8.29.51 with both
+ordinary grouping with HAVING, and a combined CTE, derived source and JOIN on
+ClickHouse 25.8.29.51 with both
 pinned driver versions; the independent expected value is 3. Existing wildcard
 runtime tests cover column lookups after expansion.
 
-Remaining migration boundaries include grouping, scalar subqueries, scalar
+Remaining migration boundaries include special grouping modes, scalar subqueries, scalar
 CTEs, windows, lambda scopes and replacing legacy construction of typed source
 signatures. Each needs parity witnesses before replacing its existing path.
 None is implied by a passed bind observation today.

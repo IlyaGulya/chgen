@@ -127,4 +127,8 @@ func TestSeriesRowsAndTypes(t *testing.T) {
 	if err != nil || len(collision) != 1 || collision[0].Number != uint32(3) {
 		t.Fatalf("column alias collision: %+v, %v", collision, err)
 	}
+	grouped, err := q.GroupedAliases(t.Context(), GroupedAliasesParams{})
+	if err != nil || len(grouped) != 1 || grouped[0].Key != uint32(3) || grouped[0].Rows != uint64(1) {
+		t.Fatalf("grouped aliases and HAVING: %+v, %v", grouped, err)
+	}
 }

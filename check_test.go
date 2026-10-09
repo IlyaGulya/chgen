@@ -446,6 +446,26 @@ func TestResultTypeAssertionStillWorksWithRelationCTE(t *testing.T) {
 	}
 }
 
+func TestGroupedIRBindingKeepsAggregateValidation(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT id, count() AS rows FROM events GROUP BY missing",
+		"SELECT id, count() AS rows FROM events GROUP BY id HAVING missing > 0",
+		"SELECT id FROM events GROUP BY count()",
+		"SELECT id, count() AS rows FROM events",
+		"SELECT id FROM events WHERE count() > 0",
+	} {
+		t.Run(sql, func(t *testing.T) {
+			_, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;", "-- name: Read :many\n"+sql)
+			if err == nil {
+				t.Fatal("invalid grouped query accepted")
+			}
+			if strings.Contains(sql, "missing") && !strings.Contains(err.Error(), `column "missing"`) {
+				t.Fatalf("missing column diagnostic lost: %v", err)
+			}
+		})
+	}
+}
+
 func TestColumnAliasBindingDoesNotHideAnUnknownSource(t *testing.T) {
 	_, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;", "-- name: Read :many\nSELECT e.missing AS event_id FROM events e WHERE event_id > 1;")
 	if err == nil {
@@ -460,6 +480,7 @@ func TestColumnAliasBindingDoesNotHideAnUnknownSource(t *testing.T) {
 func TestAliasBindingPreservesLegacyPrecedenceBoundaries(t *testing.T) {
 	cli := buildPublicCLI(t)
 	for _, example := range []struct{ sql, bind, generate string }{
+		{"SELECT toUInt32(id) AS key, count() AS rows FROM events GROUP BY key HAVING rows > 0 AND key > 1 ORDER BY key", "passed", "passed"},
 		{"SELECT id AS id FROM events ORDER BY id", "passed", "passed"},
 		{"SELECT id AS first_id, first_id AS second_id FROM events ORDER BY second_id", "passed", "passed"},
 		{"SELECT id AS value, id AS value FROM events ORDER BY value", "unknown", "not_run"},
