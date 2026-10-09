@@ -45,8 +45,7 @@ type scopedTable struct {
 // parent stack. Keeping the resolved scope by node lets parameter inference use
 // the columns visible at the placeholder's actual SELECT level.
 type scopeIndex struct {
-	bindingQuery        *clickhouse.SelectQuery
-	irBinding           *sqlir.BoundScope
+	irBindings          map[*clickhouse.SelectQuery]*sqlir.BoundScope
 	byNode              map[clickhouse.Expr]queryScope
 	selects             map[*clickhouse.SelectQuery]queryScope
 	scalarSubqueries    map[*clickhouse.SelectQuery]CHType
@@ -1304,15 +1303,16 @@ func resolveScope(selectQuery *clickhouse.SelectQuery, schema *Schema) (querySco
 	return resolveScopeWithIRBinding(selectQuery, schema, nil)
 }
 
-func resolveScopeWithIRBinding(selectQuery *clickhouse.SelectQuery, schema *Schema, binding *sqlir.BoundScope) (queryScope, *scopeIndex, error) {
+func resolveScopeWithIRBinding(selectQuery *clickhouse.SelectQuery, schema *Schema, binding *irSelectBinding) (queryScope, *scopeIndex, error) {
 	scopes := &scopeIndex{
-		bindingQuery:        selectQuery,
-		irBinding:           binding,
 		byNode:              make(map[clickhouse.Expr]queryScope),
 		selects:             make(map[*clickhouse.SelectQuery]queryScope),
 		scalarSubqueries:    make(map[*clickhouse.SelectQuery]CHType),
 		resolvingScalar:     make(map[*clickhouse.SelectQuery]bool),
 		expressionContracts: make(map[*clickhouse.FunctionExpr]bool),
+	}
+	if binding != nil {
+		scopes.irBindings = binding.nodes
 	}
 	if !selectQueryHasSetOperation(selectQuery) {
 		scope, err := resolveSelectScope(selectQuery, schema, nil, scopes)
@@ -1706,6 +1706,7 @@ func cloneWindows(values map[string]*clickhouse.WindowExpr) map[string]*clickhou
 
 func cloneScopeIndex(scopes *scopeIndex) *scopeIndex {
 	copy := &scopeIndex{
+		irBindings:       scopes.irBindings,
 		byNode:           make(map[clickhouse.Expr]queryScope, len(scopes.byNode)),
 		selects:          make(map[*clickhouse.SelectQuery]queryScope, len(scopes.selects)),
 		scalarSubqueries: make(map[*clickhouse.SelectQuery]CHType, len(scopes.scalarSubqueries)),
@@ -1751,9 +1752,7 @@ func resolveSelectScope(
 		arrayJoinTypes:      make(map[string]CHType),
 		arrayJoinQualified:  make(map[string]CHType),
 	}
-	if selectQuery == scopes.bindingQuery {
-		scope.irBinding = scopes.irBinding
-	}
+	scope.irBinding = scopes.irBindings[selectQuery]
 	if parent != nil {
 		for name, table := range parent.relations {
 			scope.relations[name] = table

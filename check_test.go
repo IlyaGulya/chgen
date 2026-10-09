@@ -418,6 +418,34 @@ func TestCyclicProjectionAliasesFailAtBinding(t *testing.T) {
 	}
 }
 
+func TestNestedIRScopesStillRejectMissingColumns(t *testing.T) {
+	for _, sql := range []string{
+		"WITH source AS (SELECT missing FROM events) SELECT id FROM source;",
+		"SELECT nested.missing FROM (SELECT id FROM events) AS nested;",
+		"SELECT a.id FROM events a JOIN events b ON a.id = b.missing;",
+	} {
+		t.Run(sql, func(t *testing.T) {
+			_, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;", "-- name: Read :many\n"+sql)
+			if err == nil || !strings.Contains(err.Error(), `column "missing"`) {
+				t.Fatalf("nested column error was lost: %v", err)
+			}
+		})
+	}
+}
+
+func TestResultTypeAssertionStillWorksWithRelationCTE(t *testing.T) {
+	queries, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;", "-- name: Read :many\n-- result-chtype: value UInt64\nWITH source AS (SELECT id FROM events) SELECT clientFunction(id) AS value FROM source;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(queries[0].Results) != 1 || queries[0].Results[0].GoType != "uint64" {
+		t.Fatalf("asserted type was lost: %+v", queries)
+	}
+	if _, err := chgen.Generate("queries", queries); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestColumnAliasBindingDoesNotHideAnUnknownSource(t *testing.T) {
 	_, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;", "-- name: Read :many\nSELECT e.missing AS event_id FROM events e WHERE event_id > 1;")
 	if err == nil {
@@ -432,11 +460,18 @@ func TestColumnAliasBindingDoesNotHideAnUnknownSource(t *testing.T) {
 func TestAliasBindingPreservesLegacyPrecedenceBoundaries(t *testing.T) {
 	cli := buildPublicCLI(t)
 	for _, example := range []struct{ sql, bind, generate string }{
-		{"SELECT id AS id FROM events ORDER BY id", "unknown", "passed"},
+		{"SELECT id AS id FROM events ORDER BY id", "passed", "passed"},
 		{"SELECT id AS first_id, first_id AS second_id FROM events ORDER BY second_id", "passed", "passed"},
 		{"SELECT id AS value, id AS value FROM events ORDER BY value", "unknown", "not_run"},
 		{"SELECT toUInt64(id) AS value FROM events ORDER BY value", "passed", "passed"},
 		{"SELECT arraySum(x -> toUInt32(x), values) AS value FROM events", "unknown", "passed"},
+		{"WITH source AS (SELECT id FROM events) SELECT source.id FROM source", "passed", "passed"},
+		{"SELECT nested.id FROM (SELECT id FROM events) AS nested", "passed", "passed"},
+		{"SELECT a.id FROM events a INNER JOIN events b ON a.id = b.id", "passed", "passed"},
+		{"SELECT id FROM events a LEFT JOIN events b USING (id)", "passed", "passed"},
+		{"WITH source AS (SELECT id FROM events) SELECT nested.id FROM (SELECT id FROM source) AS nested", "passed", "passed"},
+		{"SELECT toUInt32(id) AS id FROM events WHERE id > 1 ORDER BY id", "passed", "passed"},
+		{"SELECT id AS outer_id, nested.id AS found FROM events e CROSS JOIN (SELECT id FROM events r WHERE r.id = outer_id) AS nested", "passed", "passed"},
 	} {
 		t.Run(example.sql, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "corpus.json")

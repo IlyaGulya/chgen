@@ -305,10 +305,43 @@ func lowerRelationIR(expression clickhouse.Expr) (result sqlir.Relation, err err
 		relation.Alias = alias.Name
 		return relation, nil
 	case *clickhouse.JoinExpr:
-		if err := irFields(expr, "Left"); err != nil {
+		if expr.Right == nil && len(expr.Modifiers) == 0 && expr.Constraints == nil {
+			if err := irFields(expr, "Left"); err != nil {
+				return sqlir.Relation{}, err
+			}
+			return lowerRelationIR(expr.Left)
+		}
+		if err := irFields(expr, "Left", "Right", "Modifiers", "Constraints"); err != nil {
 			return sqlir.Relation{}, err
 		}
-		return lowerRelationIR(expr.Left)
+		left, err := lowerRelationIR(expr.Left)
+		if err != nil {
+			return sqlir.Relation{}, err
+		}
+		relation := sqlir.Relation{Kind: "join", Left: &left, Modifiers: slices.Clone(expr.Modifiers)}
+		if expr.Right != nil {
+			right, err := lowerRelationIR(expr.Right)
+			if err != nil {
+				return sqlir.Relation{}, err
+			}
+			relation.Right = &right
+		}
+		if expr.Constraints != nil {
+			relation.On, relation.Using, err = lowerJoinConstraintIR(expr.Constraints)
+			if err != nil {
+				return sqlir.Relation{}, err
+			}
+		}
+		return relation, nil
+	case *clickhouse.SubQuery:
+		if err := irFields(expr, "Select", "HasParen"); err != nil {
+			return sqlir.Relation{}, err
+		}
+		document, err := lowerSelectIR(expr.Select)
+		if err != nil {
+			return sqlir.Relation{}, err
+		}
+		return sqlir.Relation{Kind: "derived", Query: &document.Select, Parenthesized: expr.HasParen}, nil
 	case *clickhouse.JoinTableExpr:
 		if err := irFields(expr, "Table"); err != nil {
 			return sqlir.Relation{}, err
@@ -356,6 +389,33 @@ func lowerRelationIR(expression clickhouse.Expr) (result sqlir.Relation, err err
 	default:
 		return sqlir.Relation{}, fmt.Errorf("IR adapter does not model relation %s", clickhouse.Format(expression))
 	}
+}
+
+func lowerJoinConstraintIR(expression clickhouse.Expr) ([]sqlir.Expr, []sqlir.Expr, error) {
+	var on, using *clickhouse.ColumnExprList
+	var err error
+	switch constraint := expression.(type) {
+	case *clickhouse.OnClause:
+		err = irFields(constraint, "On")
+		on = constraint.On
+	case *clickhouse.UsingClause:
+		err = irFields(constraint, "Using")
+		using = constraint.Using
+	case *clickhouse.JoinConstraintClause:
+		err = irFields(constraint, "On", "Using")
+		on, using = constraint.On, constraint.Using
+	default:
+		return nil, nil, fmt.Errorf("IR adapter does not model JOIN constraint %T", expression)
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	onExpressions, err := lowerExprListIR(on)
+	if err != nil {
+		return nil, nil, err
+	}
+	usingExpressions, err := lowerExprListIR(using)
+	return onExpressions, usingExpressions, err
 }
 
 func irSourceSpan(expression clickhouse.Expr) *sqlir.Span {

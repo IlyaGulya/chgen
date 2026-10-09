@@ -119,4 +119,12 @@ func TestSeriesRowsAndTypes(t *testing.T) {
 	if err != nil || len(aliased) != 1 || aliased[0].Value != uint32(3) || aliased[0].SmallNumber != uint32(3) {
 		t.Fatalf("bound alias filter: %+v, %v", aliased, err)
 	}
+	scoped, err := q.ScopedJoin(t.Context(), ScopedJoinParams{})
+	if err != nil || len(scoped) != 1 || scoped[0].Value != uint32(3) {
+		t.Fatalf("CTE and derived JOIN: %+v, %v", scoped, err)
+	}
+	collision, err := q.CollisionAlias(t.Context(), CollisionAliasParams{})
+	if err != nil || len(collision) != 1 || collision[0].Number != uint32(3) {
+		t.Fatalf("column alias collision: %+v, %v", collision, err)
+	}
 }

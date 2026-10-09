@@ -39,11 +39,18 @@ type Expr struct {
 }
 
 type Relation struct {
-	Span  *Span    `json:"span,omitempty"`
-	Kind  string   `json:"kind"`
-	Name  []string `json:"name,omitempty"`
-	Call  *Expr    `json:"call,omitempty"`
-	Alias string   `json:"alias,omitempty"`
+	Span          *Span     `json:"span,omitempty"`
+	Kind          string    `json:"kind"`
+	Name          []string  `json:"name,omitempty"`
+	Call          *Expr     `json:"call,omitempty"`
+	Alias         string    `json:"alias,omitempty"`
+	Query         *Select   `json:"query,omitempty"`
+	Left          *Relation `json:"left,omitempty"`
+	Right         *Relation `json:"right,omitempty"`
+	Modifiers     []string  `json:"modifiers,omitempty"`
+	On            []Expr    `json:"on,omitempty"`
+	Using         []Expr    `json:"using,omitempty"`
+	Parenthesized bool      `json:"parenthesized,omitzero"`
 }
 
 // Span is a half-open range of UTF-8 byte offsets in the parsed SQL.

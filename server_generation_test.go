@@ -243,7 +243,14 @@ SELECT number FROM numbers(0);
 -- name: BoundFilter :many
 SELECT number FROM numbers(5) WHERE number > 1 AND number < 4 ORDER BY number LIMIT 1 OFFSET 1;
 -- name: BoundAliasFilter :many
-SELECT small_number AS value, toUInt32(n.number) AS small_number FROM numbers(5) n WHERE value > 1 AND value < 4 ORDER BY value LIMIT 1 OFFSET 1;`)
+SELECT small_number AS value, toUInt32(n.number) AS small_number FROM numbers(5) n WHERE value > 1 AND value < 4 ORDER BY value LIMIT 1 OFFSET 1;
+-- name: ScopedJoin :many
+WITH source AS (SELECT toUInt32(number) AS value FROM numbers(5))
+SELECT l.value AS value FROM (SELECT value FROM source) AS l
+INNER JOIN numbers(5) AS r ON l.value = r.number
+WHERE l.value > 1 AND l.value < 4 ORDER BY value LIMIT 1 OFFSET 1;
+-- name: CollisionAlias :many
+SELECT toUInt32(number) AS number FROM numbers(5) WHERE number > 1 AND number < 4 ORDER BY number LIMIT 1 OFFSET 1;`)
 	if err != nil {
 		t.Fatal(err)
 	}

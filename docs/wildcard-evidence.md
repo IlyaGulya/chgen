@@ -52,6 +52,6 @@ server-analysis workflow for unsupported shapes. -- result-chtype remains
 restricted to explicit aliases and does not contract a wildcard.
 
 The IR retains the original wildcard. The resolver's expansion is not a
-replacement parser frontend. Simple single-source queries now use the
-[bounded IR binder](ir-binding.md); nested relations and other unsupported
-binding shapes continue through the existing resolver.
+replacement parser frontend. Eligible queries now use the
+[bounded IR binder](ir-binding.md), including eligible CTE, derived and JOIN
+scopes. Unsupported binding shapes continue through the existing resolver.

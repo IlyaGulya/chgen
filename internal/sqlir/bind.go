@@ -17,6 +17,7 @@ type Table struct {
 }
 
 type Reference struct {
+	Kind   string `json:"kind,omitempty"`
 	Table  string `json:"table"`
 	Column string `json:"column"`
 	Type   string `json:"type"`
@@ -30,10 +31,22 @@ type BindingReport struct {
 
 // BoundScope contains catalog identities and types, never parser AST nodes.
 type BoundScope struct {
-	table   Table
+	tables  []Table
 	columns map[string]string
+	merged  map[string]string
+	scalars map[string]string
+	parent  *BoundScope
 	aliases map[string]Expr
 	report  BindingReport
+}
+
+// ScopeContext is a typed lexical input, independent of parser AST nodes.
+// Scalar signatures distinguish outer expressions from catalog columns.
+type ScopeContext struct {
+	Tables  []Table
+	Merged  map[string]string
+	Scalars map[string]string
+	Parent  *ScopeContext
 }
 
 type BindingError struct {
@@ -46,15 +59,20 @@ type BindingError struct {
 
 func (e *BindingError) Error() string { return e.Message }
 
-// BindingDomain limits the first production slice to one relation without
-// CTE scope rules, grouping or correlation.
+// BindingDomain leaves unmodeled expression and grouping scopes on the legacy
+// path. Eligible relation trees are validated recursively, not partly erased.
 func BindingDomain(document *Document) error {
 	query := document.Select
-	if len(query.With) != 0 || len(query.From) != 1 || len(query.GroupBy) != 0 || query.Having != nil {
+	if len(query.From) != 1 || len(query.GroupBy) != 0 || query.Having != nil {
 		return ErrBindingUnmodeled
 	}
-	if query.From[0].Kind != "table" && query.From[0].Kind != "function" {
-		return ErrBindingUnmodeled
+	for _, cte := range query.With {
+		if err := BindingDomain(&Document{Select: cte.Query}); err != nil {
+			return err
+		}
+	}
+	if err := bindingRelationDomain(query.From[0]); err != nil {
+		return err
 	}
 	for _, item := range query.Items {
 		if item.Alias != "" && item.Expr.Kind == "wildcard" {
@@ -77,6 +95,38 @@ func BindingDomain(document *Document) error {
 		}
 	}
 	return nil
+}
+
+func bindingRelationDomain(relation Relation) error {
+	switch relation.Kind {
+	case "table", "function":
+		return nil
+	case "derived":
+		if relation.Query == nil {
+			return ErrBindingUnmodeled
+		}
+		return BindingDomain(&Document{Select: *relation.Query})
+	case "join":
+		if relation.Left == nil {
+			return ErrBindingUnmodeled
+		}
+		if err := bindingRelationDomain(*relation.Left); err != nil {
+			return err
+		}
+		if relation.Right != nil {
+			if err := bindingRelationDomain(*relation.Right); err != nil {
+				return err
+			}
+		}
+		for _, expression := range append(slices.Clone(relation.On), relation.Using...) {
+			if err := bindingExprDomain(expression); err != nil {
+				return err
+			}
+		}
+		return nil
+	default:
+		return ErrBindingUnmodeled
+	}
 }
 
 func bindingExprDomain(expression Expr) error {
@@ -106,22 +156,41 @@ func bindingExprDomain(expression Expr) error {
 }
 
 func Bind(document *Document, table Table) (*BoundScope, error) {
+	return BindSources(document, []Table{table}, nil)
+}
+
+// BindSources consumes typed source signatures. Merged JOIN column types are
+// supplied by the engine; binding does not infer nullability or common types.
+func BindSources(document *Document, tables []Table, merged map[string]string) (*BoundScope, error) {
+	return BindContext(document, &ScopeContext{Tables: tables, Merged: merged})
+}
+
+func contextScope(context *ScopeContext) *BoundScope {
+	if context == nil {
+		return nil
+	}
+	scope := &BoundScope{tables: context.Tables, merged: context.Merged, scalars: context.Scalars, columns: make(map[string]string), aliases: make(map[string]Expr), parent: contextScope(context.Parent), report: BindingReport{Backend: "sqlir", References: []Reference{}}}
+	for _, table := range context.Tables {
+		for _, column := range table.Columns {
+			scope.columns[column.Name] = column.Type
+		}
+	}
+	return scope
+}
+
+func BindContext(document *Document, context *ScopeContext) (*BoundScope, error) {
 	if err := BindingDomain(document); err != nil {
 		return nil, err
 	}
-	scope := &BoundScope{table: table, columns: make(map[string]string), aliases: make(map[string]Expr), report: BindingReport{Backend: "sqlir", References: []Reference{}}}
-	for _, column := range table.Columns {
-		scope.columns[column.Name] = column.Type
-	}
+	scope := contextScope(context)
 	query := document.Select
-	// Name collisions and duplicate aliases retain legacy precedence rules.
+	// Duplicate projections are still checked by the existing result validator.
 	for _, item := range query.Items {
 		if item.Alias == "" {
 			continue
 		}
-		_, collision := scope.columns[item.Alias]
 		_, duplicate := scope.aliases[item.Alias]
-		if collision || duplicate {
+		if duplicate {
 			return nil, ErrBindingUnmodeled
 		}
 		scope.aliases[item.Alias] = item.Expr
@@ -143,7 +212,37 @@ func Bind(document *Document, table Table) (*BoundScope, error) {
 			return nil, err
 		}
 	}
+	if _, err := scope.bindJoin(query.From[0], 0); err != nil {
+		return nil, err
+	}
 	return scope, nil
+}
+
+func (scope *BoundScope) bindJoin(relation Relation, seen int) (int, error) {
+	if relation.Kind != "join" {
+		return seen + 1, nil
+	}
+	seen, err := scope.bindJoin(*relation.Left, seen)
+	if err != nil {
+		return seen, err
+	}
+	local := *scope
+	local.tables = scope.tables[:seen]
+	for _, expression := range relation.On {
+		if err := local.bindClause(expression, "JOIN ON condition"); err != nil {
+			return seen, err
+		}
+	}
+	for _, expression := range relation.Using {
+		if err := local.bindClause(expression, "JOIN USING column"); err != nil {
+			return seen, err
+		}
+	}
+	scope.report = local.report
+	if relation.Right != nil {
+		return scope.bindJoin(*relation.Right, seen)
+	}
+	return seen, nil
 }
 
 func (scope *BoundScope) bindClause(expression Expr, clause string) error {
@@ -160,7 +259,7 @@ func (scope *BoundScope) bindExpr(expression Expr, active map[string]bool, useSp
 			qualifier, name = expression.Name[0], expression.Name[1]
 		}
 		if qualifier == "" {
-			if source, alias := scope.aliases[name]; alias {
+			if source, alias := scope.aliases[name]; alias && !(active[name] && scope.columns[name] != "") {
 				if active[name] {
 					return &BindingError{Name: name, Span: expression.Span, Code: "ir-alias-cycle", Message: fmt.Sprintf("cyclic projection alias %q", name)}
 				}
@@ -173,7 +272,7 @@ func (scope *BoundScope) bindExpr(expression Expr, active map[string]bool, useSp
 				return err
 			}
 		}
-		typ, err := scope.Lookup(qualifier, name)
+		table, typ, err := scope.resolveColumn(qualifier, name)
 		if err != nil {
 			return &BindingError{Name: name, Qualifier: qualifier, Span: expression.Span, Message: err.Error()}
 		}
@@ -181,10 +280,17 @@ func (scope *BoundScope) bindExpr(expression Expr, active map[string]bool, useSp
 		if useSpan != nil {
 			span = useSpan
 		}
-		scope.report.References = append(scope.report.References, Reference{Table: scope.table.Name, Column: name, Type: typ, Span: span})
+		reference := Reference{Table: table, Column: name, Type: typ, Span: span}
+		if table == "" {
+			reference.Kind = "scalar"
+		}
+		scope.report.References = append(scope.report.References, reference)
 	}
-	if expression.Kind == "wildcard" && len(expression.Name) > 0 && expression.Name[0] != scope.table.Alias && expression.Name[0] != scope.table.Name {
-		return &BindingError{Name: expression.Name[0], Span: expression.Span, Message: fmt.Sprintf("wildcard qualifier %q is not a FROM source", expression.Name[0])}
+	if expression.Kind == "wildcard" && len(expression.Name) > 0 {
+		known := slices.ContainsFunc(scope.tables, func(table Table) bool { return expression.Name[0] == table.Alias || expression.Name[0] == table.Name })
+		if !known {
+			return &BindingError{Name: expression.Name[0], Span: expression.Span, Message: fmt.Sprintf("wildcard qualifier %q is not a FROM source", expression.Name[0])}
+		}
 	}
 	for _, argument := range expression.Args {
 		if err := scope.bindExpr(argument, active, useSpan); err != nil {
@@ -195,14 +301,52 @@ func (scope *BoundScope) bindExpr(expression Expr, active map[string]bool, useSp
 }
 
 func (scope *BoundScope) Lookup(qualifier, name string) (string, error) {
-	if qualifier != "" && qualifier != scope.table.Alias && qualifier != scope.table.Name {
-		return "", fmt.Errorf("column %q is not present in FROM tables", name)
+	_, typ, err := scope.resolveColumn(qualifier, name)
+	return typ, err
+}
+
+func (scope *BoundScope) resolveColumn(qualifier, name string) (string, string, error) {
+	if qualifier == "" {
+		if scalar, found := scope.scalars[name]; found {
+			return "", scalar, nil
+		}
 	}
-	typ, found := scope.columns[name]
-	if !found {
-		return "", fmt.Errorf("column %q is not present in FROM tables", name)
+	var source, typ string
+	count := 0
+	localQualifier := false
+	for _, table := range scope.tables {
+		if qualifier != "" && qualifier != table.Alias && qualifier != table.Name {
+			continue
+		}
+		localQualifier = localQualifier || qualifier != ""
+		for _, column := range table.Columns {
+			if column.Name != name {
+				continue
+			}
+			if count == 0 {
+				source, typ = table.Name, column.Type
+			}
+			count++
+		}
 	}
-	return typ, nil
+	key := name
+	if qualifier != "" {
+		key = qualifier + "." + name
+	}
+	if merged, ok := scope.merged[key]; ok {
+		return source, merged, nil
+	}
+	if count == 0 {
+		if scope.parent != nil && !localQualifier {
+			return scope.parent.resolveColumn(qualifier, name)
+		}
+		return "", "", fmt.Errorf("column %q is not present in FROM tables", name)
+	}
+	// The measured two-source rule preserves left-source precedence.
+	if count > 1 && qualifier == "" && len(scope.tables) != 2 {
+		return "", "", fmt.Errorf("column %q is ambiguous", name)
+	}
+	return source, typ, nil
 }
 
 func (scope *BoundScope) Report() BindingReport { return scope.report }

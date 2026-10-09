@@ -53,7 +53,8 @@ ordered result vectors are compared separately. An artifact with no comparable
 complete trees is refused. Candidate artifacts never authorize generation.
 
 The observation tree currently covers ordinary projections, table relations,
-series function calls, relation CTEs, numeric expressions, WHERE, GROUP BY,
+series function calls, relation CTEs, derived sources, JOIN chains with their
+modifiers and ON or USING conditions, numeric expressions, WHERE, GROUP BY,
 HAVING, ORDER BY and LIMIT/OFFSET. Any unmodeled nonzero parser property rejects
 the entire lowering. This is not a SQL-equivalence proof or a replacement
 frontend. Available source ranges are carried separately and excluded from
