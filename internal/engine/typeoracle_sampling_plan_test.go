@@ -71,7 +71,8 @@ var requiredSamplingSemanticFamilies = []string{
 
 func expectedCurrentSamplingRegistryShape() samplingRegistryShape {
 	return samplingRegistryShape{
-		Scalar:           samplingRegistryBaseline.Scalar + len(currentScalarSamplingExpansion),
+		// currentDatabase is a zero-argument measured scalar with no argument domain.
+		Scalar:           samplingRegistryBaseline.Scalar + len(currentScalarSamplingExpansion) + 1,
 		Aggregate:        samplingRegistryBaseline.Aggregate,
 		Window:           samplingRegistryBaseline.Window + len(currentWindowSamplingExpansion),
 		IllegalScalar:    samplingRegistryBaseline.IllegalScalar + len(currentScalarSamplingExpansion) + 1,

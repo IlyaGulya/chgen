@@ -1,16 +1,16 @@
 {
   "format_version": 2,
-  "catalog_sha256": "5f3d3b177147a7371a47a2f32695d0b6e9098227be4defc4071976b51fa8d055",
+  "catalog_sha256": "b156361811e67029230e19c67b30a474a5e7a2e3934834675a3360cf271d572f",
   "report": {
     "metadata": {
       "server": {
         "version": "25.8.29.51",
-        "server_run": 1788943684,
-        "server_uptime_s": 385
+        "server_run": 1791540496,
+        "server_uptime_s": 606
       },
       "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
       "seed_hash": "92d8066c8fa76055871158c665f36ddd75e6c6512d8f05ec38a720cbe014c7d9",
-      "matrix_hash": "377ec501c87de1b31e0aec21ba582e8b78dc343ac790d17b9ccf6943bf464779",
+      "matrix_hash": "13e764097ec3cf819f51185c3dfeb9c92901ad2cd6691ab24fb327fe333e0cb0",
       "fixture_columns": [
         {
           "table": "t",
@@ -13861,6 +13861,55 @@
           "raw": "UInt64",
           "canonical": {
             "Name": "UInt64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "currentdatabase/illegal_arity/a1/p-1",
+        "expression": "currentDatabase(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function currentDatabase rejects argument position 2: it accepts these argument counts: 0; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "currentdatabase/legal_result/a0/p-1",
+        "expression": "currentDatabase()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "String",
+          "canonical": {
+            "Name": "String",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "String",
+          "canonical": {
+            "Name": "String",
             "Args": null
           }
         },
@@ -47248,6 +47297,7 @@
     "countif/legal/a1/p0": "UInt64",
     "countif/legal_placement/a1/p-1": "UInt64",
     "countif/legal_result/a1/p-1": "UInt64",
+    "currentdatabase/legal_result/a0/p-1": "String",
     "date_diff/legal/a3/p0": "Int64",
     "date_diff/legal/a3/p1": "Int64",
     "date_diff/legal/a3/p2": "Int64",

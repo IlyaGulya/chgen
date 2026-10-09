@@ -88,6 +88,16 @@ func applySchemaSource(catalogs *SchemaCatalogs, path, raw string) error {
 	}
 
 	for _, statement := range statements {
+		var systemReference bool
+		clickhouse.Walk(statement, func(node clickhouse.Expr) bool {
+			if identifier, ok := node.(*clickhouse.TableIdentifier); ok && identifier.Database != nil && identifier.Database.Name == "system" {
+				systemReference = true
+			}
+			return true
+		})
+		if systemReference {
+			return fmt.Errorf("%s:%d: system tables are read-only and cannot be used in schema migrations", path, lineOfOffset(content, int(statement.Pos())))
+		}
 		switch statement := statement.(type) {
 		case *clickhouse.CreateTable:
 			line := lineOfOffset(content, int(statement.CreatePos))

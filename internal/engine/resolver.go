@@ -3037,13 +3037,24 @@ func collectTablesWithFinal(
 			tableName := source.Table.Name
 			var table Table
 			var found bool
+			isSystem := source.Database != nil && source.Database.Name == "system"
+			if isSystem {
+				var err error
+				table, found, err = systemTable(tableName)
+				if err != nil {
+					return err
+				}
+			}
 			if source.Database == nil {
 				table, found = scope.lookupTable(tableName)
 			}
-			if !found && !scope.hasReservedRelation(tableName) {
+			if !isSystem && !found && !scope.hasReservedRelation(tableName) {
 				table, found = schema.Tables[tableName]
 			}
 			if !found {
+				if isSystem {
+					return fmt.Errorf("table %q is not present in the pinned system catalog", "system."+tableName)
+				}
 				message := fmt.Sprintf("table %q is not present in the schema or the query scope", tableName)
 				if suggestion := suggestName(tableName, tableCandidates(schema, scope)); suggestion != "" {
 					message += fmt.Sprintf("; did you mean %q?", suggestion)

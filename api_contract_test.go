@@ -433,6 +433,91 @@ ALTER TABLE events ADD COLUMN created_at DateTime;`
 	}
 }
 
+func TestSystemCatalogReadBoundaries(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT name FROM system.tables", ""},
+		{"SELECT name FROM system.columns", ""},
+		{"SELECT name FROM system.functions", ""},
+		{"SELECT active FROM system.parts", ""},
+		{"SELECT p.rows FROM system.parts AS p", ""},
+		{"SELECT parts.rows FROM system.parts", ""},
+		{"SELECT name FROM system.no_such_table", "system.no_such_table"},
+		{"SELECT no_such_column FROM system.parts", "no_such_column"},
+		{"SELECT name FROM other_db.parts", "qualified reference other_db.parts is not allowed"},
+		{"SELECT database FROM parts", "database"},
+	} {
+		t.Run(tc.sql, func(t *testing.T) {
+			config, _ := writeCheckProject(t, "CREATE TABLE parts (name String) ENGINE=MergeTree ORDER BY name;", "-- name: Read :many\n"+tc.sql+";")
+			dir := filepath.Dir(config)
+			catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(dir, "schema.sql")})
+			if err != nil {
+				t.Fatal(err)
+			}
+			queries, err := chgen.ParseQueryFiles([]string{filepath.Join(dir, "queries.sql")}, catalogs)
+			if tc.want != "" {
+				if err == nil || !strings.Contains(err.Error(), tc.want) {
+					t.Fatalf("want %q, got %v", tc.want, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := chgen.Generate("querygen", queries); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestSystemCatalogCannotBeChangedByMigrations(t *testing.T) {
+	for _, ddl := range []string{
+		"CREATE TABLE system.parts (id UInt64) ENGINE=MergeTree ORDER BY id;",
+		"ALTER TABLE system.parts ADD COLUMN id UInt64;",
+		"DROP TABLE system.parts;",
+	} {
+		t.Run(ddl, func(t *testing.T) {
+			config, _ := writeCheckProject(t, ddl, "-- name: Read :one\nSELECT 1;")
+			_, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(filepath.Dir(config), "schema.sql")})
+			if err == nil || !strings.Contains(err.Error(), "system tables are read-only") {
+				t.Fatalf("expected read-only diagnostic, got %v", err)
+			}
+		})
+	}
+}
+
+func TestSystemCatalogRejectsExecWrites(t *testing.T) {
+	config, _ := writeCheckProject(t, "CREATE TABLE parts (name String) ENGINE=MergeTree ORDER BY name;", "-- name: Remove :exec\nDELETE FROM system.parts WHERE name = 'x';")
+	dir := filepath.Dir(config)
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(dir, "schema.sql")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = chgen.ParseQueryFiles([]string{filepath.Join(dir, "queries.sql")}, catalogs)
+	if err == nil || !strings.Contains(err.Error(), "system tables are read-only") {
+		t.Fatalf("want read-only diagnostic, got %v", err)
+	}
+}
+
+func TestSystemPartsSignatureGeneratesWithoutAnApplicationDeclaration(t *testing.T) {
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{"testdata/golden/system_parts/schema.sql"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	queries, err := chgen.ParseQueryFiles([]string{"testdata/golden/system_parts/queries.sql"}, catalogs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := queries[0]
+	if len(q.Params) != 1 || q.Params[0].GoName != "Table" || q.Params[0].GoType != "string" ||
+		len(q.Results) != 1 || q.Results[0].GoType != "uint64" {
+		t.Fatalf("system.parts query contract: %+v", q)
+	}
+	if _, err := chgen.Generate("querygen", queries); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCreateAsExchangeRenameKeepsFactDefinition(t *testing.T) {
 	const ddl = `CREATE TABLE fact_ci_spans_v3 (
 		fact_id String, repository_key String, span_type String, span_id String,

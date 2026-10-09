@@ -139,6 +139,27 @@ git diff --exit-code
 Programs can also import `github.com/IlyaGulya/chgen` and call `LoadConfig`,
 the parse functions, `Generate`, or `Run`.
 
+SELECT queries can read qualified `system.*` relations, including `system.parts`
+and `system.tables`. Their column schemas are generated from the pinned
+ClickHouse 25.8.29.51 server and embedded for offline resolution. Unknown tables
+and columns remain errors. Application relations must stay unqualified, and
+schema migrations cannot reference the read-only system catalog.
+`currentDatabase()` resolves to `String`.
+
+Maintainers can regenerate the entire snapshot, rather than adding individual
+tables by hand, on a disposable pinned server:
+
+```sh
+clickhouse-client --query 'SYSTEM FLUSH LOGS'
+go run ./internal/tooling/cmd/systemcatalog -url http://localhost:8123
+go run ./internal/tooling/cmd/systemcatalog -url http://localhost:8123 -check
+```
+
+The snapshot describes the pinned server configuration, not every possible
+deployment: optional system tables can vary, and some ClickHouse types still
+lack a Go representation. This catalog does not remove SQL-parser or
+function-inference coverage limits.
+
 ### Check without generating files
 
 ```sh

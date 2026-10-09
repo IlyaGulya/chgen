@@ -2,7 +2,7 @@
 
 package engine
 
-const generatedSemanticDigest = "2cb8b8558881487b77055a193640cc5f7ed1de3b137aaee5aefd34c37cac44d5"
+const generatedSemanticDigest = "27e6754cd69596fc9999322f4b80298f2f391c98886700fee36a41a08227847a"
 
 // generatedFunctionAuditRoster lists each static semantic source entry for tests.
 var generatedFunctionAuditRoster = []string{
@@ -65,6 +65,7 @@ var generatedFunctionAuditRoster = []string{
 	"count",
 	"countdistinct",
 	"countif",
+	"currentdatabase",
 	"date_diff",
 	"datediff",
 	"dense_rank",
@@ -246,6 +247,7 @@ var generatedFunctionSemanticFamilies = map[string]string{
 	"count":                     "fixed-result-aggregate",
 	"countdistinct":             "fixed-result-aggregate",
 	"countif":                   "fixed-result-aggregate",
+	"currentdatabase":           "fixed-result-scalar",
 	"date_diff":                 "fixed-result-scalar",
 	"datediff":                  "fixed-result-scalar",
 	"dense_rank":                "fixed-result-window",

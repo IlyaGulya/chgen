@@ -33,11 +33,22 @@ type ExternalColumn struct {
 // a connection property; a name in the SQL text would silently disagree with
 // the connection.
 func checkQualifiedReferences(statement clickhouse.Expr) error {
+	return checkQueryQualifiedReferences(statement, false)
+}
+
+func checkQueryQualifiedReferences(statement clickhouse.Expr, allowSystem bool) error {
 	var refError error
 	clickhouse.Walk(statement, func(node clickhouse.Expr) bool {
 		identifier, ok := node.(*clickhouse.TableIdentifier)
 		if !ok || identifier.Database == nil || identifier.Table == nil || refError != nil {
 			return true
+		}
+		if identifier.Database.Name == "system" {
+			if allowSystem {
+				return true
+			}
+			refError = fmt.Errorf("system tables are read-only; qualified reference system.%s is not allowed in this operation", identifier.Table.Name)
+			return false
 		}
 		if identifier.Database.Name == "__DATABASE__" {
 			refError = fmt.Errorf("__DATABASE__ was removed; the database comes from the connection (clickhouse Auth.Database); use the unqualified name %s", identifier.Table.Name)

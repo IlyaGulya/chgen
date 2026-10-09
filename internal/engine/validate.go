@@ -189,7 +189,7 @@ func validateQueryFields(query Query) error {
 		return fmt.Errorf("expected exactly one SQL statement, got %d", len(statements))
 	}
 
-	if err := checkQualifiedReferences(statements[0]); err != nil {
+	if err := checkQueryQualifiedReferences(statements[0], query.Command != CommandExec); err != nil {
 		return err
 	}
 

@@ -150,6 +150,7 @@ func expectedToolingCommands() []string {
 		"probe",
 		"probegate",
 		"supportmanifest",
+		"systemcatalog",
 		"typespecimens",
 	}
 }

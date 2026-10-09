@@ -229,6 +229,14 @@ jobs:
       - name: Verify SETTINGS read controls and explicit opt-in
         run: go test -tags fuzzoracle -run '^TestSettingsReadControlsAgainstClickHouse$' -count=1 -v ./internal/engine
 
+      - name: Verify pinned system catalog and generated reads
+        env:
+          CHGEN_SYSTEM_HTTP: localhost:8123
+        run: |
+          curl -sf --data 'SYSTEM FLUSH LOGS' "${CHGEN_ORACLE_URL}"
+          go run ./internal/tooling/cmd/systemcatalog -check
+          go test -run '^TestGeneratedSystemPartsSignatureRuntime$' -count=1 -v ./internal/engine
+
       - name: Verify EXCHANGE catalog against ClickHouse
         run: go test -tags fuzzoracle -run '^TestCatalogExchangeAgainstClickHouse$' -count=1 -v ./internal/engine
 

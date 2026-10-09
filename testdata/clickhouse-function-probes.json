@@ -6086,6 +6086,48 @@
       ]
     },
     {
+      "name": "currentdatabase",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "currentDatabase",
+      "signature": {
+        "forms": [
+          {}
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "clickhouse-25.8.29.51/registry-real-columns"
+      },
+      "positions": null,
+      "probes": [
+        {
+          "id": "currentdatabase/legal_result/a0/p-1",
+          "kind": "legal_result",
+          "arity": 0,
+          "position": -1,
+          "sql": "currentDatabase()",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "currentdatabase/illegal_arity/a1/p-1",
+          "kind": "illegal_arity",
+          "arity": 1,
+          "position": -1,
+          "sql": "currentDatabase(i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
       "name": "date_diff",
       "family": "fixed-result-scalar",
       "probe_recipe": "scalar-signature",
