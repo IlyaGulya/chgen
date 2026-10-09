@@ -5,9 +5,11 @@ import (
 	"strings"
 )
 
-// Explicit CH types remove the need to infer an argument through an unknown
-// function. Only placeholders change; the server owns expression semantics.
-func normalizeServerArguments(sql string, declarations []ServerParameter) (string, error) {
+// Lower before selecting optional blocks so positional declarations retain
+// their original correspondence even when an earlier block is omitted.
+// Explicit types avoid inference through unknown functions; only placeholders
+// change, while the server remains responsible for expression semantics.
+func lowerServerArguments(sql string, declarations []ServerParameter) (string, error) {
 	tokens, err := scanSQLBoundary(sql)
 	if err != nil {
 		return "", err
@@ -56,25 +58,5 @@ func normalizeServerArguments(sql string, declarations []ServerParameter) (strin
 		}
 	}
 	out.WriteString(sql[position:])
-	normalized := out.String()
-	_, parameters, err := PrepareServerSelect(normalized)
-	if err != nil {
-		return "", err
-	}
-	for _, declaration := range declarations {
-		found := false
-		for _, param := range parameters {
-			if param.Name != declaration.Name {
-				continue
-			}
-			if param.Type.String() != declaration.Type.String() {
-				return "", fmt.Errorf("conflicting type for parameter %s", param.Name)
-			}
-			found = true
-		}
-		if !found {
-			return "", fmt.Errorf("unused parameter declaration %s", declaration.Name)
-		}
-	}
-	return normalized, nil
+	return out.String(), nil
 }

@@ -87,6 +87,9 @@ func renderCompositionParams(query Query) string {
 		out.WriteString("}\n")
 	}
 	for i, variant := range query.Composition.Variants {
+		if evidence := serverAnalysisEvidence(variant); evidence != "" {
+			out.WriteString(evidence + "\n")
+		}
 		fmt.Fprintf(&out, "const %sVariant%dSQL = %s\n", lowerFirstIdentifier(query.Name), i, querySQLLiteral(variant))
 	}
 	return out.String()
@@ -116,6 +119,10 @@ func renderCompositionSetup(query Query, empty string) string {
 		fmt.Fprintf(&out, "querySQL = %sVariant%dSQL\n", lowerFirstIdentifier(query.Name), mask)
 		var args []string
 		for _, param := range textPathParams(variant) {
+			if variant.serverVersion != "" {
+				args = append(args, serverBindingArg(param.CHType, compositionAccess(query, param.GoName)))
+				continue
+			}
 			param.GoName = strings.TrimPrefix(compositionAccess(query, param.GoName), "arg.")
 			args = append(args, generatedParamArg(param))
 		}

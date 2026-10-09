@@ -83,3 +83,14 @@ The public runtime scenario exercises `FINAL`, mutable run membership, a
 repeated external-key set, first and following pages, an archive table,
 independent options, optional external tables, temporal arguments and empty
 results on ClickHouse 25.8.29.51 with both supported Go drivers.
+
+## Server analysis
+
+`generate-server` supports these same finite variants, including optional
+external tables. Each selected physical table must exist in the prepared
+database; no physical schema replay is performed. Supply explicit CH types
+for arguments and one example per parameter across the entire query.
+ClickHouse analyzes every variant before generation. Shared parameter types
+and the ordered result contracts must agree, just as in offline composition.
+See [server generation](server-generation.md#typed-finite-composition) for
+transport, permissions, and trust boundaries.

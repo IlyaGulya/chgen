@@ -246,6 +246,7 @@ func ParseServerQuerySourceWithExternal(file, source string, externalSchema *Sch
 	}
 	var queries []Query
 	var declarations []ServerParameter
+	var tableChoices []TableChoice
 	bodyStart := 0
 	finish := func(end int) error {
 		if len(queries) == 0 {
@@ -253,16 +254,10 @@ func ParseServerQuerySourceWithExternal(file, source string, externalSchema *Sch
 		}
 		query := &queries[len(queries)-1]
 		query.SQL = strings.TrimSpace(source[bodyStart:end])
-		normalized, params, err := normalizeExternalTables(query.SQL, externalSchema, nil)
-		if err != nil {
-			return err
+		prepared, err := prepareServerComposition(*query, declarations, tableChoices, externalSchema)
+		if err == nil {
+			*query = prepared
 		}
-		query.SQL, query.ExternalParams = normalized, params
-		declarations, err = serverLegacyDeclarations(query.SQL, declarations, query.serverParamAnnotations)
-		if err != nil {
-			return err
-		}
-		query.SQL, err = normalizeServerArguments(query.SQL, declarations)
 		return err
 	}
 	for _, token := range tokens {
@@ -285,6 +280,7 @@ func ParseServerQuerySourceWithExternal(file, source string, externalSchema *Sch
 			query.File, query.Line = file, lineOfOffset(source, token.start)
 			queries = append(queries, query)
 			declarations = nil
+			tableChoices = nil
 			bodyStart = token.end
 		} else if header && strings.HasPrefix(token.text, "-- param-chtype:") {
 			if len(queries) == 0 {
@@ -334,6 +330,21 @@ func ParseServerQuerySourceWithExternal(file, source string, externalSchema *Sch
 			}
 			query := &queries[len(queries)-1]
 			query.serverResultAnnotations = append(query.serverResultAnnotations, result)
+		} else if header && strings.HasPrefix(token.text, "-- chgen:table") {
+			if len(queries) == 0 {
+				return nil, fmt.Errorf("table choice requires a named query")
+			}
+			choice, err := parseTableChoice(token.text)
+			if err != nil {
+				return nil, err
+			}
+			tableChoices = append(tableChoices, choice)
+		} else if header && isCompositionControlLine(token.text) {
+			if len(queries) == 0 {
+				return nil, fmt.Errorf("composition control requires a named query")
+			}
+			// Interpreted after the entire query has been collected.
+			continue
 		} else if strings.HasPrefix(token.text, "-- chgen:") || strings.HasPrefix(token.text, "-- param") || strings.HasPrefix(token.text, "-- result") {
 			return nil, fmt.Errorf("server generation does not interpret offline query annotations: %s", token.text)
 		}
@@ -455,6 +466,13 @@ func serverNativeScalar(t CHType) bool {
 	return false
 }
 
+func serverAnalysisEvidence(query Query) string {
+	if query.serverVersion == "" {
+		return ""
+	}
+	return fmt.Sprintf("// server-analysis: ClickHouse %q; SQL SHA-256 %x.\n// Metadata is checked before Scan; this does not prove query value semantics.", query.serverVersion, query.serverSQLHash)
+}
+
 func serverBindingArg(t CHType, value string) string {
 	switch t.Name {
 	case "Date", "Date32":
@@ -531,7 +549,12 @@ func serverResultGoName(name string) string {
 }
 
 func serverParamContext(query Query) string {
-	if len(query.serverParams) == 0 || query.serverBindingSQL != "" {
+	if query.serverBindingSQL != "" {
+		// Explicit native parameters make the driver bypass positional binding.
+		// Keep settings and external tables but clear a caller's older map.
+		return "ctx = clickhouse.Context(ctx, clickhouse.WithParameters(nil))\n"
+	}
+	if len(query.serverParams) == 0 {
 		return ""
 	}
 	var source strings.Builder

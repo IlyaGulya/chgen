@@ -77,6 +77,33 @@ the analyzer. There is no automatic fallback after a local validation error.
 outputs, and fails on drift or missing output without writing files. Use it in
 CI against a prepared test database; it is not a substitute for runtime tests.
 
+## Typed finite composition
+
+The [existing composition API](query-composition.md) also works with server
+analysis: optional `-- chgen:if Name` blocks, finite `-- chgen:table` choices,
+and option-owned scalar or external-table parameters. The generator describes
+every combination, requires identical result columns and compatible shared
+parameter types, and produces one Go method. No caller-supplied SQL fragment
+or arbitrary table name is accepted. Each variant records its analysis digest.
+
+Declare the CH types of `chgen.arg` and positional parameters explicitly.
+One example fixture covers the union of parameters; analysis sends only the
+parameters and empty external-table structures used by the selected variant.
+Positional placeholders are normalized before optional blocks are removed,
+so omitting a block never shifts declarations onto different arguments.
+
+Table choices must be distinct, simple names; every choice must be used in
+every variant, and each selected table must exist in the prepared database.
+Unlike offline mode, physical catalog declarations are not required. External
+schemas cannot be selected as physical tables. The same limit of 32 variants,
+and the same refusal of nested blocks and `else`, apply to both analyzers.
+
+Composed methods bind the selected variant's arguments with explicit casts
+and clear older native parameters from the caller's context. Other context
+settings and selected external tables remain intact. `check-server` checks all
+variants without writing; any analysis or result-contract failure preserves
+existing generated files.
+
 ## Trust and limits
 
 - This is **server analysis**, not proof of execution or correct business values.
@@ -95,8 +122,8 @@ CI against a prepared test database; it is not a substitute for runtime tests.
   regressions cover primitive, nullable, array, map, UUID, decimal and temporal
   binding on both supported drivers. This does not promise every ClickHouse
   type: identifier parameters and types without a supported Go representation
-  remain errors. Composition directives and macros other than `chgen.arg` and
-  `chgen.external` are not supported by this analyzer.
+  remain errors. Macros other than `chgen.arg`, `chgen.external`, and declared
+  `chgen.table` slots are not supported by this analyzer.
 - Some otherwise valid SQL cannot be analyzed with `readonly=1`. On the pinned
   server, `DESCRIBE TABLE (SELECT zero FROM zeros(...))` returns code 164; ordinary
   offline series generation works. The tool does not silently relax readonly.

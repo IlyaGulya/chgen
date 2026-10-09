@@ -2,6 +2,7 @@ package chgen_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/IlyaGulya/chgen"
 )
@@ -478,4 +480,165 @@ SELECT {B:Bool} AS b, {I8:Int8} AS i8, {I16:Int16} AS i16,
 		t.Fatal(err)
 	}
 	runGeneratedRuntime(t, "serverqueries", generated, fixture)
+}
+
+func TestServerCompositionGeneratedRuntime(t *testing.T) {
+	endpoint := os.Getenv("CHGEN_ORACLE_URL")
+	if endpoint == "" || os.Getenv("CHGEN_CONTRACT_NATIVE") == "" {
+		t.Skip("requires disposable ClickHouse HTTP and native endpoints")
+	}
+	cli := buildPublicCLI(t)
+	config, output := writeCheckProject(t, "", `-- name: Read :many
+-- param-chtype: Limit UInt64
+-- param-chtype: AfterID UInt64
+SELECT number FROM numbers(chgen.arg('Limit'))
+-- chgen:if After
+WHERE number > chgen.arg('AfterID')
+-- chgen:end
+QUALIFY row_number() OVER () > 0
+ORDER BY number;`)
+	examples := filepath.Join(filepath.Dir(config), "examples.json")
+	if err := os.WriteFile(examples, []byte(`{"Read":{"Limit":"5","AfterID":"1"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-server", endpoint, "-params", examples).CombinedOutput(); err != nil {
+		t.Fatalf("composed generation: %v\n%s", err, out)
+	}
+	generated, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture, err := os.ReadFile("testdata/servercomposition/runtime_test.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runGeneratedRuntime(t, "servercomposition", generated, fixture)
+}
+
+func TestServerCompositionTablesGeneratedRuntime(t *testing.T) {
+	endpoint := os.Getenv("CHGEN_ORACLE_URL")
+	if endpoint == "" || os.Getenv("CHGEN_CONTRACT_NATIVE") == "" {
+		t.Skip("requires disposable ClickHouse HTTP and native endpoints")
+	}
+	database := fmt.Sprintf("chgen_composition_%d", time.Now().UnixNano())
+	execute := func(ctx context.Context, sql string) {
+		t.Helper()
+		request, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(sql))
+		if err != nil {
+			t.Fatal(err)
+		}
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+		if response.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(response.Body)
+			t.Fatalf("prepare disposable fixture: %s", body)
+		}
+	}
+	execute(t.Context(), "CREATE DATABASE "+database)
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		execute(ctx, "DROP DATABASE IF EXISTS "+database)
+	})
+	for _, table := range []string{"current", "archive"} {
+		execute(t.Context(), "CREATE TABLE "+database+"."+table+" (id UInt64, at DateTime64(6, 'UTC'), payload String) ENGINE=Memory")
+	}
+	execute(t.Context(), "INSERT INTO "+database+".current VALUES (1, '2026-01-01 00:00:00', 'a'), (2, '2026-01-02 00:00:00', 'b'), (3, '2026-01-03 00:00:00', 'a')")
+	execute(t.Context(), "INSERT INTO "+database+".archive VALUES (8, '2026-01-01 00:00:00', 'a')")
+	cli := buildPublicCLI(t)
+	config, output := writeCheckProject(t, "-- chgen:external\nCREATE TABLE requested_keys (id UInt64);", `-- name: Read :many
+-- param-chtype: Keys Array(String)
+-- param-chtype: AfterID UInt64
+-- param-chtype: Since DateTime64(6, 'UTC')
+-- chgen:table Source current archive
+SELECT id, at, payload FROM chgen.table('Source')
+WHERE has(chgen.arg('Keys'), payload)
+-- chgen:if After
+AND id > chgen.arg('AfterID')
+-- chgen:end
+-- chgen:if Changed
+AND id IN (SELECT id FROM chgen.external('ChangedIDs', requested_keys))
+-- chgen:end
+AND at >= chgen.arg('Since')
+QUALIFY row_number() OVER () > 0
+ORDER BY id;`)
+	examples := filepath.Join(filepath.Dir(config), "examples.json")
+	if err := os.WriteFile(examples, []byte(`{"Read":{"Keys":"['a']","AfterID":"1","Since":"2026-01-01 00:00:00"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-server", endpoint, "-database", database, "-params", examples).CombinedOutput(); err != nil {
+		t.Fatalf("composed generation: %v\n%s", err, out)
+	}
+	generated, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture, err := os.ReadFile("testdata/servercompositiontables/runtime_test.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("CHGEN_COMPOSITION_DATABASE", database)
+	runGeneratedRuntime(t, "servercompositiontables", generated, fixture)
+}
+
+func TestServerCompositionRefusesResultShapeDrift(t *testing.T) {
+	endpoint := os.Getenv("CHGEN_ORACLE_URL")
+	if endpoint == "" {
+		t.Skip("requires disposable ClickHouse HTTP endpoint")
+	}
+	cli := buildPublicCLI(t)
+	config, output := writeCheckProject(t, "", `-- name: Read :one
+SELECT
+-- chgen:if Extra
+toUInt64(2) AS extra,
+-- chgen:end
+toUInt64(1) AS value;`)
+	if err := os.MkdirAll(filepath.Dir(output), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	const original = "preserved output"
+	if err := os.WriteFile(output, []byte(original), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-server", endpoint).CombinedOutput()
+	if err == nil || !strings.Contains(string(out), "result column count") {
+		t.Fatalf("accepted result shape drift: %v\n%s", err, out)
+	}
+	data, err := os.ReadFile(output)
+	if err != nil || string(data) != original {
+		t.Fatalf("failed composition changed output: %q, %v", data, err)
+	}
+}
+
+func TestServerCompositionRefusesUnsafeInactiveVariants(t *testing.T) {
+	cli := buildPublicCLI(t)
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		http.Error(w, "unexpected request", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	for _, sql := range []string{
+		"SELECT 1\n-- chgen:if Unsafe\n; DROP TABLE events\n-- chgen:end",
+		"SELECT 1\n-- chgen:if Unsafe\nINTO OUTFILE '/tmp/chgen-output'\n-- chgen:end",
+		"SELECT 1\n-- chgen:if Unsafe\nFORMAT JSON\n-- chgen:end",
+		"-- chgen:table Source a b\nSELECT 1\n-- chgen:if Optional\nFROM chgen.table('Source')\n-- chgen:end",
+		"SELECT 1\n-- chgen:if A\n-- chgen:if B\n-- chgen:end\n-- chgen:end",
+		"SELECT 1\n-- chgen:if A\n-- chgen:else\n-- chgen:end",
+		"SELECT 1\n-- chgen:if A\n-- chgen:end\n-- chgen:if B\n-- chgen:end\n-- chgen:if C\n-- chgen:end\n-- chgen:if D\n-- chgen:end\n-- chgen:if E\n-- chgen:end\n-- chgen:if F\n-- chgen:end",
+	} {
+		config, output := writeCheckProject(t, "", "-- name: Read :one\n"+sql)
+		if out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-server", server.URL).CombinedOutput(); err == nil {
+			t.Fatalf("accepted unsafe composition: %s", out)
+		}
+		if _, err := os.Stat(output); !os.IsNotExist(err) {
+			t.Fatalf("refusal created output: %v", err)
+		}
+	}
+	if requests.Load() != 0 {
+		t.Fatalf("unsafe variants reached server: %d", requests.Load())
+	}
 }

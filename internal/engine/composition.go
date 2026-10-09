@@ -108,6 +108,37 @@ type conditionalSQL struct {
 	option string
 }
 
+func compositionVariantCount(options []string, tables []TableChoice) (int, error) {
+	if len(options) > 5 {
+		return 0, fmt.Errorf("composition exceeds the limit of 32 fully checked variants")
+	}
+	count := 1 << len(options)
+	names := slices.Clone(options)
+	for _, choice := range tables {
+		if slices.Contains(names, choice.Name) {
+			return 0, fmt.Errorf("duplicate composition option %s", choice.Name)
+		}
+		names = append(names, choice.Name)
+		if len(choice.Tables) == 0 || count > 32/len(choice.Tables) {
+			return 0, fmt.Errorf("composition exceeds the limit of 32 fully checked variants")
+		}
+		count *= len(choice.Tables)
+	}
+	return count, nil
+}
+
+func compositionSQL(parts []conditionalSQL, options []string, mask int) string {
+	var sql strings.Builder
+	for _, part := range parts {
+		if part.option == "" || mask&(1<<slices.Index(options, part.option)) != 0 {
+			sql.WriteString(part.text)
+		} else {
+			sql.WriteString(strings.Repeat("\n", strings.Count(part.text, "\n")))
+		}
+	}
+	return strings.TrimSpace(sql.String())
+}
+
 func compositionError(query Query, err error) error {
 	return diagnostic.With(fmt.Errorf("%s:%d: query %s composition: %w", query.File, query.Line, query.Name, err), diagnostic.Detail{
 		Code: "composition-invalid", Status: diagnostic.Invalid, Stage: "composition",
@@ -178,20 +209,11 @@ func resolveComposedQuery(builder *queryBuilder, schema, external *Schema) (Quer
 	if builder.query.Command == CommandExec {
 		return Query{}, compositionError(builder.query, fmt.Errorf("composition is supported only in :one and :many queries"))
 	}
-	if len(options) > 5 {
-		return Query{}, compositionError(builder.query, fmt.Errorf("composition exceeds the limit of 32 fully checked variants"))
+	count, err := compositionVariantCount(options, builder.tableChoices)
+	if err != nil {
+		return Query{}, compositionError(builder.query, err)
 	}
-	count := 1 << len(options)
-	names := slices.Clone(options)
 	for _, choice := range builder.tableChoices {
-		if slices.Contains(names, choice.Name) {
-			return Query{}, compositionError(builder.query, fmt.Errorf("duplicate composition option %s", choice.Name))
-		}
-		names = append(names, choice.Name)
-		if count > 32/len(choice.Tables) {
-			return Query{}, compositionError(builder.query, fmt.Errorf("composition exceeds the limit of 32 fully checked variants"))
-		}
-		count *= len(choice.Tables)
 		for _, table := range choice.Tables {
 			if _, ok := schema.Tables[table]; !ok {
 				return Query{}, compositionError(builder.query, fmt.Errorf("table choice %s names %q, which is not a physical catalog table", choice.Name, table))
@@ -204,15 +226,7 @@ func resolveComposedQuery(builder *queryBuilder, schema, external *Schema) (Quer
 		variant.query = builder.query
 		variant.query.Params = slices.Clone(builder.query.Params)
 		variant.query.Results = slices.Clone(builder.query.Results)
-		var sql strings.Builder
-		for _, part := range parts {
-			if part.option == "" || mask&(1<<slices.Index(options, part.option)) != 0 {
-				sql.WriteString(part.text)
-			} else {
-				sql.WriteString(strings.Repeat("\n", strings.Count(part.text, "\n")))
-			}
-		}
-		variant.query.SQL = strings.TrimSpace(sql.String())
+		variant.query.SQL = compositionSQL(parts, options, mask)
 		var used map[string]bool
 		variant.query.SQL, used, err = replaceTableChoices(variant.query.SQL, selectedTables(composition, mask))
 		if err != nil {

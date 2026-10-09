@@ -316,16 +316,11 @@ var generatedTemplate = template.Must(template.New("chgen").Funcs(template.FuncM
 		}
 		return ""
 	},
-	"sqlLiteral": querySQLLiteral,
-	"serverEvidence": func(query Query) string {
-		if query.serverVersion == "" {
-			return ""
-		}
-		return fmt.Sprintf("// server-analysis: ClickHouse %q; SQL SHA-256 %x.\n// Metadata is checked before Scan; this does not prove query value semantics.", query.serverVersion, query.serverSQLHash)
-	},
-	"needsNativeParams": func(queries []Query) bool {
+	"sqlLiteral":     querySQLLiteral,
+	"serverEvidence": serverAnalysisEvidence,
+	"needsServerContext": func(queries []Query) bool {
 		for _, query := range queries {
-			if len(query.serverParams) > 0 && query.serverBindingSQL == "" {
+			if len(query.serverParams) > 0 || query.serverBindingSQL != "" {
 				return true
 			}
 		}
@@ -493,7 +488,7 @@ import (
 {{- if .NeedsUUID}}
 	"github.com/google/uuid"
 {{- end}}
-{{- if or .NeedsExternalTables (needsNativeParams .Queries)}}
+{{- if or .NeedsExternalTables (needsServerContext .Queries)}}
 	"github.com/ClickHouse/clickhouse-go/v2"
 {{- end}}
 {{- if .NeedsExternalTables}}

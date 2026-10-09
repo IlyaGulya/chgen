@@ -251,7 +251,7 @@ jobs:
       - name: Verify server generation and native parameter transport
         env:
           CHGEN_CONTRACT_NATIVE: localhost:9000
-        run: go test -run '^(TestServer.*GeneratedRuntime|TestServerGeneration.*|TestCheckServer.*)$' -count=1 -v .
+        run: go test -run '^(TestServer.*|TestCheckServer.*)$' -count=1 -v .
 
       - name: Run the type oracle over every seed of the fixed seed set
         # One report per seed, all against the ONE server this job started,

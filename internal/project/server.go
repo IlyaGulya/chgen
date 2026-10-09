@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/IlyaGulya/chgen/internal/describe"
 	"github.com/IlyaGulya/chgen/internal/engine"
@@ -71,29 +70,7 @@ func runServer(ctx context.Context, configPath string, options describe.Options,
 					}
 				}
 				seenExamples[exampleKey] = true
-				queryOptions := options
-				queryOptions.Parameters = examples[exampleKey]
-				queryOptions.ExternalTables = nil
-				for _, external := range input.ExternalParams {
-					var columns []string
-					for _, column := range external.Columns {
-						columns = append(columns, "`"+strings.ReplaceAll(column.SQLName, "`", "``")+"` "+column.ClickHouseType)
-					}
-					queryOptions.ExternalTables = append(queryOptions.ExternalTables, describe.ExternalTable{Name: external.WireName, Structure: strings.Join(columns, ", ")})
-				}
-				report, err := describe.NativeQuery(ctx, queryOptions, input.SQL)
-				if err != nil {
-					return nil, fmt.Errorf("query %s: %w", input.Name, err)
-				}
-				if version != "" && version != report.ServerVersion {
-					return nil, fmt.Errorf("server version changed during generation")
-				}
-				version = report.ServerVersion
-				columns := make([]engine.ServerColumn, len(report.Columns))
-				for i, column := range report.Columns {
-					columns[i] = engine.ServerColumn{Name: column.Name, Type: column.Type}
-				}
-				query, err := engine.WithServerResults(input, columns, report.ServerVersion)
+				query, err := analyzeServerQuery(ctx, options, input, examples[exampleKey], &version)
 				if err != nil {
 					return nil, fmt.Errorf("query %s: %w", input.Name, err)
 				}
