@@ -63,16 +63,24 @@ func (e *BindingError) Error() string { return e.Message }
 // path. Eligible relation trees are validated recursively, not partly erased.
 func BindingDomain(document *Document) error {
 	query := document.Select
-	if len(query.From) != 1 {
+	if len(query.From) > 1 {
 		return ErrBindingUnmodeled
 	}
 	for _, cte := range query.With {
+		if cte.Expr != nil {
+			if err := bindingExprDomain(*cte.Expr); err != nil {
+				return err
+			}
+			continue
+		}
 		if err := BindingDomain(&Document{Select: cte.Query}); err != nil {
 			return err
 		}
 	}
-	if err := bindingRelationDomain(query.From[0]); err != nil {
-		return err
+	for _, relation := range query.From {
+		if err := bindingRelationDomain(relation); err != nil {
+			return err
+		}
 	}
 	for _, item := range query.Items {
 		if item.Alias != "" && item.Expr.Kind == "wildcard" {
@@ -140,6 +148,11 @@ func bindingExprDomain(expression Expr) error {
 		return ErrBindingUnmodeled
 	}
 	switch expression.Kind {
+	case "subquery":
+		if expression.Query == nil {
+			return ErrBindingUnmodeled
+		}
+		return BindingDomain(&Document{Select: *expression.Query})
 	case "identifier":
 		if len(expression.Name) < 1 || len(expression.Name) > 2 {
 			return ErrBindingUnmodeled
@@ -189,6 +202,14 @@ func BindContext(document *Document, context *ScopeContext) (*BoundScope, error)
 	}
 	scope := contextScope(context)
 	query := document.Select
+	// Scalar definitions have their own lexical scope, before projection aliases.
+	for _, cte := range query.With {
+		if cte.Expr != nil {
+			if err := scope.bindClause(*cte.Expr, "scalar WITH expression"); err != nil {
+				return nil, err
+			}
+		}
+	}
 	// Duplicate projections are still checked by the existing result validator.
 	for _, item := range query.Items {
 		if item.Alias == "" {
@@ -222,8 +243,10 @@ func BindContext(document *Document, context *ScopeContext) (*BoundScope, error)
 			return nil, err
 		}
 	}
-	if _, err := scope.bindJoin(query.From[0], 0); err != nil {
-		return nil, err
+	for _, relation := range query.From {
+		if _, err := scope.bindJoin(relation, 0); err != nil {
+			return nil, err
+		}
 	}
 	return scope, nil
 }

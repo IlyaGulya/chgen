@@ -37,8 +37,19 @@ func bindIRSelect(query *clickhouse.SelectQuery, schema *Schema, sql string) (*i
 		return nil, err
 	}
 	scoped := map[*clickhouse.SelectQuery]queryScope{}
-	sourceKind := document.Select.From[0].Kind
-	if len(document.Select.With) == 0 && (sourceKind == "table" || sourceKind == "function") {
+	sourceKind := ""
+	if len(document.Select.From) != 0 {
+		sourceKind = document.Select.From[0].Kind
+	}
+	// Scalar subqueries need their own typed scope and cardinality checks.
+	hasSubquery := false
+	clickhouse.Walk(query, func(node clickhouse.Expr) bool {
+		if _, ok := node.(*clickhouse.SubQuery); ok {
+			hasSubquery = true
+		}
+		return !hasSubquery
+	})
+	if !hasSubquery && len(document.Select.With) == 0 && (sourceKind == "table" || sourceKind == "function") {
 		scope := queryScope{}
 		if err := collectTables(query.From.Expr, schema, &scope, nil); err != nil {
 			return nil, err
@@ -123,9 +134,6 @@ func catalogIRContext(scope queryScope, aliasScope *queryScope) (*sqlir.ScopeCon
 }
 
 func bindIRCatalogScope(document *sqlir.Document, scope queryScope) (*sqlir.BoundScope, error) {
-	if len(scope.tables) == 0 {
-		return nil, sqlir.ErrBindingUnmodeled
-	}
 	context, err := catalogIRContext(scope, nil)
 	if err != nil {
 		return nil, err

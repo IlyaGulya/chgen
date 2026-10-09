@@ -253,7 +253,13 @@ WHERE l.value > 1 AND l.value < 4 ORDER BY value LIMIT 1 OFFSET 1;
 SELECT toUInt32(number) AS number FROM numbers(5) WHERE number > 1 AND number < 4 ORDER BY number LIMIT 1 OFFSET 1;
 -- name: GroupedAliases :many
 SELECT toUInt32(number) AS key, count() AS rows FROM numbers(5)
-GROUP BY key HAVING rows = 1 AND key > 1 ORDER BY key LIMIT 1 OFFSET 1;`)
+GROUP BY key HAVING rows = 1 AND key > 1 ORDER BY key LIMIT 1 OFFSET 1;
+-- name: ScalarScopes :many
+WITH later AS threshold, toUInt32(2) AS later,
+(SELECT count() FROM numbers(5)) AS total
+SELECT number, total FROM numbers(5) WHERE number = threshold;
+-- name: ScalarLiteral :one
+SELECT (SELECT toUInt32(7)) AS value;`)
 	if err != nil {
 		t.Fatal(err)
 	}

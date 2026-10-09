@@ -131,4 +131,12 @@ func TestSeriesRowsAndTypes(t *testing.T) {
 	if err != nil || len(grouped) != 1 || grouped[0].Key != uint32(3) || grouped[0].Rows != uint64(1) {
 		t.Fatalf("grouped aliases and HAVING: %+v, %v", grouped, err)
 	}
+	scalar, err := q.ScalarScopes(t.Context(), ScalarScopesParams{})
+	if err != nil || len(scalar) != 1 || scalar[0].Number != uint64(2) || scalar[0].Total == nil || *scalar[0].Total != uint64(5) {
+		t.Fatalf("scalar WITH and subquery: %+v, %v", scalar, err)
+	}
+	literal, err := q.ScalarLiteral(t.Context(), ScalarLiteralParams{})
+	if err != nil || literal.Value == nil || *literal.Value != uint32(7) {
+		t.Fatalf("scalar SELECT without FROM: %+v, %v", literal, err)
+	}
 }

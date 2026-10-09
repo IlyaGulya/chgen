@@ -49,7 +49,16 @@ func lowerSelectIR(query *clickhouse.SelectQuery) (*sqlir.Document, error) {
 			}
 			body, ok := cte.Alias.(*clickhouse.SelectQuery)
 			if !ok {
-				return nil, fmt.Errorf("IR adapter requires a relation CTE")
+				name, err := relationName(cte.Alias)
+				if err != nil {
+					return nil, err
+				}
+				expression, err := lowerExprIR(cte.Expr)
+				if err != nil {
+					return nil, err
+				}
+				result.With = append(result.With, sqlir.CTE{Name: name, Expr: &expression})
+				continue
 			}
 			name, err := relationName(cte.Expr)
 			if err != nil {
@@ -212,6 +221,15 @@ func lowerExprIR(expression clickhouse.Expr) (result sqlir.Expr, err error) {
 		}
 		args, err := lowerExprListIR(expr.Params.Items)
 		return sqlir.Expr{Kind: "call", Value: expr.Name.Name, Args: args}, err
+	case *clickhouse.SubQuery:
+		if err := irFields(expr, "Select", "HasParen"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		document, err := lowerSelectIR(expr.Select)
+		if err != nil {
+			return sqlir.Expr{}, err
+		}
+		return sqlir.Expr{Kind: "subquery", Query: &document.Select, Parenthesized: expr.HasParen}, nil
 	case *clickhouse.ColumnExpr:
 		if err := irFields(expr, "Expr"); err != nil {
 			return sqlir.Expr{}, err

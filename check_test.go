@@ -420,6 +420,8 @@ func TestCyclicProjectionAliasesFailAtBinding(t *testing.T) {
 
 func TestNestedIRScopesStillRejectMissingColumns(t *testing.T) {
 	for _, sql := range []string{
+		"SELECT (SELECT missing FROM events LIMIT 1) AS value FROM events;",
+		"WITH missing AS value SELECT value FROM events;",
 		"WITH source AS (SELECT missing FROM events) SELECT id FROM source;",
 		"SELECT nested.missing FROM (SELECT id FROM events) AS nested;",
 		"SELECT a.id FROM events a JOIN events b ON a.id = b.missing;",
@@ -443,6 +445,22 @@ func TestResultTypeAssertionStillWorksWithRelationCTE(t *testing.T) {
 	}
 	if _, err := chgen.Generate("queries", queries); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestScalarIRScopesKeepCardinalityAndVisibilityChecks(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT (SELECT id FROM events) AS value FROM events",
+		"SELECT (SELECT id, id FROM events LIMIT 1) AS value FROM events",
+		"WITH second AS first, first AS second SELECT first AS value",
+		"SELECT (SELECT r.id FROM events r WHERE r.id = e.id LIMIT 1) AS value FROM events e",
+	} {
+		t.Run(sql, func(t *testing.T) {
+			_, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;", "-- name: Read :many\n"+sql)
+			if err == nil {
+				t.Fatal("invalid scalar query accepted")
+			}
+		})
 	}
 }
 
@@ -480,6 +498,12 @@ func TestColumnAliasBindingDoesNotHideAnUnknownSource(t *testing.T) {
 func TestAliasBindingPreservesLegacyPrecedenceBoundaries(t *testing.T) {
 	cli := buildPublicCLI(t)
 	for _, example := range []struct{ sql, bind, generate string }{
+		{"WITH toUInt64(100) AS x, inner_q AS (WITH x AS y, toInt16(7) AS x SELECT y AS value) SELECT value FROM inner_q", "passed", "passed"},
+		{"WITH (SELECT count() FROM events) AS total SELECT id, total FROM events", "passed", "passed"},
+		{"WITH later AS threshold, toUInt32(2) AS later SELECT threshold AS value", "passed", "passed"},
+		{"SELECT id, (SELECT toUInt32(7)) AS value FROM events", "passed", "passed"},
+		{"SELECT id, (SELECT count() FROM events) AS total FROM events", "passed", "passed"},
+		{"WITH toUInt32(2) AS threshold SELECT id FROM events WHERE id > threshold", "passed", "passed"},
 		{"SELECT toUInt32(id) AS key, count() AS rows FROM events GROUP BY key HAVING rows > 0 AND key > 1 ORDER BY key", "passed", "passed"},
 		{"SELECT id AS id FROM events ORDER BY id", "passed", "passed"},
 		{"SELECT id AS first_id, first_id AS second_id FROM events ORDER BY second_id", "passed", "passed"},

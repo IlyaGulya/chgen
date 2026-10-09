@@ -7,9 +7,10 @@ remain in the existing engine.
 
 ## Production domain
 
-The domain covers catalog tables, measured series functions, relation CTEs,
-derived sources and JOIN chains. Each SELECT has its own binding, including
-eligible bodies of CTEs and derived relations. Ordinary and qualified column
+The domain covers catalog tables, measured series functions, relation and scalar
+CTEs, scalar subqueries, derived sources and JOIN chains. Each SELECT has its own
+binding, including eligible bodies of CTEs, scalar subqueries and derived
+relations. SELECT without FROM is also eligible. Ordinary and qualified column
 references are resolved in projections, WHERE, ordinary GROUP BY, HAVING,
 ORDER BY, LIMIT and OFFSET;
 JOIN conditions see only the sources introduced at that point. The existing
@@ -22,9 +23,17 @@ derived output types, JOIN common types and outer-join nullability still come
 from the established engine. This is not a parser-independent type inferencer
 or a complete replacement for legacy scope construction.
 
+Scalar WITH definitions are represented as expressions rather than relation
+queries. Their types, dependency ordering and lexical visibility still come from
+the established resolver. Scalar subqueries retain their complete SELECT tree
+and parentheses; each nested scope is bound separately. Existing single-column,
+cardinality and correlation restrictions remain in force, as does scalar-result
+nullability. Binding does not treat a subquery's columns as outer row bindings.
+
 Column and computed aliases are expanded during binding, including chains,
-forward references and uses in WHERE, GROUP BY, HAVING and ORDER BY. Their observations retain
-the referenced catalog columns and the range of each alias use. The existing
+forward references and uses in WHERE, GROUP BY, HAVING and ORDER BY. Their
+observations retain the referenced catalog columns and the range of each alias
+use. The existing
 engine still infers the expression type; the binder does not assign a computed
 alias the type of its input column. Cycles fail with ir-alias-cycle. An active
 alias that refers to an identically named physical column resolves that column,
@@ -36,8 +45,8 @@ that are rebound against a derived query's rows. References to outer scalar
 expressions carry kind scalar rather than pretending to be catalog columns.
 An existing local qualifier prevents lookup from leaking into a parent source.
 
-Special grouping modes such as ROLLUP, CUBE and TOTALS, scalar subquery syntax,
-lambda scopes, tuple-field paths and
+Special grouping modes such as ROLLUP, CUBE and TOTALS, lambda scopes,
+tuple-field paths and
 literal-name precedence for NULL, true and false stay
 outside this domain. Queries that cannot lower completely, or fall outside the
 binder domain, keep the legacy resolver. This is an explicit migration boundary,
@@ -73,13 +82,18 @@ behavior. CLI tests verify source ranges, catalog reference identities, strict
 lowering and comparison with a spanless frontend report. Existing unknown-column
 suggestion and clause-validation regressions remain intact.
 
-TestServerSeriesGeneratedRuntime executes generated filters, alias collisions
+TestServerSeriesGeneratedRuntime executes generated filters, alias collisions,
 ordinary grouping with HAVING, and a combined CTE, derived source and JOIN on
 ClickHouse 25.8.29.51 with both
 pinned driver versions; the independent expected value is 3. Existing wildcard
 runtime tests cover column lookups after expansion.
 
-Remaining migration boundaries include special grouping modes, scalar subqueries, scalar
-CTEs, windows, lambda scopes and replacing legacy construction of typed source
+The same runtime fixture checks a forward scalar WITH dependency and a scalar
+count subquery returning 5 for row 2, plus a scalar SELECT without FROM returning
+7. Public and CLI regressions retain local scalar shadowing, reject dependency
+cycles and unknown columns, and preserve scalar-subquery cardinality checks.
+
+Remaining migration boundaries include special grouping modes, windows, lambda
+scopes and replacing legacy construction of typed source
 signatures. Each needs parity witnesses before replacing its existing path.
 None is implied by a passed bind observation today.

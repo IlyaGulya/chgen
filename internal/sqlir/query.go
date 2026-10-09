@@ -22,7 +22,8 @@ type Select struct {
 
 type CTE struct {
 	Name  string `json:"name"`
-	Query Select `json:"query"`
+	Query Select `json:"query,omitzero"`
+	Expr  *Expr  `json:"expr,omitempty"`
 }
 
 type Item struct {
@@ -31,11 +32,13 @@ type Item struct {
 }
 
 type Expr struct {
-	Span  *Span    `json:"span,omitempty"`
-	Kind  string   `json:"kind"`
-	Name  []string `json:"name,omitempty"`
-	Value string   `json:"value,omitempty"`
-	Args  []Expr   `json:"args,omitempty"`
+	Span          *Span    `json:"span,omitempty"`
+	Kind          string   `json:"kind"`
+	Name          []string `json:"name,omitempty"`
+	Value         string   `json:"value,omitempty"`
+	Args          []Expr   `json:"args,omitempty"`
+	Query         *Select  `json:"query,omitempty"`
+	Parenthesized bool     `json:"parenthesized,omitzero"`
 }
 
 type Relation struct {
