@@ -18,6 +18,7 @@ func runCoverage(args []string, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("chgen coverage", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	path := flags.String("corpus", "", "versioned SQL corpus JSON (required)")
+	candidate := flags.String("candidate", "", "optional frontend report for the same corpus; compares complete lowered structures")
 	server := flags.String("server", "", "optional explicit test ClickHouse HTTP(S) endpoint; analyzes query cases only")
 	database := flags.String("database", "", "existing test fixture database; no DDL is applied")
 	if err := flags.Parse(args); err != nil {
@@ -48,13 +49,23 @@ func runCoverage(args []string, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintf(stderr, "chgen coverage: %v\n", err)
 		return 2
 	}
+	if *candidate != "" {
+		data, err := os.ReadFile(*candidate)
+		if err == nil {
+			err = coverage.Compare(&report, data)
+		}
+		if err != nil {
+			_, _ = fmt.Fprintf(stderr, "chgen coverage: %v\n", err)
+			return 2
+		}
+	}
 	encoder := json.NewEncoder(stdout)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(report); err != nil {
 		_, _ = fmt.Fprintf(stderr, "chgen coverage: %v\n", err)
 		return 1
 	}
-	if report.Counts["type_comparison"]["mismatch"] > 0 {
+	if report.Counts["type_comparison"]["mismatch"] > 0 || report.Counts["ir_comparison"]["mismatch"] > 0 || report.Counts["frontend_type_comparison"]["mismatch"] > 0 {
 		return 1
 	}
 	return 0

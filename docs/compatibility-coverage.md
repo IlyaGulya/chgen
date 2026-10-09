@@ -25,8 +25,9 @@ duplicate IDs and trailing JSON are refused.
 Reports identify the exact corpus SHA-256 and pinned parser dependency. Stages
 are distinct: `parse`, `catalog`, `resolve` (binding and inference), `generate`,
 `server_analysis`, and complete ordered `type_comparison`. Unvisited stages
-remain `not_run`. `lower` is reserved for the experimental IR tooling and stays
-`not_run` here. `execution` is always `not_run`: formatting generated Go does
+remain `not_run`. `lower` records whether the entire SELECT can be represented
+in the parser-independent observation tree. Unsupported properties refuse
+lowering rather than disappearing. `execution` is always `not_run`: formatting generated Go does
 not demonstrate compilation or runtime correctness.
 
 Declared server expectations are not measurements, and a local refusal does
@@ -36,10 +37,27 @@ other refusals may mean that the prepared fixture is missing, not invalid SQL.
 There is deliberately no percentage of "all ClickHouse SQL". Keep parser-only
 scripts separate from typed-query cases when interpreting the counts.
 
-Exit codes: `0` means a report without compared type mismatches, including
-unknown or blocked coverage; `1` means a measured result-vector mismatch (JSON
+Exit codes: `0` means a report without compared mismatches, including
+unknown or blocked coverage; `1` means a structure or result-vector mismatch (JSON
 is still emitted); `2` means an invalid corpus or run. Unknown coverage must
 not be read as support or as proof that a workload is safe.
+
+## Comparing frontend observations
+
+`chgen coverage -corpus corpus.json -candidate candidate.json` compares a
+separately produced report against local observations. Corpus digest, format,
+server version, case IDs, scope and source must agree. Complete lowered trees
+are compared with a JSON-pointer diagnostic for the first difference; available
+ordered result vectors are compared separately. An artifact with no comparable
+complete trees is refused. Candidate artifacts never authorize generation.
+
+The observation tree currently covers ordinary projections, table relations,
+series function calls, relation CTEs, numeric expressions, WHERE, GROUP BY,
+HAVING, ORDER BY and LIMIT/OFFSET. Any unmodeled nonzero parser property rejects
+the entire lowering. This is not a SQL-equivalence proof or a replacement
+frontend: source positions, the production binder and the generator still use
+the existing parser. A matching self-generated report is only a comparison
+mechanism test, not independent evidence of correctness.
 
 ## Bundled corpus
 

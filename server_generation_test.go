@@ -180,6 +180,48 @@ func TestServerGenerationMixesExplicitPackageAnalyzers(t *testing.T) {
 	}
 }
 
+func TestServerSeriesGeneratedRuntime(t *testing.T) {
+	if os.Getenv("CHGEN_CONTRACT_NATIVE") == "" {
+		t.Skip("requires disposable ClickHouse native endpoint")
+	}
+	queries, err := parsePublicQuery(t, "", `-- name: Series :many
+SELECT n.number, z.zero FROM numbers(10,6,2) AS n CROSS JOIN zeros_mt(1) AS z ORDER BY n.number;
+-- name: Parallel :many
+SELECT n.number, z.zero FROM numbers_mt(10,6,2) AS n CROSS JOIN zeros(1) AS z ORDER BY n.number;
+-- name: Inclusive :many
+SELECT generate_series AS value FROM generate_series(2,8,2) ORDER BY value;
+-- name: Camel :many
+SELECT generate_series AS value FROM generateSeries(2,8,2) ORDER BY value;
+-- name: Parameterized :many
+SELECT number FROM numbers(chgen.arg('Start'), chgen.arg('Length'), chgen.arg('Step')) ORDER BY number;
+-- name: ParamParallel :many
+SELECT number FROM numbers_mt(chgen.arg('Start'), chgen.arg('Length'), chgen.arg('Step')) ORDER BY number;
+-- name: ParamZeros :many
+SELECT zero FROM zeros(chgen.arg('Length'));
+-- name: ParamZerosParallel :many
+SELECT zero FROM zeros_mt(chgen.arg('Length'));
+-- name: ParamInclusive :many
+SELECT generate_series AS value FROM generate_series(chgen.arg('Start'),chgen.arg('Stop'),chgen.arg('Step')) ORDER BY value;
+-- name: ParamCamel :many
+SELECT generate_series AS value FROM generateSeries(chgen.arg('Start'),chgen.arg('Stop'),chgen.arg('Step')) ORDER BY value;
+-- name: Unlimited :many
+SELECT number FROM numbers() LIMIT 3;
+-- name: Empty :many
+SELECT number FROM numbers(0);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	generated, err := chgen.Generate("series", queries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture, err := os.ReadFile("testdata/series/runtime_test.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	runGeneratedRuntime(t, "series", generated, fixture)
+}
+
 func TestServerGenerationPreservesLegacyAnnotations(t *testing.T) {
 	endpoint := os.Getenv("CHGEN_ORACLE_URL")
 	if endpoint == "" || os.Getenv("CHGEN_CONTRACT_NATIVE") == "" {

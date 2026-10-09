@@ -510,6 +510,66 @@
       "semantic_family": "measured-aggregate-combinator",
       "evidence": "clickhouse-25.8.29.51/generated-value-probe",
       "test_witness": "internal/engine/execoracle_test.go:TestAggregateCombinatorValueProbesCoverSupportedPrimitives"
+    },
+    {
+      "kind": "table_function",
+      "name": "numbers",
+      "status": "partially_measured",
+      "semantic_family": "integer-series-relation",
+      "evidence": "docs/series-table-evidence.md",
+      "test_witness": "server_generation_test.go:TestServerSeriesGeneratedRuntime",
+      "accepted_products": ["SELECT number FROM numbers(10,6,2)"],
+      "refused_products": ["SELECT number FROM numbers(1 + 2)"]
+    },
+    {
+      "kind": "table_function",
+      "name": "numbers_mt",
+      "status": "partially_measured",
+      "semantic_family": "integer-series-relation",
+      "evidence": "docs/series-table-evidence.md",
+      "test_witness": "server_generation_test.go:TestServerSeriesGeneratedRuntime",
+      "accepted_products": ["SELECT number FROM numbers_mt(10,6,2)"],
+      "refused_products": ["SELECT number FROM numbers_mt(1 + 2)"]
+    },
+    {
+      "kind": "table_function",
+      "name": "zeros",
+      "status": "partially_measured",
+      "semantic_family": "integer-series-relation",
+      "evidence": "docs/series-table-evidence.md",
+      "test_witness": "server_generation_test.go:TestServerSeriesGeneratedRuntime",
+      "accepted_products": ["SELECT zero FROM zeros(1)"],
+      "refused_products": ["SELECT zero FROM zeros(1 + 2)"]
+    },
+    {
+      "kind": "table_function",
+      "name": "zeros_mt",
+      "status": "partially_measured",
+      "semantic_family": "integer-series-relation",
+      "evidence": "docs/series-table-evidence.md",
+      "test_witness": "server_generation_test.go:TestServerSeriesGeneratedRuntime",
+      "accepted_products": ["SELECT zero FROM zeros_mt(1)"],
+      "refused_products": ["SELECT zero FROM zeros_mt(1 + 2)"]
+    },
+    {
+      "kind": "table_function",
+      "name": "generate_series",
+      "status": "partially_measured",
+      "semantic_family": "integer-series-relation",
+      "evidence": "docs/series-table-evidence.md",
+      "test_witness": "server_generation_test.go:TestServerSeriesGeneratedRuntime",
+      "accepted_products": ["SELECT generate_series FROM generate_series(2,8,2)"],
+      "refused_products": ["SELECT generate_series FROM generate_series(1)"]
+    },
+    {
+      "kind": "table_function",
+      "name": "generateSeries",
+      "status": "partially_measured",
+      "semantic_family": "integer-series-relation",
+      "evidence": "docs/series-table-evidence.md",
+      "test_witness": "server_generation_test.go:TestServerSeriesGeneratedRuntime",
+      "accepted_products": ["SELECT generate_series FROM generateSeries(2,8,2)"],
+      "refused_products": ["SELECT generate_series FROM generateSeries(1)"]
     }
   ]
 }

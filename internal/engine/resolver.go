@@ -259,7 +259,7 @@ func parseChgenStatements(sql string, command Command) ([]clickhouse.Expr, error
 }
 
 func parseChgenStatementsWithAdapters(sql string, command Command) ([]clickhouse.Expr, error) {
-	statements, err := clickhouse.NewParser(sql).ParseStmts()
+	statements, err := parseWithSeriesParameters(sql)
 	if err == nil {
 		return statements, err
 	}
@@ -271,7 +271,7 @@ func parseChgenStatementsWithAdapters(sql string, command Command) ([]clickhouse
 		return nil, fmt.Errorf(`CASE operand: cannot infer type for unary operator "+"`)
 	}
 	if normalized != sql {
-		normalizedStatements, normalizedErr := clickhouse.NewParser(normalized).ParseStmts()
+		normalizedStatements, normalizedErr := parseWithSeriesParameters(normalized)
 		if normalizedErr == nil {
 			return normalizedStatements, nil
 		}
@@ -290,7 +290,7 @@ func parseChgenStatementsWithAdapters(sql string, command Command) ([]clickhouse
 		if err := validateLimitWithTiesOwnership(normalized); err != nil {
 			return nil, err
 		}
-		normalizedStatements, normalizedErr := clickhouse.NewParser(withoutLimitModifier).ParseStmts()
+		normalizedStatements, normalizedErr := parseWithSeriesParameters(withoutLimitModifier)
 		if normalizedErr == nil {
 			return normalizedStatements, nil
 		}
@@ -308,7 +308,7 @@ func parseChgenStatementsWithAdapters(sql string, command Command) ([]clickhouse
 	if stripped == withoutLimitModifier {
 		return nil, err
 	}
-	strippedStatements, strippedErr := clickhouse.NewParser(stripped).ParseStmts()
+	strippedStatements, strippedErr := parseWithSeriesParameters(stripped)
 	if strippedErr == nil {
 		return strippedStatements, nil
 	}
@@ -474,6 +474,9 @@ func resolveParams(query *Query, statement clickhouse.Expr, fallback queryScope,
 	clickhouse.Walk(statement, func(node clickhouse.Expr) bool {
 		if placeholder, ok := node.(*clickhouse.PlaceHolder); ok {
 			placeholders = append(placeholders, placeholder)
+		}
+		if function, ok := node.(*clickhouse.TableFunctionExpr); ok {
+			inferSeriesParams(function, inferredTypes, paramNames)
 		}
 		if function, ok := node.(*clickhouse.FunctionExpr); ok && strings.EqualFold(function.Name.Name, "startsWith") {
 			args := functionArgs(function)
@@ -3030,6 +3033,22 @@ func collectTablesWithFinal(
 			return err
 		}
 		switch source := source.(type) {
+		case *clickhouse.TableFunctionExpr:
+			if final {
+				return fmt.Errorf("FINAL is not supported for series table functions")
+			}
+			if alias == "" {
+				alias = clickhouse.Format(source.Name)
+			}
+			if scope.hasFromAlias(alias) {
+				return fmt.Errorf("table alias %q is defined more than once", alias)
+			}
+			table, err := resolveSeriesTable(source, alias)
+			if err != nil {
+				return err
+			}
+			scope.tables = append(scope.tables, scopedTable{table: table, alias: alias})
+			return nil
 		case *clickhouse.TableIdentifier:
 			if source.Table == nil {
 				return fmt.Errorf("FROM table has no table name")

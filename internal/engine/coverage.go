@@ -5,6 +5,7 @@ import (
 
 	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
 	"github.com/IlyaGulya/chgen/internal/diagnostic"
+	"github.com/IlyaGulya/chgen/internal/sqlir"
 )
 
 // CoverageStage records an observation, not a claim about unvisited stages.
@@ -20,6 +21,7 @@ type CoverageColumn struct {
 }
 
 type SQLCoverage struct {
+	IR      *sqlir.Document          `json:"ir,omitempty"`
 	Stages  map[string]CoverageStage `json:"stages"`
 	Columns []CoverageColumn         `json:"columns,omitempty"`
 }
@@ -49,9 +51,14 @@ func InspectSQL(source, schema, sql string, parserOnly bool) SQLCoverage {
 		record("resolve", fmt.Errorf("query coverage requires exactly one SELECT"))
 		return report
 	}
-	if _, ok := statements[0].(*clickhouse.SelectQuery); !ok {
+	query, ok := statements[0].(*clickhouse.SelectQuery)
+	if !ok {
 		record("resolve", fmt.Errorf("query coverage requires SELECT; use scope parse for scripts or DDL"))
 		return report
+	}
+	ir, lowerErr := lowerSelectIR(query)
+	if record("lower", lowerErr) {
+		report.IR = ir
 	}
 	catalogs := &SchemaCatalogs{Physical: &Schema{Tables: make(map[string]Table)}, External: &Schema{Tables: make(map[string]Table)}}
 	if !record("catalog", applySchemaSource(catalogs, source+"/schema", schema)) {

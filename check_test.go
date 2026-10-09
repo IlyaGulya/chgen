@@ -32,6 +32,103 @@ func writeCheckProject(t *testing.T, ddl, sql string) (string, string) {
 	return filepath.Join(dir, "chgen.yaml"), filepath.Join(dir, "generated", "queries.go")
 }
 
+func TestSeriesTableFunctionsResolveAcrossQueryScopes(t *testing.T) {
+	queries, err := parsePublicQuery(t, "", `-- name: Series :many
+WITH series AS (SELECT number AS id FROM numbers(10, 6, 2))
+SELECT s.id, z.zero FROM series AS s CROSS JOIN zeros(1) AS z ORDER BY s.id;
+-- name: Parallel :many
+SELECT n.number, z.zero FROM numbers_mt(2) AS n CROSS JOIN zeros_mt(1) AS z ORDER BY n.number;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, query := range queries {
+		for i, result := range query.Results {
+			if result.GoType != []string{"uint64", "uint8"}[i] {
+				t.Fatalf("series result: %+v", result)
+			}
+		}
+	}
+	if _, err := chgen.Generate("queries", queries); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestInclusiveSeriesRelationsResolve(t *testing.T) {
+	queries, err := parsePublicQuery(t, "", `-- name: Inclusive :many
+SELECT generate_series AS value FROM generate_series(2,8,2) ORDER BY value;
+-- name: Camel :many
+SELECT generate_series AS value FROM generateSeries(2,8,2) ORDER BY value;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, query := range queries {
+		if len(query.Results) != 1 || query.Results[0].GoType != "uint64" {
+			t.Fatalf("inclusive series result: %+v", query.Results)
+		}
+	}
+	if _, err := chgen.Generate("series", queries); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSeriesTableFunctionDomainsRemainBounded(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT number FROM numbers(-1)", "SELECT number FROM numbers(1.5)", "SELECT number FROM numbers('3')",
+		"SELECT number FROM numbers(1,3,0)", "SELECT number FROM numbers(1,2,3,4)",
+		"SELECT zero FROM zeros(1,2)", "SELECT number FROM numbers(1) FINAL", "SELECT number FROM numbers(1) SAMPLE 1",
+		"SELECT number FROM numbers(1 + 2)", "SELECT number FROM numbers_mt(1 + 2)",
+		"SELECT zero FROM zeros(1 + 2)", "SELECT zero FROM zeros_mt(1 + 2)",
+		"SELECT generate_series FROM generate_series(1)", "SELECT generate_series FROM generateSeries()",
+		"SELECT generate_series FROM generate_series(1,3,0)", "SELECT generate_series FROM generateSeries(-1,3)",
+		"SELECT missing FROM numbers(1)", "SELECT number FROM numbers(1) AS n CROSS JOIN numbers(1) AS n",
+		"SELECT number FROM client_table_function(1)",
+	} {
+		if _, err := parsePublicQuery(t, "", "-- name: Read :many\n"+sql); err == nil {
+			t.Errorf("accepted %s", sql)
+		}
+	}
+}
+
+func TestSeriesParametersAreUInt64(t *testing.T) {
+	queries, err := parsePublicQuery(t, "", `-- name: Read :many
+SELECT number FROM numbers(chgen.arg('Start'), chgen.arg('Length'), chgen.arg('Step')) ORDER BY number;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(queries[0].Params) != 3 {
+		t.Fatalf("series parameters: %+v", queries[0].Params)
+	}
+	for _, param := range queries[0].Params {
+		if param.GoType != "uint64" || param.CHType.String() != "UInt64" {
+			t.Fatalf("series parameter: %+v", param)
+		}
+	}
+	if _, err := chgen.Generate("series", queries); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSeriesParameterAdapterPreservesSQLAndOtherParserAdapters(t *testing.T) {
+	queries, err := parsePublicQuery(t, "", `-- name: Quoted :many
+SELECT 'numbers(?)' AS label, number FROM numbers(chgen.arg('Length')) ORDER BY number;
+-- name: Ties :many
+SELECT number FROM numbers(chgen.arg('Length')) ORDER BY number LIMIT 1 WITH TIES;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(queries[0].SQL, "'numbers(?)'") || !strings.Contains(queries[0].SQL, "FROM numbers(?)") || !strings.Contains(queries[1].SQL, "WITH TIES") {
+		t.Fatalf("parser-only normalization changed runtime SQL: %+v", queries)
+	}
+	for _, query := range queries {
+		if len(query.Params) != 1 || query.Params[0].CHType.String() != "UInt64" {
+			t.Fatalf("parameter binding was lost: %+v", query.Params)
+		}
+	}
+	if _, err := chgen.Generate("series", queries); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCoverageCLIReportsIndependentStagesAndContinuesAfterRefusal(t *testing.T) {
 	cli := buildPublicCLI(t)
 	corpus := filepath.Join(t.TempDir(), "corpus.json")
@@ -59,6 +156,111 @@ func TestCoverageCLIReportsIndependentStagesAndContinuesAfterRefusal(t *testing.
 	}
 	if len(report.Cases) != 3 || report.Cases[0].Stages["generate"].Status != "passed" || report.Cases[1].Stages["parse"].Status == "passed" || report.Cases[2].Stages["resolve"].Status != "not_run" || report.Cases[0].Stages["execution"].Status != "not_run" {
 		t.Fatalf("misleading stage report: %s", out)
+	}
+}
+
+func TestCoverageCLIExposesCompleteIRWithoutErasingUnknownProperties(t *testing.T) {
+	cli := buildPublicCLI(t)
+	path := filepath.Join(t.TempDir(), "corpus.json")
+	data := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[
+	{"id":"filter","family":"series","source":"client","sql":"SELECT number AS value FROM numbers(3) WHERE number > 1 ORDER BY number","expected_server":"accept"},
+	{"id":"distinct","family":"series","source":"client","sql":"SELECT DISTINCT number FROM numbers(3)","expected_server":"accept"}]}`
+	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", path).Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var report struct {
+		Cases []struct {
+			Stages map[string]struct {
+				Status string `json:"status"`
+			} `json:"stages"`
+			IR *struct {
+				Select struct {
+					Where struct{ Kind, Value string } `json:"where"`
+				} `json:"select"`
+			} `json:"ir"`
+		} `json:"cases"`
+	}
+	if err := json.Unmarshal(out, &report); err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Cases) != 2 || report.Cases[0].IR == nil || report.Cases[0].IR.Select.Where.Kind != "operator" || report.Cases[0].IR.Select.Where.Value != ">" || report.Cases[0].Stages["lower"].Status != "passed" || report.Cases[1].IR != nil || report.Cases[1].Stages["lower"].Status != "unknown" {
+		t.Fatalf("incomplete IR was claimed as complete: %s", out)
+	}
+}
+
+func TestCoverageCLIRejectsLostPredicateInCandidate(t *testing.T) {
+	cli := buildPublicCLI(t)
+	dir := t.TempDir()
+	corpus := filepath.Join(dir, "corpus.json")
+	if err := os.WriteFile(corpus, []byte(`{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"filter","family":"series","source":"client","sql":"SELECT number AS value FROM numbers(3) WHERE number > 1","expected_server":"accept"}]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", corpus).CombinedOutput()
+	if err != nil {
+		t.Fatalf("%v: %s", err, out)
+	}
+	var candidate map[string]any
+	if err := json.Unmarshal(out, &candidate); err != nil {
+		t.Fatal(err)
+	}
+	candidate["frontend"] = "candidate-test"
+	path := filepath.Join(dir, "candidate.json")
+	for _, lost := range []bool{false, true} {
+		if lost {
+			delete(candidate["cases"].([]any)[0].(map[string]any)["ir"].(map[string]any)["select"].(map[string]any), "where")
+		}
+		data, err := json.Marshal(candidate)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, data, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		out, err = exec.CommandContext(t.Context(), cli, "coverage", "-corpus", corpus, "-candidate", path).CombinedOutput()
+		if !lost {
+			if err != nil || !strings.Contains(string(out), `"status": "matched"`) {
+				t.Fatalf("matching candidate: %v: %s", err, out)
+			}
+		} else {
+			var exit *exec.ExitError
+			if !errors.As(err, &exit) || exit.ExitCode() != 1 || !strings.Contains(string(out), "/select/where") {
+				t.Fatalf("lost WHERE accepted: %v: %s", err, out)
+			}
+		}
+	}
+	for _, mutate := range []func(map[string]any){
+		func(r map[string]any) { r["corpus_sha256"] = "different" },
+		func(r map[string]any) { r["unknown"] = true },
+		func(r map[string]any) { r["compared_frontend"] = "already-combined" },
+		func(r map[string]any) { r["cases"].([]any)[0].(map[string]any)["source"] = "different-source" },
+		func(r map[string]any) { r["cases"].([]any)[0].(map[string]any)["ir"] = nil },
+	} {
+		var invalid map[string]any
+		baseline, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", corpus).Output()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := json.Unmarshal(baseline, &invalid); err != nil {
+			t.Fatal(err)
+		}
+		invalid["frontend"] = "candidate-test"
+		mutate(invalid)
+		data, err := json.Marshal(invalid)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, data, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", corpus, "-candidate", path).CombinedOutput()
+		var exit *exec.ExitError
+		if !errors.As(err, &exit) || exit.ExitCode() != 2 {
+			t.Fatalf("invalid candidate accepted: %v: %s", err, out)
+		}
 	}
 }
 

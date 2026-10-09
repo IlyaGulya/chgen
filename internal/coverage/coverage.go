@@ -41,6 +41,7 @@ type Observation struct {
 }
 
 type Report struct {
+	ComparedFrontend  string                    `json:"compared_frontend,omitempty"`
 	Version           int                       `json:"version"`
 	ClickHouseVersion string                    `json:"clickhouse_version"`
 	ServerVersion     string                    `json:"server_version,omitempty"`
