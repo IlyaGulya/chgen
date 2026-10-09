@@ -7,12 +7,19 @@ remain in the existing engine.
 
 ## Production domain
 
-The initial domain has exactly one FROM relation and no CTE, projection alias,
-GROUP BY, HAVING or correlated subquery. The relation can be a catalog table or
+The domain has exactly one FROM relation and no CTE, GROUP BY, HAVING or
+correlated subquery. The relation can be a catalog table or
 a measured series table function. Ordinary and qualified column references are
 resolved in projections, WHERE, ORDER BY, LIMIT and OFFSET. Wildcards are
 validated against the source; the existing expansion preserves column order
 and inclusion settings.
+
+Direct column aliases such as e.id AS event_id are resolved back to their
+catalog column, including uses in WHERE and ORDER BY. Their observations retain
+the source column identity and the range of each alias use. Computed aliases,
+alias chains, duplicate aliases and names that collide with source columns
+remain in the legacy resolver; their substitution and precedence rules are
+not part of this domain.
 
 Tuple-field paths and literal-name precedence for NULL, true and false stay
 outside this domain. Queries that cannot lower completely, or fall outside the
@@ -56,6 +63,6 @@ ORDER BY, LIMIT and OFFSET on ClickHouse 25.8.29.51 with both pinned driver
 versions; its independent expected result is number=3. Existing wildcard runtime
 tests cover root column lookups after expansion.
 
-Next steps are projection alias substitution, relation CTE visibility, derived
+Next steps are computed alias substitution, relation CTE visibility, derived
 scopes and JOIN binding. Each needs its own domain and parity witnesses before
 replacing the legacy path. None is implied by a passed bind observation today.

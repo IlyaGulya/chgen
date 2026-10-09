@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -332,6 +333,100 @@ func TestProductionIRBindingRefusesAnUnknownPredicateColumn(t *testing.T) {
 	detail := chgen.ExplainError(err)
 	if detail.Code != "ir-column-missing" || detail.Status != "invalid" || detail.Stage != "binding" || !strings.Contains(err.Error(), `column "missing"`) {
 		t.Fatalf("production did not use the IR binder: %+v; %v", detail, err)
+	}
+}
+
+func TestCoverageBindsColumnAliasesToTheirSource(t *testing.T) {
+	cli := buildPublicCLI(t)
+	path := filepath.Join(t.TempDir(), "corpus.json")
+	corpus := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"alias","family":"binding","source":"client","schema":"CREATE TABLE events (id UInt64) ENGINE=Memory;","sql":"SELECT e.id AS event_id FROM events e WHERE event_id > 1 ORDER BY event_id","expected_server":"accept"}]}`
+	if err := os.WriteFile(path, []byte(corpus), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", path).Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var report struct {
+		Cases []struct {
+			Stages  map[string]struct{ Status string }
+			Binding *struct {
+				References []struct{ Table, Column, Type string }
+			}
+		}
+	}
+	if err := json.Unmarshal(out, &report); err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Cases) != 1 || report.Cases[0].Stages["bind"].Status != "passed" || report.Cases[0].Stages["generate"].Status != "passed" || report.Cases[0].Binding == nil {
+		t.Fatalf("alias was not bound and generated: %s", out)
+	}
+	refs := report.Cases[0].Binding.References
+	if len(refs) != 3 {
+		t.Fatalf("missing alias references: %s", out)
+	}
+	for _, ref := range refs {
+		if ref.Table != "events" || ref.Column != "id" || ref.Type != "UInt64" {
+			t.Fatalf("alias lost its catalog identity: %s", out)
+		}
+	}
+}
+
+func TestColumnAliasBindingPreservesPublicQueryContract(t *testing.T) {
+	const sql = "SELECT e.id AS event_id FROM events e WHERE event_id > 1 ORDER BY event_id;"
+	queries, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;", "-- name: Read :many\n"+sql)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(queries) != 1 || len(queries[0].Results) != 1 || queries[0].Results[0].SQLName != "event_id" || queries[0].Results[0].GoType != "uint64" || queries[0].SQL != sql {
+		t.Fatalf("alias changed the query contract: %+v", queries)
+	}
+	if _, err := chgen.Generate("queries", queries); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestColumnAliasBindingDoesNotHideAnUnknownSource(t *testing.T) {
+	_, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;", "-- name: Read :many\nSELECT e.missing AS event_id FROM events e WHERE event_id > 1;")
+	if err == nil {
+		t.Fatal("unknown alias source accepted")
+	}
+	detail := chgen.ExplainError(err)
+	if detail.Code != "ir-column-missing" || detail.Stage != "binding" || !strings.Contains(err.Error(), `column "missing"`) {
+		t.Fatalf("unknown alias source was masked: %+v; %v", detail, err)
+	}
+}
+
+func TestComplexAliasesKeepValidatedLegacyResolution(t *testing.T) {
+	cli := buildPublicCLI(t)
+	for _, example := range []struct{ sql, generate string }{
+		{"SELECT id AS id FROM events ORDER BY id", "passed"},
+		{"SELECT id AS first_id, first_id AS second_id FROM events ORDER BY second_id", "passed"},
+		{"SELECT id AS value, id AS value FROM events ORDER BY value", "not_run"},
+		{"SELECT toUInt64(id) AS value FROM events ORDER BY value", "passed"},
+	} {
+		t.Run(example.sql, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "corpus.json")
+			corpus := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"legacy","family":"binding","source":"client","schema":"CREATE TABLE events (id UInt64) ENGINE=Memory;","sql":` + strconv.Quote(example.sql) + `,"expected_server":"accept"}]}`
+			if err := os.WriteFile(path, []byte(corpus), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", path).Output()
+			if err != nil {
+				t.Fatal(err)
+			}
+			var report struct {
+				Cases []struct {
+					Stages map[string]struct{ Status string }
+				}
+			}
+			if err := json.Unmarshal(out, &report); err != nil {
+				t.Fatal(err)
+			}
+			if len(report.Cases) != 1 || report.Cases[0].Stages["bind"].Status != "unknown" || report.Cases[0].Stages["generate"].Status != example.generate {
+				t.Fatalf("legacy alias rules were lost: %s", out)
+			}
+		})
 	}
 }
 

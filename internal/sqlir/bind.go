@@ -32,6 +32,7 @@ type BindingReport struct {
 type BoundScope struct {
 	table   Table
 	columns map[string]string
+	aliases map[string]string
 	report  BindingReport
 }
 
@@ -45,7 +46,7 @@ type BindingError struct {
 func (e *BindingError) Error() string { return e.Message }
 
 // BindingDomain limits the first production slice to one relation without
-// alias substitution, CTE scope rules, grouping or correlated expressions.
+// computed alias substitution, CTE scope rules, grouping or correlation.
 func BindingDomain(document *Document) error {
 	query := document.Select
 	if len(query.With) != 0 || len(query.From) != 1 || len(query.GroupBy) != 0 || query.Having != nil {
@@ -55,7 +56,7 @@ func BindingDomain(document *Document) error {
 		return ErrBindingUnmodeled
 	}
 	for _, item := range query.Items {
-		if item.Alias != "" {
+		if item.Alias != "" && item.Expr.Kind != "identifier" {
 			return ErrBindingUnmodeled
 		}
 		if err := bindingExprDomain(item.Expr); err != nil {
@@ -103,11 +104,35 @@ func Bind(document *Document, table Table) (*BoundScope, error) {
 	if err := BindingDomain(document); err != nil {
 		return nil, err
 	}
-	scope := &BoundScope{table: table, columns: make(map[string]string), report: BindingReport{Backend: "sqlir", References: []Reference{}}}
+	scope := &BoundScope{table: table, columns: make(map[string]string), aliases: make(map[string]string), report: BindingReport{Backend: "sqlir", References: []Reference{}}}
 	for _, column := range table.Columns {
 		scope.columns[column.Name] = column.Type
 	}
 	query := document.Select
+	// Only direct column aliases enter this domain. Collisions, chains and
+	// cycles retain the legacy resolver's substitution and precedence rules.
+	aliasNames := make(map[string]bool)
+	for _, item := range query.Items {
+		if item.Alias == "" {
+			continue
+		}
+		if _, collision := scope.columns[item.Alias]; collision || aliasNames[item.Alias] {
+			return nil, ErrBindingUnmodeled
+		}
+		aliasNames[item.Alias] = true
+	}
+	for _, item := range query.Items {
+		if item.Alias == "" {
+			continue
+		}
+		names := item.Expr.Name
+		name := names[len(names)-1]
+		if len(names) == 1 && aliasNames[name] {
+			return nil, ErrBindingUnmodeled
+		}
+		// Qualified sources are validated by the normal expression walk below.
+		scope.aliases[item.Alias] = name
+	}
 	for _, item := range query.Items {
 		if err := scope.bindClause(item.Expr, "selected expression"); err != nil {
 			return nil, err
@@ -145,6 +170,11 @@ func (scope *BoundScope) bindExpr(expression Expr) error {
 		if err != nil {
 			return &BindingError{Name: name, Qualifier: qualifier, Span: expression.Span, Message: err.Error()}
 		}
+		if qualifier == "" {
+			if source, alias := scope.aliases[name]; alias {
+				name = source
+			}
+		}
 		scope.report.References = append(scope.report.References, Reference{Table: scope.table.Name, Column: name, Type: typ, Span: expression.Span})
 	}
 	if expression.Kind == "wildcard" && len(expression.Name) > 0 && expression.Name[0] != scope.table.Alias && expression.Name[0] != scope.table.Name {
@@ -161,6 +191,11 @@ func (scope *BoundScope) bindExpr(expression Expr) error {
 func (scope *BoundScope) Lookup(qualifier, name string) (string, error) {
 	if qualifier != "" && qualifier != scope.table.Alias && qualifier != scope.table.Name {
 		return "", fmt.Errorf("column %q is not present in FROM tables", name)
+	}
+	if qualifier == "" {
+		if source, alias := scope.aliases[name]; alias {
+			name = source
+		}
 	}
 	typ, found := scope.columns[name]
 	if !found {
