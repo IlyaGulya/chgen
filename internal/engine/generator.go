@@ -78,11 +78,17 @@ type Query struct {
 	UncheckedExec bool
 	Composition   *QueryComposition
 	// NamedParamNames contains one source chgen.arg name for each placeholder.
-	NamedParamNames       []string
-	resultContracts       map[string]resultTypeContract
-	unverifiedResults     []string
-	unverifiedExpressions []string
-	uncheckedSettings     []string
+	NamedParamNames         []string
+	resultContracts         map[string]resultTypeContract
+	unverifiedResults       []string
+	unverifiedExpressions   []string
+	uncheckedSettings       []string
+	serverVersion           string
+	serverParams            []string
+	serverSQLHash           [32]byte
+	serverBindingSQL        string
+	serverParamAnnotations  []Param
+	serverResultAnnotations []Result
 
 	// batchInsert marks a fixed INSERT ... VALUES whose tuple is bare
 	// placeholders only. Such a statement goes through the native

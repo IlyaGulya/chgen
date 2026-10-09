@@ -61,6 +61,21 @@ func Run(configPath string) error {
 }
 
 func buildExecutionPlan(config *Config) (*executionPlan, error) {
+	for _, pkg := range config.Packages {
+		if pkg.Analysis == "server" {
+			return nil, fmt.Errorf("package %q requires explicit server analysis; use generate-server or check-server", pkg.Name)
+		}
+	}
+	return buildExecutionPlanWithResolver(config, func(_ string, schemaFiles, queryFiles []string) ([]engine.Query, error) {
+		catalogs, err := engine.ParseSchemaCatalogs(schemaFiles)
+		if err != nil {
+			return nil, diagnostic.With(err, diagnostic.Detail{Stage: "schema"})
+		}
+		return engine.ParseQueryFiles(queryFiles, catalogs)
+	})
+}
+
+func buildExecutionPlanWithResolver(config *Config, resolve func(string, []string, []string) ([]engine.Query, error)) (*executionPlan, error) {
 	configPath, err := canonicalExistingPath(config.Path)
 	if err != nil {
 		return nil, fmt.Errorf("resolve config path %q: %w", config.Path, err)
@@ -193,11 +208,7 @@ func buildExecutionPlan(config *Config) (*executionPlan, error) {
 		planned := &plan.packages[index]
 		schemaFiles := expandedInputPaths(planned.schema)
 		queryFiles := expandedInputPaths(planned.queries)
-		catalogs, err := engine.ParseSchemaCatalogs(schemaFiles)
-		if err != nil {
-			return nil, diagnostic.With(fmt.Errorf("package %q: %w", planned.name, err), diagnostic.Detail{Package: planned.name, Stage: "schema"})
-		}
-		queries, err := engine.ParseQueryFiles(queryFiles, catalogs)
+		queries, err := resolve(planned.name, schemaFiles, queryFiles)
 		if err != nil {
 			return nil, diagnostic.With(fmt.Errorf("package %q: %w", planned.name, err), diagnostic.Detail{Package: planned.name})
 		}

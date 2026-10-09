@@ -25,6 +25,12 @@ func main() {
 }
 
 func run(args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "generate-server" {
+		return runServerGeneration(args[1:], stderr, false)
+	}
+	if len(args) > 0 && args[0] == "check-server" {
+		return runServerGeneration(args[1:], stderr, true)
+	}
 	if len(args) > 0 && args[0] == "describe" {
 		return runDescribe(args[1:], stdout, stderr)
 	}
@@ -43,6 +49,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintln(stderr, "       chgen init")
 		_, _ = fmt.Fprintln(stderr, "       chgen check [-f chgen.yaml] [-json] [-require-confirmed]")
 		_, _ = fmt.Fprintln(stderr, "       chgen describe -server URL -sql concrete-select.sql [-database fixture]")
+		_, _ = fmt.Fprintln(stderr, "       chgen generate-server -f chgen.yaml -server URL [-database fixture] [-params examples.json]")
+		_, _ = fmt.Fprintln(stderr, "       chgen check-server -f chgen.yaml -server URL [-database fixture] [-params examples.json]")
 		_, _ = fmt.Fprintln(stderr)
 		_, _ = fmt.Fprintln(stderr, "The init command creates chgen.yaml, schema.sql, and queries.sql in the current directory.")
 		flags.PrintDefaults()

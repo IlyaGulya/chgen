@@ -159,6 +159,9 @@ func validateQuery(query Query) error {
 }
 
 func validateQueryFields(query Query) error {
+	if query.serverVersion != "" {
+		return validateServerQuery(query)
+	}
 	if query.SQL == "" {
 		return fmt.Errorf("SQL body is empty")
 	}

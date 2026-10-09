@@ -56,6 +56,10 @@ func (e *unregisteredFunctionError) Diagnostic() diagnostic.Detail {
 }
 
 func parseResultTypeContract(line string, lineNumber int) (string, resultTypeContract, error) {
+	return parseTypeContractWith(line, lineNumber, parseCHType)
+}
+
+func parseTypeContractWith(line string, lineNumber int, parseType func(clickhouse.ColumnType) (CHType, error)) (string, resultTypeContract, error) {
 	text := strings.TrimSpace(strings.TrimPrefix(line, resultCHTypeDirective))
 	separator := strings.IndexFunc(text, unicode.IsSpace)
 	if separator < 1 {
@@ -87,7 +91,7 @@ func parseResultTypeContract(line string, lineNumber int) (string, resultTypeCon
 	if end != len(typeText) && !(end == len(typeText)-1 && typeText[end] == ')') {
 		return "", resultTypeContract{}, fmt.Errorf("result-chtype must contain only a ClickHouse type")
 	}
-	typeOf, err := parseCHType(column.Type)
+	typeOf, err := parseType(column.Type)
 	if err != nil {
 		return "", resultTypeContract{}, err
 	}

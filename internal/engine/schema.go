@@ -91,6 +91,10 @@ func stripUnsupportedTTLRollup(input string) string {
 }
 
 func parseCreateTable(createTable *clickhouse.CreateTable) (Table, error) {
+	return parseCreateTableWithType(createTable, parseCHType)
+}
+
+func parseCreateTableWithType(createTable *clickhouse.CreateTable, parseType func(clickhouse.ColumnType) (CHType, error)) (Table, error) {
 	if createTable.Name == nil || createTable.Name.Table == nil {
 		return Table{}, fmt.Errorf("CREATE TABLE has no table name")
 	}
@@ -110,7 +114,7 @@ func parseCreateTable(createTable *clickhouse.CreateTable) (Table, error) {
 			// not contribute to a query column catalog.
 			continue
 		}
-		column, err := parseColumnDef(tableName, columnDef)
+		column, err := parseColumnDefWithType(tableName, columnDef, parseType)
 		if err != nil {
 			return Table{}, err
 		}
@@ -404,6 +408,10 @@ func applyAlterTable(schema *Schema, alterTable *clickhouse.AlterTable) error {
 }
 
 func parseColumnDef(tableName string, columnDef *clickhouse.ColumnDef) (Column, error) {
+	return parseColumnDefWithType(tableName, columnDef, parseCHType)
+}
+
+func parseColumnDefWithType(tableName string, columnDef *clickhouse.ColumnDef, parseType func(clickhouse.ColumnType) (CHType, error)) (Column, error) {
 	if columnDef.Name == nil || columnDef.Name.Ident == nil {
 		return Column{}, fmt.Errorf("table %s contains a column without a name", tableName)
 	}
@@ -414,7 +422,7 @@ func parseColumnDef(tableName string, columnDef *clickhouse.ColumnDef) (Column, 
 	if columnDef.Name.DotIdent != nil {
 		columnName += "." + columnDef.Name.DotIdent.Name
 	}
-	columnType, err := parseCHType(columnDef.Type)
+	columnType, err := parseType(columnDef.Type)
 	if err != nil {
 		return Column{}, fmt.Errorf("column %s.%s: %w", tableName, columnName, err)
 	}

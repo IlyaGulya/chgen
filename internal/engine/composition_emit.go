@@ -87,7 +87,7 @@ func renderCompositionParams(query Query) string {
 		out.WriteString("}\n")
 	}
 	for i, variant := range query.Composition.Variants {
-		fmt.Fprintf(&out, "const %sVariant%dSQL = `%s`\n", lowerFirstIdentifier(query.Name), i, variant.SQL)
+		fmt.Fprintf(&out, "const %sVariant%dSQL = %s\n", lowerFirstIdentifier(query.Name), i, querySQLLiteral(variant))
 	}
 	return out.String()
 }

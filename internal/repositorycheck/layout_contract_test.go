@@ -519,6 +519,7 @@ func validateLayoutSnapshot(value layoutSnapshot) error {
 		"cursor_query_test.go",
 		"oracle_regression_test.go",
 		"facade_test.go",
+		"server_generation_test.go",
 	}
 	if len(value.rootProduction) > 10 || !sameRequiredValues(value.rootProduction, wantProduction) || len(value.rootProduction) != len(wantProduction) {
 		return fmt.Errorf("root production Go files = %v, want %v", value.rootProduction, wantProduction)

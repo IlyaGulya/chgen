@@ -145,10 +145,14 @@ func applySchemaSource(catalogs *SchemaCatalogs, path, raw string) error {
 }
 
 func applyExternalCreate(catalogs *SchemaCatalogs, path string, line int, statement *clickhouse.CreateTable) error {
+	return applyExternalCreateWithParser(catalogs, path, line, statement, parseCreateTable)
+}
+
+func applyExternalCreateWithParser(catalogs *SchemaCatalogs, path string, line int, statement *clickhouse.CreateTable, parseTable func(*clickhouse.CreateTable) (Table, error)) error {
 	if statement.TableSchema != nil && statement.TableSchema.AliasTable != nil {
 		return fmt.Errorf("%s:%d: external schema must declare an explicit column list; CREATE TABLE AS is not supported", path, line)
 	}
-	table, err := parseCreateTable(statement)
+	table, err := parseTable(statement)
 	if err != nil {
 		return fmt.Errorf("%s:%d: %w", path, line, err)
 	}

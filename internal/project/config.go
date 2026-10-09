@@ -22,10 +22,12 @@ type Config struct {
 
 // PackageConfig is one generation unit from the configuration file.
 type PackageConfig struct {
-	Name    string
-	Output  string
-	Queries []InputEntry
-	Schema  []InputEntry
+	// Analysis selects an explicit backend. Empty preserves command defaults.
+	Analysis string
+	Name     string
+	Output   string
+	Queries  []InputEntry
+	Schema   []InputEntry
 }
 
 // InputEntry is one queries or schema input as written in the configuration
@@ -55,10 +57,11 @@ func (e *missingConfigError) Error() string {
 func (e *missingConfigError) Unwrap() error { return e.cause }
 
 type packageWire struct {
-	Name    strictString `yaml:"name"`
-	Output  strictString `yaml:"output"`
-	Queries pathList     `yaml:"queries"`
-	Schema  pathList     `yaml:"schema"`
+	Analysis strictString `yaml:"analysis"`
+	Name     strictString `yaml:"name"`
+	Output   strictString `yaml:"output"`
+	Queries  pathList     `yaml:"queries"`
+	Schema   pathList     `yaml:"schema"`
 }
 
 type strictInteger struct {
@@ -217,7 +220,7 @@ func validateYAMLSyntax(path string, data []byte) error {
 				return fmt.Errorf("%s: line %d: package %d must be a mapping", path, node.Line, ordinal+1)
 			}
 			if err := validateMappingKeys(path, fmt.Sprintf("package %d", ordinal+1), node, map[string]bool{
-				"name": true, "output": true, "queries": true, "schema": true,
+				"name": true, "output": true, "queries": true, "schema": true, "analysis": true,
 			}); err != nil {
 				return err
 			}
@@ -234,7 +237,7 @@ func validatePackageValues(path string, ordinal int, node *yaml.Node) error {
 		field := node.Content[index].Value
 		value := node.Content[index+1]
 		switch field {
-		case "name", "output":
+		case "name", "output", "analysis":
 			if value.Kind != yaml.ScalarNode || value.Tag != "!!str" {
 				return fmt.Errorf("%s: line %d: package %d: %s must be a string", path, value.Line, ordinal, field)
 			}
@@ -342,6 +345,9 @@ func buildConfig(path string, wire configWire) (*Config, error) {
 }
 
 func buildPackage(path, baseDir string, ordinal int, wire packageWire) (PackageConfig, error) {
+	if wire.Analysis.set && wire.Analysis.value != "offline" && wire.Analysis.value != "server" {
+		return PackageConfig{}, fmt.Errorf("%s: package %d: analysis must be offline or server", path, ordinal)
+	}
 	for _, field := range []struct {
 		name string
 		set  bool
@@ -373,10 +379,11 @@ func buildPackage(path, baseDir string, ordinal int, wire packageWire) (PackageC
 		return PackageConfig{}, err
 	}
 	return PackageConfig{
-		Name:    wire.Name.value,
-		Output:  resolveConfigPath(baseDir, wire.Output.value),
-		Queries: queries,
-		Schema:  schema,
+		Analysis: wire.Analysis.value,
+		Name:     wire.Name.value,
+		Output:   resolveConfigPath(baseDir, wire.Output.value),
+		Queries:  queries,
+		Schema:   schema,
 	}, nil
 }
 
