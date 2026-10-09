@@ -3,6 +3,7 @@ package sqlir
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 )
@@ -37,6 +38,8 @@ type BoundScope struct {
 	scalars map[string]string
 	parent  *BoundScope
 	aliases map[string]Expr
+	windows map[string]Window
+	locals  map[string]bool
 	report  BindingReport
 }
 
@@ -65,6 +68,11 @@ func BindingDomain(document *Document) error {
 	query := document.Select
 	if len(query.From) > 1 {
 		return ErrBindingUnmodeled
+	}
+	for _, definition := range query.Windows {
+		if err := bindingExprDomain(Expr{Kind: "window", Window: &definition.Spec}); err != nil {
+			return err
+		}
 	}
 	for _, cte := range query.With {
 		if cte.Expr != nil {
@@ -148,6 +156,29 @@ func bindingExprDomain(expression Expr) error {
 		return ErrBindingUnmodeled
 	}
 	switch expression.Kind {
+	case "lambda":
+		if len(expression.Name) == 0 || len(expression.Args) != 1 || containsQuery(expression.Args[0]) {
+			return ErrBindingUnmodeled
+		}
+	case "window":
+		if expression.Window == nil {
+			return ErrBindingUnmodeled
+		}
+		if expression.Window.Frame != nil {
+			if err := bindingExprDomain(*expression.Window.Frame); err != nil {
+				return err
+			}
+		}
+		for _, expr := range expression.Window.PartitionBy {
+			if err := bindingExprDomain(expr); err != nil {
+				return err
+			}
+		}
+		for _, order := range expression.Window.OrderBy {
+			if err := bindingExprDomain(order.Expr); err != nil {
+				return err
+			}
+		}
 	case "subquery":
 		if expression.Query == nil {
 			return ErrBindingUnmodeled
@@ -161,7 +192,7 @@ func bindingExprDomain(expression Expr) error {
 		if len(expression.Name) == 1 && slices.Contains([]string{"null", "true", "false"}, strings.ToLower(expression.Name[0])) {
 			return ErrBindingUnmodeled
 		}
-	case "number", "wildcard", "operator", "call", "tuple":
+	case "number", "wildcard", "operator", "call", "tuple", "window_frame", "frame_between", "frame_bound":
 	default:
 		return ErrBindingUnmodeled
 	}
@@ -171,6 +202,24 @@ func bindingExprDomain(expression Expr) error {
 		}
 	}
 	return nil
+}
+
+// Subqueries inside lambdas require a typed lambda parent context. The current
+// adapter supplies SELECT contexts only, so keep that composition on the old path.
+func containsQuery(expression Expr) bool {
+	if expression.Query != nil {
+		return true
+	}
+	if slices.ContainsFunc(expression.Args, containsQuery) {
+		return true
+	}
+	if window := expression.Window; window != nil {
+		if slices.ContainsFunc(window.PartitionBy, containsQuery) || slices.ContainsFunc(window.OrderBy, func(order Order) bool { return containsQuery(order.Expr) }) {
+			return true
+		}
+		return window.Frame != nil && containsQuery(*window.Frame)
+	}
+	return false
 }
 
 func Bind(document *Document, table Table) (*BoundScope, error) {
@@ -202,6 +251,13 @@ func BindContext(document *Document, context *ScopeContext) (*BoundScope, error)
 	}
 	scope := contextScope(context)
 	query := document.Select
+	scope.windows = make(map[string]Window, len(query.Windows))
+	for _, definition := range query.Windows {
+		if _, duplicate := scope.windows[definition.Name]; duplicate {
+			return nil, ErrBindingUnmodeled
+		}
+		scope.windows[definition.Name] = definition.Spec
+	}
 	// Scalar definitions have their own lexical scope, before projection aliases.
 	for _, cte := range query.With {
 		if cte.Expr != nil {
@@ -220,6 +276,11 @@ func BindContext(document *Document, context *ScopeContext) (*BoundScope, error)
 			return nil, ErrBindingUnmodeled
 		}
 		scope.aliases[item.Alias] = item.Expr
+	}
+	for _, definition := range query.Windows {
+		if err := scope.bindClause(Expr{Kind: "window", Window: &definition.Spec}, "WINDOW definition"); err != nil {
+			return nil, err
+		}
 	}
 	for _, item := range query.Items {
 		if err := scope.bindClause(item.Expr, "selected expression"); err != nil {
@@ -286,12 +347,57 @@ func (scope *BoundScope) bindClause(expression Expr, clause string) error {
 }
 
 func (scope *BoundScope) bindExpr(expression Expr, active map[string]bool, useSpan *Span) error {
+	if expression.Kind == "lambda" {
+		local := *scope
+		local.locals = maps.Clone(scope.locals)
+		if local.locals == nil {
+			local.locals = make(map[string]bool)
+		}
+		for _, name := range expression.Name {
+			local.locals[name] = true
+		}
+		if err := local.bindExpr(expression.Args[0], active, useSpan); err != nil {
+			return err
+		}
+		scope.report = local.report
+		return nil
+	}
+	if expression.Window != nil {
+		if name := expression.Window.Base; name != "" {
+			if _, found := scope.windows[name]; !found {
+				return &BindingError{Name: name, Span: expression.Window.Span, Code: "ir-window-missing", Message: fmt.Sprintf("window %s is not defined", name)}
+			}
+		}
+		if expression.Window.Frame != nil {
+			if err := scope.bindExpr(*expression.Window.Frame, active, useSpan); err != nil {
+				return err
+			}
+		}
+		for _, expr := range expression.Window.PartitionBy {
+			if err := scope.bindExpr(expr, active, useSpan); err != nil {
+				return err
+			}
+		}
+		for _, order := range expression.Window.OrderBy {
+			if err := scope.bindExpr(order.Expr, active, useSpan); err != nil {
+				return err
+			}
+		}
+	}
 	if expression.Kind == "identifier" {
 		qualifier, name := "", expression.Name[0]
 		if len(expression.Name) == 2 {
 			qualifier, name = expression.Name[0], expression.Name[1]
+			if scope.locals[qualifier] {
+				return ErrBindingUnmodeled
+			}
 		}
 		if qualifier == "" {
+			// Lambda parameters shadow captures and projection aliases. Their
+			// types come from the higher-order function, not catalog columns.
+			if scope.locals[name] {
+				return nil
+			}
 			if source, alias := scope.aliases[name]; alias && !(active[name] && scope.columns[name] != "") {
 				if active[name] {
 					return &BindingError{Name: name, Span: expression.Span, Code: "ir-alias-cycle", Message: fmt.Sprintf("cyclic projection alias %q", name)}

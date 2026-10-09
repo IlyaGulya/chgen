@@ -464,6 +464,70 @@ func TestScalarIRScopesKeepCardinalityAndVisibilityChecks(t *testing.T) {
 	}
 }
 
+func TestWindowAndLambdaBindingKeepsValidation(t *testing.T) {
+	for _, example := range []struct{ sql, message string }{
+		{"SELECT sum(id) OVER (PARTITION BY missing) AS value FROM events", `column "missing"`},
+		{"SELECT sum(id) OVER (ORDER BY missing) AS value FROM events", `column "missing"`},
+		{"SELECT sum(id) OVER absent AS value FROM events", "window absent is not defined"},
+		{"SELECT sum(id) OVER w AS value FROM events WINDOW w AS (other), other AS (w)", "recursive"},
+		{"SELECT sum(id) OVER (ORDER BY id ROWS BETWEEN 1 FOLLOWING AND CURRENT ROW) AS value FROM events", "frame"},
+		{"SELECT id FROM events WHERE row_number() OVER () > 1", "window"},
+		{"SELECT arrayMap(x -> x + missing, values) AS value FROM events", `column "missing"`},
+		{"SELECT arrayMap(x -> X, values) AS value FROM events", "X"},
+		{"SELECT arrayMap((x, y) -> x + y, values) AS value FROM events", "lambda parameters"},
+	} {
+		t.Run(example.sql, func(t *testing.T) {
+			_, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64, values Array(Int32)) ENGINE=Memory;", "-- name: Read :many\n"+example.sql)
+			if err == nil || !strings.Contains(err.Error(), example.message) {
+				t.Fatalf("validation lost: want %q, got %v", example.message, err)
+			}
+		})
+	}
+}
+
+func TestLambdaTupleElementsKeepLegacyTyping(t *testing.T) {
+	queries, err := parsePublicQuery(t, "CREATE TABLE events (values Array(Tuple(value UInt64))) ENGINE=Memory;", "-- name: Read :many\nSELECT arrayMap(x -> tupleElement(x, 1), values) AS mapped FROM events;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(queries[0].Results) != 1 || queries[0].Results[0].GoType != "[]uint64" {
+		t.Fatalf("lambda tuple field type changed: %+v", queries)
+	}
+	if _, err := chgen.Generate("queries", queries); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestLambdaBindingReportsCapturesNotLocalParameters(t *testing.T) {
+	cli := buildPublicCLI(t)
+	path := filepath.Join(t.TempDir(), "corpus.json")
+	corpus := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"lambda","family":"binding","source":"client","schema":"CREATE TABLE events (id UInt64, values Array(Int32)) ENGINE=Memory;","sql":"SELECT arrayMap(id -> id + events.id, values) AS mapped FROM events","expected_server":"accept"}]}`
+	if err := os.WriteFile(path, []byte(corpus), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", path).Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var report struct {
+		Cases []struct {
+			Binding *struct {
+				References []struct{ Table, Column, Type string }
+			}
+		}
+	}
+	if err := json.Unmarshal(out, &report); err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Cases) != 1 || report.Cases[0].Binding == nil {
+		t.Fatalf("no lambda binding report: %s", out)
+	}
+	references := report.Cases[0].Binding.References
+	if len(references) != 2 || references[0].Table != "events" || references[0].Column != "id" || references[0].Type != "UInt64" || references[1].Table != "events" || references[1].Column != "values" || references[1].Type != "Array(Int32)" {
+		t.Fatalf("lambda parameter became a catalog reference: %s", out)
+	}
+}
+
 func TestGroupedIRBindingKeepsAggregateValidation(t *testing.T) {
 	for _, sql := range []string{
 		"SELECT id, count() AS rows FROM events GROUP BY missing",
@@ -498,6 +562,13 @@ func TestColumnAliasBindingDoesNotHideAnUnknownSource(t *testing.T) {
 func TestAliasBindingPreservesLegacyPrecedenceBoundaries(t *testing.T) {
 	cli := buildPublicCLI(t)
 	for _, example := range []struct{ sql, bind, generate string }{
+		{"SELECT arrayMap(x -> (SELECT toUInt32(7)), values) AS value FROM events", "unknown", "not_run"},
+		{"SELECT arraySum(id -> toUInt32(id), values) AS value FROM events", "passed", "passed"},
+		{"SELECT arrayMap((x, y) -> x + y + id, values, values) AS value FROM events", "passed", "passed"},
+		{"SELECT arrayMap(x -> arrayMap(y -> y + x + id, values), values) AS value FROM events", "passed", "passed"},
+		{"SELECT sum(id) OVER ordered AS total FROM events WINDOW base AS (PARTITION BY id), ordered AS (base ORDER BY id)", "passed", "passed"},
+		{"SELECT sum(id) OVER (ORDER BY id ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS total FROM events", "passed", "passed"},
+		{"SELECT row_number() OVER (PARTITION BY id ORDER BY id) AS position FROM events", "passed", "passed"},
 		{"WITH toUInt64(100) AS x, inner_q AS (WITH x AS y, toInt16(7) AS x SELECT y AS value) SELECT value FROM inner_q", "passed", "passed"},
 		{"WITH (SELECT count() FROM events) AS total SELECT id, total FROM events", "passed", "passed"},
 		{"WITH later AS threshold, toUInt32(2) AS later SELECT threshold AS value", "passed", "passed"},
@@ -509,7 +580,7 @@ func TestAliasBindingPreservesLegacyPrecedenceBoundaries(t *testing.T) {
 		{"SELECT id AS first_id, first_id AS second_id FROM events ORDER BY second_id", "passed", "passed"},
 		{"SELECT id AS value, id AS value FROM events ORDER BY value", "unknown", "not_run"},
 		{"SELECT toUInt64(id) AS value FROM events ORDER BY value", "passed", "passed"},
-		{"SELECT arraySum(x -> toUInt32(x), values) AS value FROM events", "unknown", "passed"},
+		{"SELECT arraySum(x -> toUInt32(x), values) AS value FROM events", "passed", "passed"},
 		{"WITH source AS (SELECT id FROM events) SELECT source.id FROM source", "passed", "passed"},
 		{"SELECT nested.id FROM (SELECT id FROM events) AS nested", "passed", "passed"},
 		{"SELECT a.id FROM events a INNER JOIN events b ON a.id = b.id", "passed", "passed"},

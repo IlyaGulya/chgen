@@ -259,7 +259,18 @@ WITH later AS threshold, toUInt32(2) AS later,
 (SELECT count() FROM numbers(5)) AS total
 SELECT number, total FROM numbers(5) WHERE number = threshold;
 -- name: ScalarLiteral :one
-SELECT (SELECT toUInt32(7)) AS value;`)
+SELECT (SELECT toUInt32(7)) AS value;
+-- name: WindowRows :many
+SELECT number, row_number() OVER ordered AS position,
+sum(number) OVER (ordered ROWS BETWEEN 1 PRECEDING AND CURRENT ROW) AS total
+FROM numbers(4)
+WINDOW base AS (PARTITION BY toUInt8(1)), ordered AS (base ORDER BY number)
+ORDER BY number;
+-- name: LambdaRows :many
+SELECT number, arrayMap((x, y) -> x + y + number, array(0, 1, 2), array(0, 1, 2)) AS mapped,
+arrayMap(number -> toUInt32(number), array(0, 1, 2)) AS shadowed,
+arrayMap(x -> arraySum(y -> x + y + number, array(0, 1, 2)), array(0, 1)) AS nested
+FROM numbers(2) ORDER BY number;`)
 	if err != nil {
 		t.Fatal(err)
 	}

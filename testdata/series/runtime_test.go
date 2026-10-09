@@ -139,4 +139,26 @@ func TestSeriesRowsAndTypes(t *testing.T) {
 	if err != nil || literal.Value == nil || *literal.Value != uint32(7) {
 		t.Fatalf("scalar SELECT without FROM: %+v, %v", literal, err)
 	}
+	windows, err := q.WindowRows(t.Context(), WindowRowsParams{})
+	if err != nil || len(windows) != 4 {
+		t.Fatalf("window rows: %+v, %v", windows, err)
+	}
+	for index, total := range []uint64{0, 1, 3, 5} {
+		if windows[index].Number != uint64(index) || windows[index].Position != uint64(index+1) || windows[index].Total != total {
+			t.Fatalf("named window and frame: %+v", windows)
+		}
+	}
+	lambdas, err := q.LambdaRows(t.Context(), LambdaRowsParams{})
+	if err != nil || len(lambdas) != 2 {
+		t.Fatalf("lambda rows: %+v, %v", lambdas, err)
+	}
+	for index, expected := range []struct{ mapped, nested []uint64 }{
+		{[]uint64{0, 2, 4}, []uint64{3, 6}},
+		{[]uint64{1, 3, 5}, []uint64{6, 9}},
+	} {
+		row := lambdas[index]
+		if row.Number != uint64(index) || !slices.Equal(row.Mapped, expected.mapped) || !slices.Equal(row.Shadowed, []uint32{0, 1, 2}) || !slices.Equal(row.Nested, expected.nested) {
+			t.Fatalf("lambda scopes and captures: %+v", lambdas)
+		}
+	}
 }

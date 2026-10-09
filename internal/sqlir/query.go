@@ -9,15 +9,21 @@ type Document struct {
 }
 
 type Select struct {
-	With    []CTE      `json:"with,omitempty"`
-	Items   []Item     `json:"items"`
-	From    []Relation `json:"from,omitempty"`
-	Where   *Expr      `json:"where,omitempty"`
-	GroupBy []Expr     `json:"group_by,omitempty"`
-	Having  *Expr      `json:"having,omitempty"`
-	OrderBy []Order    `json:"order_by,omitempty"`
-	Limit   *Expr      `json:"limit,omitempty"`
-	Offset  *Expr      `json:"offset,omitempty"`
+	With    []CTE              `json:"with,omitempty"`
+	Items   []Item             `json:"items"`
+	From    []Relation         `json:"from,omitempty"`
+	Where   *Expr              `json:"where,omitempty"`
+	GroupBy []Expr             `json:"group_by,omitempty"`
+	Having  *Expr              `json:"having,omitempty"`
+	OrderBy []Order            `json:"order_by,omitempty"`
+	Limit   *Expr              `json:"limit,omitempty"`
+	Offset  *Expr              `json:"offset,omitempty"`
+	Windows []WindowDefinition `json:"windows,omitempty"`
+}
+
+type WindowDefinition struct {
+	Name string `json:"name"`
+	Spec Window `json:"spec"`
 }
 
 type CTE struct {
@@ -39,6 +45,16 @@ type Expr struct {
 	Args          []Expr   `json:"args,omitempty"`
 	Query         *Select  `json:"query,omitempty"`
 	Parenthesized bool     `json:"parenthesized,omitzero"`
+	Window        *Window  `json:"window,omitempty"`
+}
+
+type Window struct {
+	Span          *Span   `json:"span,omitempty"`
+	Base          string  `json:"base,omitempty"`
+	PartitionBy   []Expr  `json:"partition_by,omitempty"`
+	OrderBy       []Order `json:"order_by,omitempty"`
+	Frame         *Expr   `json:"frame,omitempty"`
+	Parenthesized bool    `json:"parenthesized,omitzero"`
 }
 
 type Relation struct {

@@ -30,11 +30,22 @@ and parentheses; each nested scope is bound separately. Existing single-column,
 cardinality and correlation restrictions remain in force, as does scalar-result
 nullability. Binding does not treat a subquery's columns as outer row bindings.
 
+Window functions retain their OVER specification, partition and order
+expressions, named-window references and frame bounds. ROWS and RANGE, bound
+directions, and BETWEEN remain distinct tree properties. Named definitions are
+bound in their SELECT scope. Frame validity, inheritance rules, recursive
+definitions and function result types remain checked by the existing engine.
+
+Lambdas retain their parameter names, parentheses and body. Parameters shadow
+outer names and projection aliases, including inside nested lambdas; captures
+are bound against the enclosing scope. Parameters are not reported as catalog
+columns. The existing higher-order function rules assign parameter types and
+check argument counts and body types.
+
 Column and computed aliases are expanded during binding, including chains,
 forward references and uses in WHERE, GROUP BY, HAVING and ORDER BY. Their
 observations retain the referenced catalog columns and the range of each alias
-use. The existing
-engine still infers the expression type; the binder does not assign a computed
+use. The existing engine still infers the expression type; the binder does not assign a computed
 alias the type of its input column. Cycles fail with ir-alias-cycle. An active
 alias that refers to an identically named physical column resolves that column,
 preserving self-reference and collision behavior. Duplicate output aliases
@@ -45,8 +56,8 @@ that are rebound against a derived query's rows. References to outer scalar
 expressions carry kind scalar rather than pretending to be catalog columns.
 An existing local qualifier prevents lookup from leaking into a parent source.
 
-Special grouping modes such as ROLLUP, CUBE and TOTALS, lambda scopes,
-tuple-field paths and
+Special grouping modes such as ROLLUP, CUBE and TOTALS, subqueries inside
+lambdas, tuple-field paths and
 literal-name precedence for NULL, true and false stay
 outside this domain. Queries that cannot lower completely, or fall outside the
 binder domain, keep the legacy resolver. This is an explicit migration boundary,
@@ -93,7 +104,14 @@ count subquery returning 5 for row 2, plus a scalar SELECT without FROM returnin
 7. Public and CLI regressions retain local scalar shadowing, reject dependency
 cycles and unknown columns, and preserve scalar-subquery cardinality checks.
 
-Remaining migration boundaries include special grouping modes, windows, lambda
-scopes and replacing legacy construction of typed source
+Runtime window regressions check positions 1 through 4 and rolling sums
+0, 1, 3, 5 through a named-window inheritance chain and an explicit ROWS frame.
+Lambda regressions execute multiple parameters, shadowing, outer column capture
+and nested lambdas. Public tests retain invalid-frame and window-placement
+checks, parameter case sensitivity and lambda arity checks; CLI reports distinguish
+captured columns from local parameters.
+
+Remaining migration boundaries include special grouping modes, subqueries inside
+lambdas, tuple-field paths and replacing legacy construction of typed source
 signatures. Each needs parity witnesses before replacing its existing path.
 None is implied by a passed bind observation today.

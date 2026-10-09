@@ -35,10 +35,25 @@ func lowerSQLIR(query *clickhouse.SelectQuery, sql string) (*sqlir.Document, err
 }
 
 func lowerSelectIR(query *clickhouse.SelectQuery) (*sqlir.Document, error) {
-	if err := irFields(query, "With", "SelectItems", "From", "Where", "GroupBy", "Having", "OrderBy", "Limit"); err != nil {
+	if err := irFields(query, "With", "SelectItems", "From", "Where", "GroupBy", "Having", "OrderBy", "Limit", "Window"); err != nil {
 		return nil, err
 	}
 	result := sqlir.Select{}
+	if query.Window != nil {
+		if err := irFields(query.Window, "Windows"); err != nil {
+			return nil, err
+		}
+		for _, definition := range query.Window.Windows {
+			if err := irFields(definition, "Name", "Expr"); err != nil {
+				return nil, err
+			}
+			spec, err := lowerWindowIR(definition.Expr)
+			if err != nil {
+				return nil, err
+			}
+			result.Windows = append(result.Windows, sqlir.WindowDefinition{Name: definition.Name.Name, Spec: *spec})
+		}
+	}
 	if query.With != nil {
 		if err := irFields(query.With, "CTEs"); err != nil {
 			return nil, err
@@ -221,6 +236,16 @@ func lowerExprIR(expression clickhouse.Expr) (result sqlir.Expr, err error) {
 		}
 		args, err := lowerExprListIR(expr.Params.Items)
 		return sqlir.Expr{Kind: "call", Value: expr.Name.Name, Args: args}, err
+	case *clickhouse.WindowFunctionExpr:
+		if err := irFields(expr, "Function", "OverExpr"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		function, err := lowerExprIR(expr.Function)
+		if err != nil {
+			return sqlir.Expr{}, err
+		}
+		window, err := lowerWindowIR(expr.OverExpr)
+		return sqlir.Expr{Kind: "window", Args: []sqlir.Expr{function}, Window: window}, err
 	case *clickhouse.SubQuery:
 		if err := irFields(expr, "Select", "HasParen"); err != nil {
 			return sqlir.Expr{}, err
@@ -278,6 +303,18 @@ func lowerExprIR(expression clickhouse.Expr) (result sqlir.Expr, err error) {
 		if err := irFields(expr, "LeftExpr", "Operation", "RightExpr"); err != nil {
 			return sqlir.Expr{}, err
 		}
+		if string(expr.Operation) == "->" {
+			parameters, body, ok := lambdaParts(expr)
+			if !ok {
+				return sqlir.Expr{}, fmt.Errorf("IR adapter requires simple lambda parameter names")
+			}
+			if _, err := lowerExprIR(expr.LeftExpr); err != nil {
+				return sqlir.Expr{}, err
+			}
+			lowered, err := lowerExprIR(body)
+			_, parenthesized := expr.LeftExpr.(*clickhouse.ParamExprList)
+			return sqlir.Expr{Kind: "lambda", Name: parameters, Args: []sqlir.Expr{lowered}, Parenthesized: parenthesized}, err
+		}
 		left, err := lowerExprIR(expr.LeftExpr)
 		if err != nil {
 			return sqlir.Expr{}, err
@@ -289,6 +326,121 @@ func lowerExprIR(expression clickhouse.Expr) (result sqlir.Expr, err error) {
 		return sqlir.Expr{Kind: "operator", Value: strings.ToUpper(string(expr.Operation)), Args: []sqlir.Expr{left, right}}, nil
 	default:
 		return sqlir.Expr{}, fmt.Errorf("IR adapter does not model expression %s", clickhouse.Format(expression))
+	}
+}
+
+func lowerWindowIR(expression clickhouse.Expr) (*sqlir.Window, error) {
+	if name, ok := expression.(*clickhouse.Ident); ok {
+		if err := irFields(name, "Name", "QuoteType"); err != nil {
+			return nil, err
+		}
+		return &sqlir.Window{Span: irSourceSpan(name), Base: name.Name}, nil
+	}
+	window, ok := expression.(*clickhouse.WindowExpr)
+	if !ok {
+		return nil, fmt.Errorf("IR adapter requires an inline window")
+	}
+	if err := irFields(window, "WindowName", "PartitionBy", "OrderBy", "Frame"); err != nil {
+		return nil, err
+	}
+	result := &sqlir.Window{Span: irSourceSpan(window), Parenthesized: true}
+	if window.WindowName != nil {
+		result.Base = window.WindowName.Name
+	}
+	if window.Frame != nil {
+		frame, err := lowerWindowFrameIR(window.Frame)
+		if err != nil {
+			return nil, err
+		}
+		result.Frame = &frame
+	}
+	if window.PartitionBy != nil {
+		if err := irFields(window.PartitionBy, "Expr"); err != nil {
+			return nil, err
+		}
+		list, ok := window.PartitionBy.Expr.(*clickhouse.ColumnExprList)
+		if !ok {
+			return nil, fmt.Errorf("IR adapter requires a window partition expression list")
+		}
+		var err error
+		result.PartitionBy, err = lowerExprListIR(list)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if window.OrderBy != nil {
+		if err := irFields(window.OrderBy, "Items"); err != nil {
+			return nil, err
+		}
+		for _, item := range window.OrderBy.Items {
+			order, ok := item.(*clickhouse.OrderExpr)
+			if !ok {
+				return nil, fmt.Errorf("IR adapter requires ordinary window ORDER BY expressions")
+			}
+			if err := irFields(order, "Expr", "Direction"); err != nil {
+				return nil, err
+			}
+			expr, err := lowerExprIR(order.Expr)
+			if err != nil {
+				return nil, err
+			}
+			direction := strings.ToUpper(string(order.Direction))
+			if direction == "" {
+				direction = "ASC"
+			}
+			result.OrderBy = append(result.OrderBy, sqlir.Order{Expr: expr, Direction: direction})
+		}
+	}
+	return result, nil
+}
+
+func lowerWindowFrameIR(expression clickhouse.Expr) (result sqlir.Expr, err error) {
+	defer func() {
+		if err == nil {
+			result.Span = irSourceSpan(expression)
+		}
+	}()
+	switch frame := expression.(type) {
+	case *clickhouse.WindowFrameClause:
+		if err := irFields(frame, "Type", "Extend"); err != nil {
+			return result, err
+		}
+		bound, err := lowerWindowFrameIR(frame.Extend)
+		return sqlir.Expr{Kind: "window_frame", Value: strings.ToUpper(frame.Type), Args: []sqlir.Expr{bound}}, err
+	case *clickhouse.BetweenClause:
+		if err := irFields(frame, "Between", "And"); err != nil {
+			return result, err
+		}
+		start, err := lowerWindowFrameIR(frame.Between)
+		if err != nil {
+			return result, err
+		}
+		end, err := lowerWindowFrameIR(frame.And)
+		return sqlir.Expr{Kind: "frame_between", Args: []sqlir.Expr{start, end}}, err
+	case *clickhouse.WindowFrameCurrentRow:
+		if err := irFields(frame); err != nil {
+			return result, err
+		}
+		return sqlir.Expr{Kind: "frame_bound", Value: "CURRENT ROW"}, nil
+	case *clickhouse.WindowFrameUnbounded:
+		if err := irFields(frame, "Direction"); err != nil {
+			return result, err
+		}
+		return sqlir.Expr{Kind: "frame_bound", Value: "UNBOUNDED " + strings.ToUpper(frame.Direction)}, nil
+	case *clickhouse.WindowFrameNumber:
+		if err := irFields(frame, "Number", "Direction"); err != nil {
+			return result, err
+		}
+		offset, err := lowerExprIR(frame.Number)
+		return sqlir.Expr{Kind: "frame_bound", Value: strings.ToUpper(frame.Direction), Args: []sqlir.Expr{offset}}, err
+	case *clickhouse.WindowFrameExtendExpr:
+		if err := irFields(frame, "Expr", "Direction"); err != nil {
+			return result, err
+		}
+		offset, err := lowerExprIR(frame.Expr)
+		return sqlir.Expr{Kind: "frame_bound", Value: strings.ToUpper(frame.Direction), Args: []sqlir.Expr{offset}}, err
+	default:
+		return result, fmt.Errorf("IR adapter does not model window frame %T", expression)
 	}
 }
 
