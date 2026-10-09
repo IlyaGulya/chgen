@@ -116,7 +116,7 @@ func TestSeriesRowsAndTypes(t *testing.T) {
 		t.Fatalf("bound filter: %+v, %v", filtered, err)
 	}
 	aliased, err := q.BoundAliasFilter(t.Context(), BoundAliasFilterParams{})
-	if err != nil || len(aliased) != 1 || aliased[0].Value != 3 {
+	if err != nil || len(aliased) != 1 || aliased[0].Value != uint32(3) || aliased[0].SmallNumber != uint32(3) {
 		t.Fatalf("bound alias filter: %+v, %v", aliased, err)
 	}
 }

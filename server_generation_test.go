@@ -243,7 +243,7 @@ SELECT number FROM numbers(0);
 -- name: BoundFilter :many
 SELECT number FROM numbers(5) WHERE number > 1 AND number < 4 ORDER BY number LIMIT 1 OFFSET 1;
 -- name: BoundAliasFilter :many
-SELECT n.number AS value FROM numbers(5) n WHERE value > 1 AND value < 4 ORDER BY value LIMIT 1 OFFSET 1;`)
+SELECT small_number AS value, toUInt32(n.number) AS small_number FROM numbers(5) n WHERE value > 1 AND value < 4 ORDER BY value LIMIT 1 OFFSET 1;`)
 	if err != nil {
 		t.Fatal(err)
 	}

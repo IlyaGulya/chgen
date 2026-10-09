@@ -14,14 +14,15 @@ resolved in projections, WHERE, ORDER BY, LIMIT and OFFSET. Wildcards are
 validated against the source; the existing expansion preserves column order
 and inclusion settings.
 
-Direct column aliases such as e.id AS event_id are resolved back to their
-catalog column, including uses in WHERE and ORDER BY. Their observations retain
-the source column identity and the range of each alias use. Computed aliases,
-alias chains, duplicate aliases and names that collide with source columns
-remain in the legacy resolver; their substitution and precedence rules are
-not part of this domain.
+Column and computed aliases are expanded during binding, including chains,
+forward references and uses in WHERE and ORDER BY. Their observations retain
+the referenced catalog columns and the range of each alias use. The existing
+engine still infers the expression type; the binder does not assign a computed
+alias the type of its input column. Cycles fail with ir-alias-cycle. Duplicate
+aliases and names that collide with source columns remain in the legacy
+resolver because they require separate precedence rules.
 
-Tuple-field paths and literal-name precedence for NULL, true and false stay
+Lambda scopes, tuple-field paths and literal-name precedence for NULL, true and false stay
 outside this domain. Queries that cannot lower completely, or fall outside the
 binder domain, keep the legacy resolver. This is an explicit migration boundary,
 not an opt-in to skip checks. An unknown column inside the new domain is an
@@ -63,6 +64,6 @@ ORDER BY, LIMIT and OFFSET on ClickHouse 25.8.29.51 with both pinned driver
 versions; its independent expected result is number=3. Existing wildcard runtime
 tests cover root column lookups after expansion.
 
-Next steps are computed alias substitution, relation CTE visibility, derived
+Next steps are alias name collisions, relation CTE visibility, derived
 scopes and JOIN binding. Each needs its own domain and parity witnesses before
 replacing the legacy path. None is implied by a passed bind observation today.

@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"maps"
@@ -43,7 +44,7 @@ func bindIRSelect(query *clickhouse.SelectQuery, schema *Schema, sql string) (*s
 			if suggestion := suggestName(missing.Name, scope.columnCandidates(missing.Qualifier)); suggestion != "" {
 				err = fmt.Errorf("%w; did you mean %q?", err, suggestion)
 			}
-			return nil, diagnostic.With(err, diagnostic.Detail{Code: "ir-column-missing", Status: diagnostic.Invalid, Stage: "binding", Hint: "Check the column name and schema migration order."})
+			return nil, diagnostic.With(err, diagnostic.Detail{Code: cmp.Or(missing.Code, "ir-column-missing"), Status: diagnostic.Invalid, Stage: "binding", Hint: "Check column names, projection aliases and schema migration order."})
 		}
 	}
 	return bound, err

@@ -318,7 +318,7 @@
       "binding": "alias_hidden",
       "query": "SELECT y AS x, x AS y FROM ns_outer",
       "chgen": "refuse",
-      "chgen_error": "not present in FROM tables",
+      "chgen_error": "cyclic projection alias",
       "analysis": "refuse",
       "analysis_code": 47,
       "execution": "refuse",

@@ -336,10 +336,10 @@ func TestProductionIRBindingRefusesAnUnknownPredicateColumn(t *testing.T) {
 	}
 }
 
-func TestCoverageBindsColumnAliasesToTheirSource(t *testing.T) {
+func TestCoverageBindsComputedAliasChainsToTheirSources(t *testing.T) {
 	cli := buildPublicCLI(t)
 	path := filepath.Join(t.TempDir(), "corpus.json")
-	corpus := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"alias","family":"binding","source":"client","schema":"CREATE TABLE events (id UInt64) ENGINE=Memory;","sql":"SELECT e.id AS event_id FROM events e WHERE event_id > 1 ORDER BY event_id","expected_server":"accept"}]}`
+	corpus := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"alias","family":"binding","source":"client","schema":"CREATE TABLE events (id UInt64) ENGINE=Memory;","sql":"SELECT toUInt64(e.id) AS first_id, first_id AS event_id FROM events e WHERE event_id > 1 ORDER BY event_id","expected_server":"accept"}]}`
 	if err := os.WriteFile(path, []byte(corpus), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -362,7 +362,7 @@ func TestCoverageBindsColumnAliasesToTheirSource(t *testing.T) {
 		t.Fatalf("alias was not bound and generated: %s", out)
 	}
 	refs := report.Cases[0].Binding.References
-	if len(refs) != 3 {
+	if len(refs) != 4 {
 		t.Fatalf("missing alias references: %s", out)
 	}
 	for _, ref := range refs {
@@ -386,6 +386,38 @@ func TestColumnAliasBindingPreservesPublicQueryContract(t *testing.T) {
 	}
 }
 
+func TestComputedAliasChainKeepsItsExpressionType(t *testing.T) {
+	const sql = "SELECT small_id AS value, toUInt32(id) AS small_id FROM events WHERE value > 1 ORDER BY value;"
+	queries, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;", "-- name: Read :many\n"+sql)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(queries[0].Results) != 2 || queries[0].Results[0].GoType != "uint32" || queries[0].Results[1].GoType != "uint32" || queries[0].SQL != sql {
+		t.Fatalf("alias inherited the source type instead of the expression type: %+v", queries)
+	}
+	if _, err := chgen.Generate("queries", queries); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCyclicProjectionAliasesFailAtBinding(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT second_id AS first_id, first_id AS second_id FROM events;",
+		"SELECT toUInt64(value) AS value FROM events;",
+	} {
+		t.Run(sql, func(t *testing.T) {
+			_, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;", "-- name: Read :many\n"+sql)
+			if err == nil {
+				t.Fatal("cyclic aliases accepted")
+			}
+			detail := chgen.ExplainError(err)
+			if detail.Code != "ir-alias-cycle" || detail.Stage != "binding" || detail.Status != "invalid" {
+				t.Fatalf("cycle was not diagnosed: %+v; %v", detail, err)
+			}
+		})
+	}
+}
+
 func TestColumnAliasBindingDoesNotHideAnUnknownSource(t *testing.T) {
 	_, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;", "-- name: Read :many\nSELECT e.missing AS event_id FROM events e WHERE event_id > 1;")
 	if err == nil {
@@ -397,17 +429,18 @@ func TestColumnAliasBindingDoesNotHideAnUnknownSource(t *testing.T) {
 	}
 }
 
-func TestComplexAliasesKeepValidatedLegacyResolution(t *testing.T) {
+func TestAliasBindingPreservesLegacyPrecedenceBoundaries(t *testing.T) {
 	cli := buildPublicCLI(t)
-	for _, example := range []struct{ sql, generate string }{
-		{"SELECT id AS id FROM events ORDER BY id", "passed"},
-		{"SELECT id AS first_id, first_id AS second_id FROM events ORDER BY second_id", "passed"},
-		{"SELECT id AS value, id AS value FROM events ORDER BY value", "not_run"},
-		{"SELECT toUInt64(id) AS value FROM events ORDER BY value", "passed"},
+	for _, example := range []struct{ sql, bind, generate string }{
+		{"SELECT id AS id FROM events ORDER BY id", "unknown", "passed"},
+		{"SELECT id AS first_id, first_id AS second_id FROM events ORDER BY second_id", "passed", "passed"},
+		{"SELECT id AS value, id AS value FROM events ORDER BY value", "unknown", "not_run"},
+		{"SELECT toUInt64(id) AS value FROM events ORDER BY value", "passed", "passed"},
+		{"SELECT arraySum(x -> toUInt32(x), values) AS value FROM events", "unknown", "passed"},
 	} {
 		t.Run(example.sql, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "corpus.json")
-			corpus := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"legacy","family":"binding","source":"client","schema":"CREATE TABLE events (id UInt64) ENGINE=Memory;","sql":` + strconv.Quote(example.sql) + `,"expected_server":"accept"}]}`
+			corpus := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"legacy","family":"binding","source":"client","schema":"CREATE TABLE events (id UInt64, values Array(Int32)) ENGINE=Memory;","sql":` + strconv.Quote(example.sql) + `,"expected_server":"accept"}]}`
 			if err := os.WriteFile(path, []byte(corpus), 0o600); err != nil {
 				t.Fatal(err)
 			}
@@ -423,7 +456,7 @@ func TestComplexAliasesKeepValidatedLegacyResolution(t *testing.T) {
 			if err := json.Unmarshal(out, &report); err != nil {
 				t.Fatal(err)
 			}
-			if len(report.Cases) != 1 || report.Cases[0].Stages["bind"].Status != "unknown" || report.Cases[0].Stages["generate"].Status != example.generate {
+			if len(report.Cases) != 1 || report.Cases[0].Stages["bind"].Status != example.bind || report.Cases[0].Stages["generate"].Status != example.generate {
 				t.Fatalf("legacy alias rules were lost: %s", out)
 			}
 		})
