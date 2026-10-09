@@ -433,6 +433,161 @@ ALTER TABLE events ADD COLUMN created_at DateTime;`
 	}
 }
 
+func TestCreateAsExchangeRenameKeepsFactDefinition(t *testing.T) {
+	const ddl = `CREATE TABLE fact_ci_spans_v3 (
+		fact_id String, repository_key String, span_type String, span_id String,
+		event_date Date, projected_at DateTime64(3, 'UTC')
+	) ENGINE=ReplacingMergeTree(projected_at) PARTITION BY toYYYYMM(event_date)
+	ORDER BY (repository_key, span_type, fact_id);
+	CREATE TABLE fact_ci_spans_v3_sort_key AS fact_ci_spans_v3
+	ENGINE=ReplacingMergeTree(projected_at) PARTITION BY toYYYYMM(event_date)
+	ORDER BY (repository_key, span_type, span_id, fact_id);
+	CREATE MATERIALIZED VIEW mv TO fact_ci_spans_v3_sort_key AS SELECT * FROM fact_ci_spans_v3;
+	INSERT INTO fact_ci_spans_v3_sort_key SELECT * FROM fact_ci_spans_v3;
+	EXCHANGE TABLES fact_ci_spans_v3 AND fact_ci_spans_v3_sort_key;
+	RENAME TABLE fact_ci_spans_v3_sort_key TO fact_ci_spans_v3_old;`
+	config, _ := writeCheckProject(t, ddl, "-- name: Fingerprint :many\nSELECT fact_id FROM fact_ci_spans_v3;")
+	dir := filepath.Dir(config)
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(dir, "schema.sql")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	queries, err := chgen.ParseQueryFiles([]string{filepath.Join(dir, "queries.sql")}, catalogs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := chgen.Generate("querygen", queries); err != nil {
+		t.Fatal(err)
+	}
+	current := catalogs.Physical.Tables["fact_ci_spans_v3"]
+	old := catalogs.Physical.Tables["fact_ci_spans_v3_old"]
+	if !reflect.DeepEqual(current.Engine.OrderBy, []string{"repository_key", "span_type", "span_id", "fact_id"}) ||
+		!reflect.DeepEqual(old.Engine.OrderBy, []string{"repository_key", "span_type", "fact_id"}) ||
+		len(current.Columns) != 6 || !reflect.DeepEqual(current.Columns, old.Columns) {
+		t.Fatalf("swap lost definitions: current=%+v old=%+v", current, old)
+	}
+}
+
+func TestCreateAsCopiesColumnAndStorageMetadata(t *testing.T) {
+	const ddl = `CREATE TABLE source (
+		id UInt64, event_date Date, version UInt64,
+		x UInt64 DEFAULT id + 1, m UInt64 MATERIALIZED id + 2,
+		a UInt64 ALIAS id + 3, label String COMMENT 'hello' CODEC(ZSTD)
+	) ENGINE=ReplacingMergeTree(version) PARTITION BY toYYYYMM(event_date)
+	ORDER BY (id, event_date) PRIMARY KEY id SAMPLE BY id
+	TTL event_date + INTERVAL 1 MONTH SETTINGS index_granularity=4096;
+	CREATE TABLE copied AS source;
+	CREATE TABLE changed AS source ENGINE=ReplacingMergeTree(version) ORDER BY (id, event_date, version);
+	CREATE TABLE memory_copy AS source ENGINE=Memory;`
+	config, _ := writeCheckProject(t, ddl, "-- name: Read :many\nSELECT id FROM copied;")
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(filepath.Dir(config), "schema.sql")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	source := catalogs.Physical.Tables["source"]
+	copied := catalogs.Physical.Tables["copied"]
+	if !reflect.DeepEqual(source.Columns, copied.Columns) || !reflect.DeepEqual(source.Engine, copied.Engine) {
+		t.Fatalf("plain CREATE AS did not copy the definition: source=%+v copy=%+v", source, copied)
+	}
+	if copied.Columns["x"].DefaultExpr != "id + 1" ||
+		copied.Columns["m"].MaterializedExpr != "id + 2" || copied.Columns["m"].Insertable ||
+		copied.Columns["a"].AliasExpr != "id + 3" || copied.Columns["a"].Insertable ||
+		copied.Columns["label"].Comment != "hello" || copied.Columns["label"].Codec != "CODEC(ZSTD)" {
+		t.Fatalf("column modifiers were lost: %+v", copied.Columns)
+	}
+	engine := copied.Engine
+	if engine.PartitionBy != "toYYYYMM(event_date)" || engine.PrimaryKey != "id" || engine.SampleBy != "id" || engine.TTL == "" || engine.Settings["index_granularity"] != "4096" {
+		t.Fatalf("storage clauses were lost: %+v", engine)
+	}
+	changed := catalogs.Physical.Tables["changed"].Engine
+	if changed.PartitionBy != engine.PartitionBy || changed.PrimaryKey != engine.PrimaryKey || changed.SampleBy != engine.SampleBy || changed.TTL != "" || len(changed.Settings) != 0 {
+		t.Fatalf("new ENGINE inheritance differs from ClickHouse 25.8: %+v", changed)
+	}
+	if got := catalogs.Physical.Tables["memory_copy"].Engine; got.Name != "Memory" || len(got.OrderBy) != 0 || got.PartitionBy != "" {
+		t.Fatalf("Memory inherited MergeTree clauses: %+v", got)
+	}
+}
+
+func TestCreateAsCopiesCurrentDefinitionAndIsIndependent(t *testing.T) {
+	const ddl = `CREATE TABLE source (id UInt64, label String DEFAULT 'old', occurred_at Date)
+	ENGINE=MergeTree ORDER BY id TTL occurred_at + INTERVAL 1 MONTH
+	SETTINGS index_granularity=4096, max_parts_to_merge_at_once=4;
+	ALTER TABLE source REMOVE TTL;
+	ALTER TABLE source MODIFY SETTING index_granularity=2048;
+	ALTER TABLE source RESET SETTING max_parts_to_merge_at_once;
+	CREATE TABLE copied AS source;
+	ALTER TABLE copied MODIFY COLUMN label String DEFAULT 'new';
+	ALTER TABLE copied ADD COLUMN extra UInt8;
+	ALTER TABLE copied MODIFY SETTING index_granularity=1024;`
+	config, _ := writeCheckProject(t, ddl, "-- name: Read :many\nSELECT * FROM copied;")
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(filepath.Dir(config), "schema.sql")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, copied := catalogs.Physical.Tables["source"], catalogs.Physical.Tables["copied"]
+	if source.Engine.TTL != "" || copied.Engine.TTL != "" ||
+		source.Engine.Settings["index_granularity"] != "2048" || copied.Engine.Settings["index_granularity"] != "1024" ||
+		len(source.Engine.Settings) != 1 || len(copied.Engine.Settings) != 1 ||
+		len(source.Columns) != 3 || len(copied.Columns) != 4 ||
+		source.Columns["label"].DefaultExpr != "'old'" || copied.Columns["label"].DefaultExpr != "'new'" {
+		t.Fatalf("CREATE AS copied stale or shared metadata: source=%+v copy=%+v", source, copied)
+	}
+}
+
+func TestCreateAsRejectsMissingOrQualifiedSources(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"CREATE TABLE copied AS missing_table;", `unknown source table "missing_table"`},
+		{"CREATE TABLE copied AS db.source;", "qualified reference db.source is not allowed; the database comes from the connection; use the unqualified name source"},
+		{"-- chgen:external\nCREATE TABLE ext (id UInt64);\nCREATE TABLE copied AS ext;", `unknown source table "ext"`},
+		{"-- chgen:external\nCREATE TABLE ext AS source;", "external schema must declare an explicit column list"},
+	} {
+		t.Run(tc.sql, func(t *testing.T) {
+			config, _ := writeCheckProject(t, "CREATE TABLE source (id UInt64) ENGINE=Memory;\n"+tc.sql, "-- name: Read :many\nSELECT id FROM source;")
+			path := filepath.Join(filepath.Dir(config), "schema.sql")
+			_, err := chgen.ParseSchemaCatalogs([]string{path})
+			if err == nil || !strings.Contains(err.Error(), tc.want) || !strings.Contains(err.Error(), path+":") {
+				t.Fatalf("source diagnostic = %v, want %q with file location", err, tc.want)
+			}
+		})
+	}
+}
+
+func TestCreateAsIfNotExistsPreservesExistingDefinition(t *testing.T) {
+	const ddl = `CREATE TABLE existing (id UInt64) ENGINE=MergeTree ORDER BY id;
+	CREATE TABLE source (other String) ENGINE=Memory;
+	CREATE TABLE IF NOT EXISTS existing AS source;
+	CREATE TABLE IF NOT EXISTS existing AS missing_table;`
+	config, _ := writeCheckProject(t, ddl, "-- name: Read :many\nSELECT id FROM existing;")
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(filepath.Dir(config), "schema.sql")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	table := catalogs.Physical.Tables["existing"]
+	if len(table.Columns) != 1 || table.Columns["id"].Type.Name != "UInt64" || table.Line != 1 || table.Engine.Name != "MergeTree" {
+		t.Fatalf("IF NOT EXISTS replaced its target: %+v", table)
+	}
+}
+
+func TestCreateAsRetainsModifiersAfterColumnRetype(t *testing.T) {
+	const ddl = `CREATE TABLE source (id UInt64,
+		computed UInt64 MATERIALIZED id + 1,
+		label String DEFAULT 'unknown' COMMENT 'label' CODEC(ZSTD)
+	) ENGINE=Memory;
+	ALTER TABLE source MODIFY COLUMN computed UInt32;
+	ALTER TABLE source MODIFY COLUMN label LowCardinality(String);
+	CREATE TABLE copied AS source;`
+	config, _ := writeCheckProject(t, ddl, "-- name: Read :many\nSELECT label FROM copied;")
+	catalogs, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(filepath.Dir(config), "schema.sql")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	columns := catalogs.Physical.Tables["copied"].Columns
+	if columns["computed"].Insertable || columns["computed"].MaterializedExpr != "id + 1" || columns["computed"].Type.Name != "UInt32" ||
+		columns["label"].DefaultExpr != "'unknown'" || columns["label"].Comment != "label" || columns["label"].Codec != "CODEC(ZSTD)" {
+		t.Fatalf("column retype discarded inherited modifiers: %+v", columns)
+	}
+}
+
 func TestLightweightDeleteExecPublicContract(t *testing.T) {
 	const ddl = `CREATE TABLE fact_job_metrics_v3 (
 		repository_owner String,

@@ -117,6 +117,25 @@ Schema inputs are applied in order. The catalog supports these changes:
 - `ALTER TABLE ... DROP COLUMN`
 - `RENAME TABLE old TO new`, including multiple pairs applied in source order
 - `EXCHANGE TABLES a AND b`, which swaps the full definitions of two tables
+- `CREATE TABLE new AS source`, which copies an existing physical definition
+
+`CREATE TABLE new AS source` resolves its source at that point in the migration
+stream. It copies column types, order, insertability, DEFAULT/MATERIALIZED/ALIAS
+expressions, codecs, comments, and column TTLs. The copy is independent: later
+column changes do not edit the source. A missing source is an error naming the
+file, line, and source table. External schemas cannot serve as physical sources.
+Qualified table names follow the same rejection rule as query inputs.
+`IF NOT EXISTS` preserves an existing destination, including its CREATE location.
+
+Without a new `ENGINE`, the engine and its explicit storage clauses are copied.
+With a new MergeTree-family `ENGINE`, supplied ORDER BY, PARTITION BY, PRIMARY
+KEY, and SAMPLE BY replace their source clauses; omitted ones are inherited.
+A different engine such as Memory does not inherit MergeTree keys. A new ENGINE
+does **not** inherit table TTL or SETTINGS, matching ClickHouse 25.8: supply
+those clauses again when needed. Settings metadata contains explicit values,
+not implicit server defaults. REMOVE TTL and MODIFY/RESET SETTING replay this
+descriptive metadata for subsequent copies without changing query column types
+or replacement keys. See [CREATE TABLE](https://clickhouse.com/docs/reference/statements/create/table).
 
 RENAME preserves columns, column order, engine metadata, and the original
 CREATE location. Its source must exist and its target must be free at that

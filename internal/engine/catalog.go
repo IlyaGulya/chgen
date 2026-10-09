@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"slices"
 	"strings"
 
 	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
@@ -134,6 +135,9 @@ func applySchemaSource(catalogs *SchemaCatalogs, path, raw string) error {
 }
 
 func applyExternalCreate(catalogs *SchemaCatalogs, path string, line int, statement *clickhouse.CreateTable) error {
+	if statement.TableSchema != nil && statement.TableSchema.AliasTable != nil {
+		return fmt.Errorf("%s:%d: external schema must declare an explicit column list; CREATE TABLE AS is not supported", path, line)
+	}
 	table, err := parseCreateTable(statement)
 	if err != nil {
 		return fmt.Errorf("%s:%d: %w", path, line, err)
@@ -154,18 +158,67 @@ func applyExternalCreate(catalogs *SchemaCatalogs, path string, line int, statem
 }
 
 func applyPhysicalCreate(catalogs *SchemaCatalogs, path string, line int, statement *clickhouse.CreateTable) error {
-	table, err := parseCreateTable(statement)
-	if err != nil {
-		return fmt.Errorf("%s:%d: %w", path, line, err)
+	if statement.Name == nil || statement.Name.Table == nil {
+		return fmt.Errorf("%s:%d: CREATE TABLE has no table name", path, line)
 	}
-	if table.Name == migrationsTableName {
+	name := statement.Name.Table.Name
+	if name == migrationsTableName {
 		return nil
 	}
-	if external, exists := catalogs.External.Tables[table.Name]; exists {
-		return fmt.Errorf("%s:%d: external schema %q collides with physical table %q declared at %s:%d; rename one of them", external.File, external.Line, external.Name, table.Name, path, line)
+	if err := checkQualifiedReferences(statement); err != nil {
+		return fmt.Errorf("%s:%d: %w", path, line, err)
 	}
-	if previous, exists := catalogs.Physical.Tables[table.Name]; exists {
-		return fmt.Errorf("%s:%d: duplicate CREATE TABLE %q; first declared at %s:%d", path, line, table.Name, previous.File, previous.Line)
+	if external, exists := catalogs.External.Tables[name]; exists {
+		return fmt.Errorf("%s:%d: external schema %q collides with physical table %q declared at %s:%d; rename one of them", external.File, external.Line, external.Name, name, path, line)
+	}
+	if previous, exists := catalogs.Physical.Tables[name]; exists {
+		if statement.IfNotExists {
+			return nil
+		}
+		return fmt.Errorf("%s:%d: duplicate CREATE TABLE %q; first declared at %s:%d", path, line, name, previous.File, previous.Line)
+	}
+	var table Table
+	if statement.TableSchema != nil && statement.TableSchema.AliasTable != nil {
+		sourceName := statement.TableSchema.AliasTable.Table.Name
+		source, exists := catalogs.Physical.Tables[sourceName]
+		if !exists {
+			return fmt.Errorf("%s:%d: CREATE TABLE %s AS targets unknown source table %q", path, line, name, sourceName)
+		}
+		table = source
+		table.Name = name
+		table.Columns = maps.Clone(source.Columns)
+		table.ColumnOrder = slices.Clone(source.ColumnOrder)
+		if source.Engine != nil {
+			engine := *source.Engine
+			engine.Params = slices.Clone(source.Engine.Params)
+			engine.OrderBy = slices.Clone(source.Engine.OrderBy)
+			engine.Settings = maps.Clone(source.Engine.Settings)
+			table.Engine = &engine
+		}
+		if statement.Engine != nil {
+			engine := parseTableEngine(statement.Engine)
+			if table.Engine != nil && strings.HasSuffix(engine.Name, "MergeTree") {
+				if statement.Engine.OrderBy == nil {
+					engine.OrderBy = slices.Clone(table.Engine.OrderBy)
+				}
+				if statement.Engine.PartitionBy == nil {
+					engine.PartitionBy = table.Engine.PartitionBy
+				}
+				if statement.Engine.PrimaryKey == nil {
+					engine.PrimaryKey = table.Engine.PrimaryKey
+				}
+				if statement.Engine.SampleBy == nil {
+					engine.SampleBy = table.Engine.SampleBy
+				}
+			}
+			table.Engine = engine
+		}
+	} else {
+		var err error
+		table, err = parseCreateTable(statement)
+		if err != nil {
+			return fmt.Errorf("%s:%d: %w", path, line, err)
+		}
 	}
 	table.File = path
 	table.Line = line
@@ -252,7 +305,7 @@ func applyCatalogRename(catalogs *SchemaCatalogs, path, content string, statemen
 
 const migrationsTableName = "schema_migrations"
 
-var supportedAlterOperations = "supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN; projection operations ADD PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION and index operations ADD INDEX, MATERIALIZE INDEX, DROP INDEX, CLEAR INDEX are ignored; REMOVE TTL is ignored; MODIFY SETTING and RESET SETTING are ignored"
+var supportedAlterOperations = "supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN, REMOVE TTL, MODIFY SETTING, RESET SETTING; projection operations ADD PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION and index operations ADD INDEX, MATERIALIZE INDEX, DROP INDEX, CLEAR INDEX are ignored"
 
 func applyCatalogAlter(catalogs *SchemaCatalogs, path, content string, line int, statement *clickhouse.AlterTable) error {
 	if statement.TableIdentifier == nil || statement.TableIdentifier.Table == nil {

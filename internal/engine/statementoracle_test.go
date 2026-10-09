@@ -18,6 +18,51 @@ import (
 
 // TestCatalogExchangeAgainstClickHouse checks both swapped definitions and rows.
 func TestCatalogExchangeAgainstClickHouse(t *testing.T) {
+	t.Run("create-as-exchange-rename", func(t *testing.T) {
+		const source = `CREATE TABLE serving (id UInt64, version UInt64)
+ENGINE=MergeTree ORDER BY id`
+		oracle := execWitnessFixtureWithDDL(t, source, "INSERT INTO serving VALUES (7, 1)")
+		const migration = `CREATE TABLE staged AS serving ENGINE=ReplacingMergeTree(version) ORDER BY (version, id);
+INSERT INTO staged VALUES (9, 2);
+EXCHANGE TABLES serving AND staged;
+RENAME TABLE staged TO archived;`
+		for _, statement := range statementFixtureParts(migration) {
+			if _, err := oracle.exec(statement); err != nil {
+				t.Fatal(err)
+			}
+		}
+		catalogs := catalogsFromDDL(t, source+";"+migration)
+		for _, tc := range []struct{ table, rows, engine, key string }{
+			{"serving", "9\t2", "ReplacingMergeTree(version)", "version, id"},
+			{"archived", "7\t1", "MergeTree", "id"},
+		} {
+			table := catalogs.Physical.Tables[tc.table]
+			if strings.Join(table.Engine.OrderBy, ", ") != tc.key || table.Engine.Name != strings.Split(tc.engine, "(")[0] {
+				t.Fatalf("catalog definition for %s: %+v", tc.table, table.Engine)
+			}
+			query := "SELECT id, version FROM " + tc.table
+			queries, err := parseQueriesWithCatalogs(t, "-- name: Read :many\n"+query, catalogs)
+			if err != nil {
+				t.Fatal(err)
+			}
+			results, err := arrayJoinServerResults(oracle, query)
+			if err != nil || len(results) != len(queries[0].Results) {
+				t.Fatalf("server shape = %#v, error = %v", results, err)
+			}
+			for i, result := range queries[0].Results {
+				if results[i].Name != result.SQLName || results[i].Type != result.CHType.String() {
+					t.Fatalf("server result %#v differs from %#v", results[i], result)
+				}
+			}
+			if got, err := oracle.exec(query + " FORMAT TabSeparated"); err != nil || strings.TrimSpace(got) != tc.rows {
+				t.Fatalf("rows = %q, error = %v, want %q", got, err, tc.rows)
+			}
+			metadata := "SELECT engine, sorting_key, startsWith(engine_full, '" + tc.engine + "') FROM system.tables WHERE database=currentDatabase() AND name='" + tc.table + "' FORMAT TabSeparated"
+			if got, err := oracle.exec(metadata); err != nil || strings.TrimSpace(got) != table.Engine.Name+"\t"+tc.key+"\t1" {
+				t.Fatalf("server storage = %q, error = %v", got, err)
+			}
+		}
+	})
 	const ddl = `
 CREATE TABLE serving (id UInt64)
 ENGINE = MergeTree ORDER BY id;

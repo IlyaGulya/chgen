@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 
@@ -25,21 +26,33 @@ type Table struct {
 	Engine *TableEngine
 }
 
-// TableEngine is the part of an ENGINE clause that controls row replacement.
+// TableEngine describes explicit storage clauses. Settings contains declared
+// values, not the server's implicit defaults.
 type TableEngine struct {
 	// Name is the engine name, such as ReplacingMergeTree.
 	Name string
 	// Params contains the engine arguments as written.
 	Params []string
 	// OrderBy contains the ORDER BY expressions as written.
-	OrderBy []string
+	OrderBy     []string
+	PartitionBy string
+	PrimaryKey  string
+	SampleBy    string
+	TTL         string
+	Settings    map[string]string
 }
 
 // Column is a ClickHouse column and its parsed type.
 type Column struct {
-	Name       string
-	Type       CHType
-	Insertable bool
+	Name             string
+	Type             CHType
+	Insertable       bool
+	DefaultExpr      string
+	MaterializedExpr string
+	AliasExpr        string
+	Codec            string
+	Comment          string
+	TTL              string
 }
 
 // CHType is one ClickHouse type and its nested arguments.
@@ -84,6 +97,9 @@ func parseCreateTable(createTable *clickhouse.CreateTable) (Table, error) {
 	if createTable.TableSchema == nil {
 		return Table{}, fmt.Errorf("CREATE TABLE %s has no column list", createTable.Name.Table.Name)
 	}
+	if createTable.TableSchema.AliasTable != nil || createTable.TableSchema.TableFunction != nil {
+		return Table{}, fmt.Errorf("CREATE TABLE %s requires catalog resolution of its source", createTable.Name.Table.Name)
+	}
 
 	tableName := createTable.Name.Table.Name
 	table := Table{Name: tableName, Columns: make(map[string]Column)}
@@ -108,8 +124,8 @@ func parseCreateTable(createTable *clickhouse.CreateTable) (Table, error) {
 	return table, nil
 }
 
-// parseTableEngine keeps the part of the ENGINE clause that decides which rows
-// collapse into one. It returns nil when the DDL declares no engine.
+// parseTableEngine preserves explicit engine and storage metadata. It returns
+// nil when the DDL declares no engine.
 func parseTableEngine(engine *clickhouse.EngineExpr) *TableEngine {
 	if engine == nil {
 		return nil
@@ -127,7 +143,35 @@ func parseTableEngine(engine *clickhouse.EngineExpr) *TableEngine {
 			parsed.OrderBy = append(parsed.OrderBy, engineSortKeyTerms(item)...)
 		}
 	}
+	if engine.PartitionBy != nil {
+		parsed.PartitionBy = catalogExprSQL(engine.PartitionBy.Expr)
+	}
+	if engine.PrimaryKey != nil {
+		parsed.PrimaryKey = catalogExprSQL(engine.PrimaryKey.Expr)
+	}
+	if engine.SampleBy != nil {
+		parsed.SampleBy = catalogExprSQL(engine.SampleBy.Expr)
+	}
+	if engine.TTL != nil {
+		parsed.TTL = strings.TrimPrefix(catalogExprSQL(engine.TTL), "TTL ")
+	}
+	if engine.Settings != nil {
+		parsed.Settings = make(map[string]string, len(engine.Settings.Items))
+		for _, setting := range engine.Settings.Items {
+			parsed.Settings[setting.Name.Name] = catalogExprSQL(setting.Expr)
+		}
+	}
 	return parsed
+}
+
+// catalogExprSQL preserves SQL metadata without evaluating or inferring it.
+func catalogExprSQL(expression clickhouse.Expr) string {
+	if expression == nil {
+		return ""
+	}
+	formatter := clickhouse.NewFormatter()
+	expression.FormatSQL(formatter)
+	return formatter.String()
 }
 
 // engineSortKeyTerms flattens one ORDER BY item into its terms. ClickHouse
@@ -182,7 +226,7 @@ func engineExprText(expr clickhouse.Expr) string {
 		}
 		return strings.Join(parts, ", ")
 	default:
-		return fmt.Sprintf("%T", expr)
+		return catalogExprSQL(expr)
 	}
 }
 
@@ -199,15 +243,11 @@ const (
 // outside the column and engine metadata that chgen models.
 func classifyCatalogAlter(clause clickhouse.AlterTableClause) catalogAlterAction {
 	switch clause.(type) {
-	case *clickhouse.AlterTableAddColumn, *clickhouse.AlterTableModifyColumn, *clickhouse.AlterTableDropColumn:
-		return catalogAlterApply
-	case *clickhouse.AlterTableRemoveTTL,
+	case *clickhouse.AlterTableAddColumn, *clickhouse.AlterTableModifyColumn, *clickhouse.AlterTableDropColumn,
+		*clickhouse.AlterTableRemoveTTL,
 		*clickhouse.AlterTableModifySetting,
 		*clickhouse.AlterTableResetSetting:
-		// Retention policies and table settings are not modeled by TableEngine;
-		// they do not change columns, engine arguments or replacement keys.
-		// Other clauses in the same ALTER still need to be applied.
-		return catalogAlterIgnore
+		return catalogAlterApply
 	case *clickhouse.AlterTableAddProjection,
 		*clickhouse.AlterTableMaterializeProjection,
 		*clickhouse.AlterTableDropProjection,
@@ -237,6 +277,31 @@ func applyAlterTable(schema *Schema, alterTable *clickhouse.AlterTable) error {
 	}
 	for _, expression := range alterTable.AlterExprs {
 		switch alterExpr := expression.(type) {
+		case *clickhouse.AlterTableRemoveTTL:
+			if table.Engine != nil {
+				table.Engine.TTL = ""
+			}
+		case *clickhouse.AlterTableModifySetting:
+			if table.Engine != nil {
+				if table.Engine.Settings == nil {
+					table.Engine.Settings = make(map[string]string)
+				} else {
+					table.Engine.Settings = maps.Clone(table.Engine.Settings)
+				}
+				for _, setting := range alterExpr.Settings {
+					table.Engine.Settings[setting.Name.Name] = catalogExprSQL(setting.Expr)
+				}
+			}
+		case *clickhouse.AlterTableResetSetting:
+			if table.Engine != nil {
+				table.Engine.Settings = maps.Clone(table.Engine.Settings)
+				for _, setting := range alterExpr.Settings {
+					delete(table.Engine.Settings, setting.Name)
+				}
+				if len(table.Engine.Settings) == 0 {
+					table.Engine.Settings = nil
+				}
+			}
 		case *clickhouse.AlterTableAddColumn:
 			addColumn := alterExpr
 			if addColumn.Column == nil {
@@ -280,7 +345,8 @@ func applyAlterTable(schema *Schema, alterTable *clickhouse.AlterTable) error {
 			if err != nil {
 				return err
 			}
-			if _, exists := table.Columns[column.Name]; !exists {
+			previous, exists := table.Columns[column.Name]
+			if !exists {
 				if modifyColumn.IfExists {
 					continue
 				}
@@ -288,6 +354,24 @@ func applyAlterTable(schema *Schema, alterTable *clickhouse.AlterTable) error {
 			}
 			// Retype in place; ColumnOrder already has this column's position
 			// from the CREATE TABLE or a prior ADD COLUMN.
+			// ClickHouse keeps modifiers omitted by MODIFY COLUMN, including
+			// the expression that makes a materialized/alias column non-insertable.
+			definition := modifyColumn.Column
+			if definition.DefaultExpr == nil && definition.MaterializedExpr == nil && definition.AliasExpr == nil {
+				column.DefaultExpr = previous.DefaultExpr
+				column.MaterializedExpr = previous.MaterializedExpr
+				column.AliasExpr = previous.AliasExpr
+				column.Insertable = previous.Insertable
+			}
+			if definition.Codec == nil {
+				column.Codec = previous.Codec
+			}
+			if definition.Comment == nil {
+				column.Comment = previous.Comment
+			}
+			if definition.TTL == nil {
+				column.TTL = previous.TTL
+			}
 			table.Columns[column.Name] = column
 		case *clickhouse.AlterTableDropColumn:
 			dropColumn := alterExpr
@@ -334,11 +418,24 @@ func parseColumnDef(tableName string, columnDef *clickhouse.ColumnDef) (Column, 
 	if err != nil {
 		return Column{}, fmt.Errorf("column %s.%s: %w", tableName, columnName, err)
 	}
-	return Column{
-		Name:       columnName,
-		Type:       columnType,
-		Insertable: columnDef.MaterializedExpr == nil && columnDef.AliasExpr == nil,
-	}, nil
+	column := Column{
+		Name:             columnName,
+		Type:             columnType,
+		Insertable:       columnDef.MaterializedExpr == nil && columnDef.AliasExpr == nil,
+		DefaultExpr:      catalogExprSQL(columnDef.DefaultExpr),
+		MaterializedExpr: catalogExprSQL(columnDef.MaterializedExpr),
+		AliasExpr:        catalogExprSQL(columnDef.AliasExpr),
+	}
+	if columnDef.Codec != nil {
+		column.Codec = catalogExprSQL(columnDef.Codec)
+	}
+	if columnDef.Comment != nil {
+		column.Comment = columnDef.Comment.Literal
+	}
+	if columnDef.TTL != nil {
+		column.TTL = strings.TrimPrefix(catalogExprSQL(columnDef.TTL), "TTL ")
+	}
+	return column, nil
 }
 
 func parseCHType(columnType clickhouse.ColumnType) (CHType, error) {

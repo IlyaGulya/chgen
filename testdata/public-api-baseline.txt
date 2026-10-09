@@ -12,8 +12,14 @@ field CheckReport.Diagnostics []Diagnostic
 field CheckReport.Packages int
 field CheckReport.Queries int
 field CheckReport.Status string
+field Column.AliasExpr string
+field Column.Codec string
+field Column.Comment string
+field Column.DefaultExpr string
 field Column.Insertable bool
+field Column.MaterializedExpr string
 field Column.Name string
+field Column.TTL string
 field Column.Type CHType
 field Config.Packages []PackageConfig
 field Config.Path string
@@ -73,6 +79,11 @@ field Table.Name string
 field TableEngine.Name string
 field TableEngine.OrderBy []string
 field TableEngine.Params []string
+field TableEngine.PartitionBy string
+field TableEngine.PrimaryKey string
+field TableEngine.SampleBy string
+field TableEngine.Settings map[string]string
+field TableEngine.TTL string
 func Check(configPath string) (CheckReport, error)
 func ExplainError(err error) Diagnostic
 func Generate(packageName string, queries []Query) ([]byte, error)

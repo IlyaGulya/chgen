@@ -71,10 +71,10 @@ the upstream statement loop otherwise silently drops a final single-token
 statement, such as `ALTER`, at EOF. This suffix moves no source positions and
 does not require migrations to end with a semicolon.
 
-REMOVE TTL already has an upstream AST node. It is classified as an ignored
-catalog clause, not a modeled retention policy. `TableEngine` retains only
-engine name, engine arguments and ORDER BY expressions; removing TTL changes
-none of those. Unknown-table and external-schema checks remain active, and
+REMOVE TTL already has an upstream AST node. The catalog clears its descriptive
+TTL metadata so a subsequent CREATE TABLE AS copies the current definition.
+It does not infer retention behavior or change column types and replacement
+keys. Unknown-table and external-schema checks remain active, and
 other clauses in the same ALTER are still validated and applied. This does not
 enable MODIFY TTL or other unmodeled ALTER operations. See the
 [ClickHouse REMOVE TTL documentation](https://clickhouse.com/docs/sql-reference/statements/alter/ttl#remove-ttl).

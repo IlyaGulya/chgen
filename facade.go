@@ -41,16 +41,29 @@ type Column struct {
 	Name       string
 	Type       CHType
 	Insertable bool
+	// Expressions and codecs are SQL text; Comment is the decoded comment.
+	DefaultExpr      string
+	MaterializedExpr string
+	AliasExpr        string
+	Codec            string
+	Comment          string
+	TTL              string
 }
 
-// TableEngine is the part of an ENGINE clause that controls row replacement.
+// TableEngine describes explicit storage clauses. Settings contains declared
+// values, not the server's implicit defaults.
 type TableEngine struct {
 	// Name is the engine name, such as ReplacingMergeTree.
 	Name string
 	// Params contains the engine arguments as written.
 	Params []string
 	// OrderBy contains the ORDER BY expressions as written.
-	OrderBy []string
+	OrderBy     []string
+	PartitionBy string
+	PrimaryKey  string
+	SampleBy    string
+	TTL         string
+	Settings    map[string]string
 }
 
 // Table is a ClickHouse table known to the generator.
@@ -417,11 +430,15 @@ func fromEngineTable(value engine.Table) Table {
 	if value.Columns != nil {
 		result.Columns = make(map[string]Column, len(value.Columns))
 		for name, column := range value.Columns {
-			result.Columns[name] = Column{Name: column.Name, Type: fromEngineCHType(column.Type), Insertable: column.Insertable}
+			result.Columns[name] = Column{Name: column.Name, Type: fromEngineCHType(column.Type), Insertable: column.Insertable,
+				DefaultExpr: column.DefaultExpr, MaterializedExpr: column.MaterializedExpr, AliasExpr: column.AliasExpr,
+				Codec: column.Codec, Comment: column.Comment, TTL: column.TTL}
 		}
 	}
 	if value.Engine != nil {
-		result.Engine = &TableEngine{Name: value.Engine.Name, Params: cloneStrings(value.Engine.Params), OrderBy: cloneStrings(value.Engine.OrderBy)}
+		result.Engine = &TableEngine{Name: value.Engine.Name, Params: cloneStrings(value.Engine.Params), OrderBy: cloneStrings(value.Engine.OrderBy),
+			PartitionBy: value.Engine.PartitionBy, PrimaryKey: value.Engine.PrimaryKey, SampleBy: value.Engine.SampleBy,
+			TTL: value.Engine.TTL, Settings: maps.Clone(value.Engine.Settings)}
 	}
 	return result
 }
@@ -436,11 +453,15 @@ func toEngineTable(value Table) engine.Table {
 	if value.Columns != nil {
 		result.Columns = make(map[string]engine.Column, len(value.Columns))
 		for name, column := range value.Columns {
-			result.Columns[name] = engine.Column{Name: column.Name, Type: toEngineCHType(column.Type), Insertable: column.Insertable}
+			result.Columns[name] = engine.Column{Name: column.Name, Type: toEngineCHType(column.Type), Insertable: column.Insertable,
+				DefaultExpr: column.DefaultExpr, MaterializedExpr: column.MaterializedExpr, AliasExpr: column.AliasExpr,
+				Codec: column.Codec, Comment: column.Comment, TTL: column.TTL}
 		}
 	}
 	if value.Engine != nil {
-		result.Engine = &engine.TableEngine{Name: value.Engine.Name, Params: cloneStrings(value.Engine.Params), OrderBy: cloneStrings(value.Engine.OrderBy)}
+		result.Engine = &engine.TableEngine{Name: value.Engine.Name, Params: cloneStrings(value.Engine.Params), OrderBy: cloneStrings(value.Engine.OrderBy),
+			PartitionBy: value.Engine.PartitionBy, PrimaryKey: value.Engine.PrimaryKey, SampleBy: value.Engine.SampleBy,
+			TTL: value.Engine.TTL, Settings: maps.Clone(value.Engine.Settings)}
 	}
 	return result
 }
