@@ -19,6 +19,10 @@ var buildVariantsData []byte
 
 var buildVariants = sync.OnceValues(loadBuildVariants)
 
+// BuildVariantEvidence returns a freshly decoded, validated witness for reports.
+// Callers cannot mutate the cached policy used by the inference registry.
+func BuildVariantEvidence() (Comparison, error) { return loadBuildVariants() }
+
 func loadBuildVariants() (Comparison, error) {
 	var comparison Comparison
 	if err := json.Unmarshal(buildVariantsData, &comparison); err != nil {

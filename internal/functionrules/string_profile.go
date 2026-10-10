@@ -14,6 +14,9 @@ var stringBases = []string{"String", "FixedString(8)", "FixedString(32)"}
 
 var stringNames = []string{"base64Encode", "decodeURLComponent", "encodeURLComponent", "lowerUTF8", "normalizeUTF8NFC", "normalizeUTF8NFD", "normalizeUTF8NFKC", "normalizeUTF8NFKD", "regexpQuoteMeta", "reverseUTF8", "soundex", "tryBase64Decode", "upperUTF8"}
 
+// RecipeNames returns a copy of the bounded function roster for a profile.
+func RecipeNames(profile string) ([]string, error) { return profileNames(profile) }
+
 func profileNames(profile string) ([]string, error) {
 	switch profile {
 	case Profile:

@@ -60,6 +60,31 @@ suites save `function-gaps.json`; the live suite discovers names from the
 actual server. See [Automatic function rule measurement](function-rule-generation.md)
 for the separate maintainer workflow that prepares candidates.
 
+Both suites also save `argument-support-coverage.json`. It re-evaluates each
+validated numeric/string recipe through the current public inference API and
+records input type, call shape, inferred type or refusal diagnostic, server
+analysis/execution types and codes. Counts are available globally and per
+function. Build-dependent refusals include both measured witnesses and build
+provenance; they are not counted as supported calls.
+
+The wrapper-grid section preserves its independent coordinates, SQL and
+verdicts, including gaps and exclusions. Its denominator is separate because
+grid cases overlap the numeric/string profiles, and grid measurements describe
+analysis rather than execution. Neither section claims coverage of unmeasured
+overloads. The existing roster-parity and live grid gates still check freshness.
+Wrong inferred types, server refusals of accepted calls and execution/type
+discrepancies fail the report command without hiding the offending JSON cells.
+
+To inspect the report independently, without a server or writes:
+
+```sh
+go run ./internal/tooling/cmd/functionrules -argument-coverage
+```
+
+Missing, malformed or incomplete required evidence fails instead of silently
+omitting a profile. This report complements name-level API coverage; a measured
+function name is not a claim that every combination of its arguments works.
+
 ## Read the result
 
 By default, each run creates a fresh directory under `verify-report/`.

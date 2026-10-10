@@ -15,6 +15,7 @@ import (
 	"syscall"
 
 	"github.com/IlyaGulya/chgen/internal/apiinventory"
+	"github.com/IlyaGulya/chgen/internal/argumentcoverage"
 	"github.com/IlyaGulya/chgen/internal/functionrules"
 	"github.com/IlyaGulya/chgen/internal/supportmanifest"
 )
@@ -34,9 +35,50 @@ func main() {
 	manifestPath := flag.String("manifest", "testdata/clickhouse-support-manifest.json", "measured support manifest for -gaps")
 	compact := flag.Bool("compact", false, "convert saved evidence losslessly to compact v2 with -out")
 	expand := flag.Bool("expand", false, "restore full diagnostic evidence with -out")
+	argumentCoverage := flag.Bool("argument-coverage", false, "report measured argument combinations, refusals and discrepancies as JSON")
+	wrapperGrid := flag.String("wrapper-grid", "testdata/wrapper_grid.golden", "committed wrapper-grid evidence for argument coverage")
 	flag.Parse()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
+	if *argumentCoverage {
+		if *endpoint != "" || *evidence != "" || *selected != "" || *output != "" || *check || *gaps || *reportPath != "" || *comparePath != "" || *compact || *expand {
+			fail(fmt.Errorf("-argument-coverage is read-only; do not combine with measurement or generation"))
+		}
+		var measurements []functionrules.Report
+		for _, path := range []string{"testdata/clickhouse-function-rules.json", "testdata/clickhouse-string-function-rules.json"} {
+			data, err := os.ReadFile(path)
+			if err != nil {
+				fail(err)
+			}
+			report, err := functionrules.Decode(data)
+			if err != nil {
+				fail(err)
+			}
+			measurements = append(measurements, report)
+		}
+		report, err := argumentcoverage.ArgumentCoverage(measurements...)
+		if err != nil {
+			fail(err)
+		}
+		data, err := os.ReadFile(*wrapperGrid)
+		if err != nil {
+			fail(err)
+		}
+		grid, err := argumentcoverage.WrapperCoverage(data)
+		if err != nil {
+			fail(err)
+		}
+		report.WrapperGrid = &grid
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(report); err != nil {
+			fail(err)
+		}
+		if !report.Consistent() {
+			fail(fmt.Errorf("argument coverage contains type or execution discrepancies; see JSON cells"))
+		}
+		return
+	}
 	if *compact || *expand {
 		if *compact && *expand || *endpoint != "" || *evidence == "" || *output == "" || *check || *gaps || *comparePath != "" || *selected != "" || *reportPath != "" {
 			fail(fmt.Errorf("choose -compact or -expand with only -evidence and -out"))

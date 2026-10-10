@@ -32,6 +32,7 @@ func (r *runner) types(o options) {
 		r.artifact(name)
 		r.artifact(name + ".diff.json")
 		r.output("function-gaps", "function-gaps.json", nil, tool, "-gaps", "-url", o.http)
+		r.argumentCoverage(tool)
 	}
 	r.test("function-rules-runtime", env, "", "^TestFunctionRulesGeneratedRuntime$", "./internal/functionrules")
 	r.test("function-evidence-codec", map[string]string{"CHGEN_FUNCTION_RULES_URL": o.http}, "", "^TestMeasurementWritesCompactEvidenceButKeepsExpandedLiveDiagnostics$", "./internal/functionrules")

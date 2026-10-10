@@ -14,6 +14,7 @@ func (r *runner) offline(_ options) {
 		r.gate("generated-function-rules", tool, "-evidence", "testdata/clickhouse-function-rules.json", "-check")
 		r.gate("generated-string-function-rules", tool, "-evidence", "testdata/clickhouse-string-function-rules.json", "-check")
 		r.output("function-gaps", "function-gaps.json", nil, tool, "-gaps")
+		r.argumentCoverage(tool)
 	}
 	if tool := r.tool("supportmanifest"); tool != "" {
 		if r.gate("support-manifest", tool, "-check") {
@@ -22,6 +23,15 @@ func (r *runner) offline(_ options) {
 	}
 	if tool := r.tool("chgen"); tool != "" {
 		r.output("syntax-coverage", "syntax-coverage.json", nil, tool, "coverage", "-corpus", "testdata/syntax-corpus.json")
+	}
+}
+
+func (r *runner) argumentCoverage(tool string) {
+	const name = "argument-support-coverage.json"
+	if !r.output("argument-coverage", name, nil, tool, "-argument-coverage") {
+		// A discrepancy exits nonzero after writing its evidence. Preserve that
+		// report in the merged bundle as well as preserving the failed check.
+		r.artifact(name)
 	}
 }
 
