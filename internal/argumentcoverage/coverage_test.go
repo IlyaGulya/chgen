@@ -103,6 +103,30 @@ func TestCoverageConsistencyNeverWaivesKnownAcceptance(t *testing.T) {
 	}
 }
 
+func TestCoverageDoesNotCallAnalysisOnlyAcceptanceAUsableGap(t *testing.T) {
+	data, err := os.ReadFile("../../testdata/clickhouse-string-function-rules.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	evidence, err := functionrules.Decode(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	report, err := argumentcoverage.ArgumentCoverage(evidence)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, cell := range report.Cells {
+		if cell.Function == "lowerUTF8" && cell.Input == "Nullable(FixedString(8))" {
+			if cell.Status != "chgen_refuses_execution_refuses" || cell.ExecutionCode != 36 || cell.Analysis == "" || cell.Diagnostic == "" {
+				t.Fatalf("analysis success must not hide execution refusal: %+v", cell)
+			}
+			return
+		}
+	}
+	t.Fatal("missing measured boundary")
+}
+
 func TestArgumentCoverageDoesNotWaiveWrongTypes(t *testing.T) {
 	data, err := os.ReadFile("../../testdata/clickhouse-function-rules.json")
 	if err != nil {

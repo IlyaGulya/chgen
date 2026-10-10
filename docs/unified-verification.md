@@ -67,6 +67,13 @@ analysis/execution types and codes. Counts are available globally and per
 function. Build-dependent refusals include both measured witnesses and build
 provenance; they are not counted as supported calls.
 
+`chgen_refuses_server_accepts` requires successful analysis **and execution**.
+If analysis succeeds but the measured values fail at execution and chgen also
+refuses, the separate `chgen_refuses_execution_refuses` status preserves that
+boundary instead of advertising a usable support gap. Both server codes stay
+visible; this classification does not waive a failed execution of an accepted
+chgen call.
+
 The wrapper-grid section preserves its independent coordinates, SQL and
 verdicts, including gaps and exclusions. Its denominator is separate because
 grid cases overlap the numeric/string profiles, and grid measurements describe

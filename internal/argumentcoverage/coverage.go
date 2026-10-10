@@ -87,6 +87,8 @@ func ArgumentCoverage(reports ...functionrules.Report) (ArgumentReport, error) {
 				switch {
 				case inferErr != nil && cell.AnalysisCode != 0:
 					item.Status = "both_refuse"
+				case inferErr != nil && cell.ExecutionCode != 0:
+					item.Status = "chgen_refuses_execution_refuses"
 				case inferErr != nil:
 					item.Status = "chgen_refuses_server_accepts"
 				case cell.AnalysisCode != 0:
