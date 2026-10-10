@@ -8,10 +8,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/IlyaGulya/chgen/internal/functionrules"
 )
 
 const (
@@ -69,13 +73,33 @@ var requiredSamplingSemanticFamilies = []string{
 	"parametric-scalar", "predicate-lambda", "predicate-scalar",
 }
 
-func expectedCurrentSamplingRegistryShape() samplingRegistryShape {
+func measuredScalarSamplingExpansion(t *testing.T) []string {
+	t.Helper()
+	data, err := os.ReadFile(moduleRootPath("testdata", "clickhouse-function-rules.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	report, err := functionrules.Decode(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, function := range report.Functions {
+		if function.CaseInsensitive {
+			names = append(names, function.Name)
+		}
+	}
+	return names
+}
+
+func expectedCurrentSamplingRegistryShape(t *testing.T) samplingRegistryShape {
+	measured := len(measuredScalarSamplingExpansion(t))
 	return samplingRegistryShape{
 		// currentDatabase is a zero-argument measured scalar with no argument domain.
-		Scalar:           samplingRegistryBaseline.Scalar + len(currentScalarSamplingExpansion) + 1,
+		Scalar:           samplingRegistryBaseline.Scalar + len(currentScalarSamplingExpansion) + measured + 1,
 		Aggregate:        samplingRegistryBaseline.Aggregate,
 		Window:           samplingRegistryBaseline.Window + len(currentWindowSamplingExpansion),
-		IllegalScalar:    samplingRegistryBaseline.IllegalScalar + len(currentScalarSamplingExpansion) + 1,
+		IllegalScalar:    samplingRegistryBaseline.IllegalScalar + len(currentScalarSamplingExpansion) + measured + 1,
 		IllegalAggregate: samplingRegistryBaseline.IllegalAggregate,
 	}
 }
@@ -617,7 +641,7 @@ func TestCurrentSamplingPlanMeetsCompulsoryContract(t *testing.T) {
 		if err := validateSamplingRegistryContract(source); err != nil {
 			t.Fatalf("seed %d: %v", seed, err)
 		}
-		if got, want := actualSamplingRegistryShape(source), expectedCurrentSamplingRegistryShape(); got != want {
+		if got, want := actualSamplingRegistryShape(source), expectedCurrentSamplingRegistryShape(t); got != want {
 			t.Fatalf("seed %d: unexpected registry index shape: got %+v, want baseline plus measured expansions %+v", seed, got, want)
 		}
 		exprs, stats, err := buildCurrentSamplingPlan(seed, 200, source, canaryExprs)
@@ -668,7 +692,7 @@ func TestCurrentSamplingPlanMeetsCompulsoryContract(t *testing.T) {
 
 func TestCurrentSamplingExpansionIsIntendedAndReachable(t *testing.T) {
 	source := newCurrentOracleGenerator(t, 42)
-	for _, name := range currentScalarSamplingExpansion {
+	for _, name := range append(slices.Clone(currentScalarSamplingExpansion), measuredScalarSamplingExpansion(t)...) {
 		candidate, present := source.drawIndex[name]
 		if !present {
 			t.Errorf("scalar expansion %s is absent from the draw index", name)
@@ -678,7 +702,11 @@ func TestCurrentSamplingExpansionIsIntendedAndReachable(t *testing.T) {
 			t.Errorf("scalar expansion %s is not a writable scalar candidate", name)
 		}
 		family := generatedFunctionSemanticFamilies[name]
-		if name == "bitshiftright" {
+		if strings.HasPrefix(string(functionRegistry[name].evidence), "functionrules/") {
+			if family != "fixed-result-scalar" {
+				t.Errorf("measured scalar expansion %s has family %q", name, family)
+			}
+		} else if name == "bitshiftright" {
 			if family != "dedicated-scalar" {
 				t.Errorf("scalar expansion %s has family %q", name, family)
 			}
@@ -724,7 +752,7 @@ func TestCurrentSamplingExpansionIsIntendedAndReachable(t *testing.T) {
 	if functionRegistry["xor"].domain != &xorArgumentDomain || len(illegalPositions(xor)) == 0 {
 		t.Fatal("xor does not carry its measured narrow domain into the illegal scalar lane")
 	}
-	if got, want := actualSamplingRegistryShape(source), expectedCurrentSamplingRegistryShape(); got != want {
+	if got, want := actualSamplingRegistryShape(source), expectedCurrentSamplingRegistryShape(t); got != want {
 		t.Fatalf("sampling expansion shape = %+v, want %+v", got, want)
 	}
 }

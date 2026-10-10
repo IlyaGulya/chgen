@@ -11,16 +11,22 @@ func TestAggregateGeoAliasesAgainstClickHouse(t *testing.T) {
 	}
 	oracle := execWitnessFixture(t)
 	cases := map[string]string{
-		"any(api_point)":                      "Tuple(Float64, Float64)",
-		"anyLast(api_ring)":                   "Array(Tuple(Float64, Float64))",
-		"min(api_polygon)":                    "Array(Array(Tuple(Float64, Float64)))",
-		"max(api_multi_polygon)":              "Array(Array(Array(Tuple(Float64, Float64))))",
-		"argMin(api_point, i32)":              "Tuple(Float64, Float64)",
-		"argMax(api_ring, i32)":               "Array(Tuple(Float64, Float64))",
-		"argMinIf(api_polygon, i32, b)":       "Array(Array(Tuple(Float64, Float64)))",
-		"argMaxIf(api_multi_polygon, i32, b)": "Array(Array(Array(Tuple(Float64, Float64))))",
-		"groupArray(api_polygon)":             "Array(Array(Array(Tuple(Float64, Float64))))",
-		"groupUniqArray(api_multi_polygon)":   "Array(Array(Array(Array(Tuple(Float64, Float64)))))",
+		"arrayResize(array(api_polygon), 1)":   "Array(Array(Array(Tuple(Float64, Float64))))",
+		"arraySlice(array(api_polygon), 1, 2)": "Array(Array(Array(Tuple(Float64, Float64))))",
+		"arrayReverseSort(array(api_polygon))": "Array(Array(Array(Tuple(Float64, Float64))))",
+		"arrayMap(x -> x, array(api_polygon))": "Array(Array(Array(Tuple(Float64, Float64))))",
+		"tuple(api_point)":                     "Tuple(Point)",
+		"array(api_point)":                     "Array(Point)",
+		"any(api_point)":                       "Tuple(Float64, Float64)",
+		"anyLast(api_ring)":                    "Array(Tuple(Float64, Float64))",
+		"min(api_polygon)":                     "Array(Array(Tuple(Float64, Float64)))",
+		"max(api_multi_polygon)":               "Array(Array(Array(Tuple(Float64, Float64))))",
+		"argMin(api_point, i32)":               "Tuple(Float64, Float64)",
+		"argMax(api_ring, i32)":                "Array(Tuple(Float64, Float64))",
+		"argMinIf(api_polygon, i32, b)":        "Array(Array(Tuple(Float64, Float64)))",
+		"argMaxIf(api_multi_polygon, i32, b)":  "Array(Array(Array(Tuple(Float64, Float64))))",
+		"groupArray(api_polygon)":              "Array(Array(Array(Tuple(Float64, Float64))))",
+		"groupUniqArray(api_multi_polygon)":    "Array(Array(Array(Array(Tuple(Float64, Float64)))))",
 	}
 	for expression, expected := range cases {
 		t.Run(expression, func(t *testing.T) {

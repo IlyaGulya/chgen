@@ -52,6 +52,12 @@ The suite list is defined in `internal/tooling/cmd/verify/config.go`. CI supplie
 compilers and healthy servers and calls these adapters. The previous offline
 script remains in use underneath the `offline` adapter.
 
+The offline suite checks deterministic regeneration of measured function
+rules. The type suite remeasures the pinned function profile and saves
+`function-measurements.json`, then executes generated function queries with
+the supported drivers. See [Automatic function rule measurement](function-rule-generation.md)
+for the separate maintainer workflow that prepares candidates.
+
 ## Read the result
 
 By default, each run creates a fresh directory under `verify-report/`.

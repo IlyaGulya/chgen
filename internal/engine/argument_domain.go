@@ -89,6 +89,12 @@ func numberBaseType(value CHType) bool {
 		enumBaseType(value) || value.normalizedName() == "bfloat16"
 }
 
+// numberValueBaseType is the measured numeric-value signature role. Enum
+// values participate in some numeric operations, but not arrayResize sizes.
+func numberValueBaseType(value CHType) bool {
+	return numberBaseType(value) && !enumBaseType(value)
+}
+
 // offsetBaseType covers fixed-width numbers. Wide integers, Decimals, and
 // Enums are not in this server domain.
 func offsetBaseType(value CHType) bool {

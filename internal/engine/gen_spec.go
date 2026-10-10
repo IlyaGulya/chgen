@@ -32,7 +32,8 @@ const (
 	// the column pool of the domain.
 	argSortValue
 	// argSortNumber is a numeric value expression. It can be a column and
-	// does not have to be a constant.
+	// does not have to be a constant. The measured role refuses Nullable
+	// values and Enums; Decimals and wide integers are legal.
 	argSortNumber
 	// argSortOffset is a fixed-width number that an offset accepts.
 	argSortOffset

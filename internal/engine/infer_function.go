@@ -52,10 +52,12 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 	// paths below would refuse, because the parameter is not a column.
 	if higherOrder, known := higherOrderArrayFunctions[name]; known && len(args) > 0 {
 		if isLambdaExpr(args[0]) {
-			return inferHigherOrderArrayType(name, function.Name.Name, args, scope)
+			result, err := inferHigherOrderArrayType(name, function.Name.Name, args, scope)
+			return withoutGeometryAliases(result), err
 		}
 		if higherOrder.allowNoLambda {
-			return inferHigherOrderArrayWithoutLambda(name, function.Name.Name, args, scope)
+			result, err := inferHigherOrderArrayWithoutLambda(name, function.Name.Name, args, scope)
+			return withoutGeometryAliases(result), err
 		}
 	}
 	// The wide and the sized constructors need their argument
@@ -858,7 +860,10 @@ func firstFunctionArgument(args []CHType) (CHType, error) {
 	if len(args) == 0 {
 		return CHType{}, fmt.Errorf("function has no arguments")
 	}
-	return args[0], nil
+	// Computed value-preserving results expose geometry structures, including
+	// nested aliases (arraySlice(Array(Polygon)) loses Polygon). Constructors
+	// such as tuple/array have separate rules and retain their aliases.
+	return withoutGeometryAliases(args[0]), nil
 }
 
 // arrayDistinctFunctionResult types arrayDistinct. The function gives
@@ -915,7 +920,7 @@ func arrayResizeFunctionResult(args []CHType) (CHType, error) {
 	if len(args) < 2 {
 		return CHType{}, fmt.Errorf("arrayResize needs an array and a size")
 	}
-	arrayType := domainBaseType(args[0])
+	arrayType := withoutGeometryAliases(domainBaseType(args[0]))
 	if arrayType.normalizedName() != "array" || len(arrayType.Params) != 1 {
 		return CHType{}, fmt.Errorf("arrayResize needs an Array as its first argument")
 	}

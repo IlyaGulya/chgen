@@ -80,6 +80,82 @@
       ]
     },
     {
+      "name": "acos",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "acos",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "acos/legal/a1/p0",
+          "illegal_probe_id": "acos/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "acos/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "acos(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "acos/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "acos(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "acos/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "acos(s)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "acos/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "acos()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "acos/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "acos(i8, i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
       "name": "adddays",
       "family": "fixed-result-scalar",
       "probe_recipe": "scalar-signature",
@@ -5225,6 +5301,82 @@
       ]
     },
     {
+      "name": "asin",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "asin",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "asin/legal/a1/p0",
+          "illegal_probe_id": "asin/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "asin/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "asin(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "asin/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "asin(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "asin/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "asin(s)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "asin/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "asin()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "asin/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "asin(i8, i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
       "name": "assumenotnull",
       "family": "dedicated-scalar",
       "probe_recipe": "scalar-signature",
@@ -5288,6 +5440,82 @@
           "arity": 2,
           "position": -1,
           "sql": "assumeNotNull(i8, i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
+      "name": "atan",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "atan",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "atan/legal/a1/p0",
+          "illegal_probe_id": "atan/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "atan/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "atan(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "atan/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "atan(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "atan/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "atan(s)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "atan/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "atan()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "atan/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "atan(i8, i8)",
           "expected_chgen": "refuse"
         }
       ]
@@ -5821,6 +6049,82 @@
           "arity": 1,
           "sql": "concat(i8)",
           "expected_chgen": "accept"
+        }
+      ]
+    },
+    {
+      "name": "cos",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "cos",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "cos/legal/a1/p0",
+          "illegal_probe_id": "cos/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "cos/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "cos(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "cos/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "cos(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "cos/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "cos(s)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "cos/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "cos()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "cos/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "cos(i8, i8)",
+          "expected_chgen": "refuse"
         }
       ]
     },
@@ -6848,6 +7152,82 @@
           "arity": 3,
           "position": -1,
           "sql": "equals(i8, i8, i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
+      "name": "exp",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "exp",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "exp/legal/a1/p0",
+          "illegal_probe_id": "exp/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "exp/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "exp(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "exp/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "exp(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "exp/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "exp(s)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "exp/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "exp()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "exp/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "exp(i8, i8)",
           "expected_chgen": "refuse"
         }
       ]
@@ -10128,6 +10508,234 @@
       ]
     },
     {
+      "name": "log",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "log",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "log/legal/a1/p0",
+          "illegal_probe_id": "log/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "log/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "log(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "log/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "log(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "log/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "log(s)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "log/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "log()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "log/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "log(i8, i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
+      "name": "log10",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "log10",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "log10/legal/a1/p0",
+          "illegal_probe_id": "log10/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "log10/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "log10(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "log10/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "log10(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "log10/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "log10(s)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "log10/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "log10()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "log10/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "log10(i8, i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
+      "name": "log2",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "log2",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "log2/legal/a1/p0",
+          "illegal_probe_id": "log2/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "log2/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "log2(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "log2/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "log2(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "log2/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "log2(s)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "log2/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "log2()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "log2/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "log2(i8, i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
       "name": "lower",
       "family": "dedicated-scalar",
       "probe_recipe": "scalar-signature",
@@ -13230,6 +13838,234 @@
       ]
     },
     {
+      "name": "sign",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "sign",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "sign/legal/a1/p0",
+          "illegal_probe_id": "sign/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "sign/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "sign(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "sign/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "sign(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "sign/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "sign(s)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "sign/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "sign()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "sign/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "sign(i8, i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
+      "name": "sin",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "sin",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "sin/legal/a1/p0",
+          "illegal_probe_id": "sin/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "sin/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "sin(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "sin/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "sin(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "sin/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "sin(s)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "sin/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "sin()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "sin/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "sin(i8, i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
+      "name": "sqrt",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "sqrt",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "sqrt/legal/a1/p0",
+          "illegal_probe_id": "sqrt/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "sqrt/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "sqrt(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "sqrt/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "sqrt(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "sqrt/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "sqrt(s)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "sqrt/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "sqrt()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "sqrt/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "sqrt(i8, i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
       "name": "substring",
       "family": "fixed-result-scalar",
       "probe_recipe": "scalar-signature",
@@ -14478,6 +15314,158 @@
           "position": -1,
           "sql": "sumWithOverflow(i8)",
           "expected_chgen": "accept"
+        }
+      ]
+    },
+    {
+      "name": "tan",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "tan",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "tan/legal/a1/p0",
+          "illegal_probe_id": "tan/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "tan/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "tan(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "tan/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "tan(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "tan/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "tan(s)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "tan/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "tan()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "tan/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "tan(i8, i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
+      "name": "tanh",
+      "family": "fixed-result-scalar",
+      "probe_recipe": "scalar-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type"
+      ],
+      "spelling": "tanh",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {}
+        ],
+        "placement": "scalar",
+        "allow_bare": true,
+        "allow_over": false,
+        "evidence": "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "tanh/legal/a1/p0",
+          "illegal_probe_id": "tanh/illegal_domain/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "tanh/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "tanh(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "tanh/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "tanh(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "tanh/illegal_domain/a1/p0",
+          "kind": "illegal_domain",
+          "arity": 1,
+          "sql": "tanh(s)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "tanh/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "tanh()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "tanh/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "tanh(i8, i8)",
+          "expected_chgen": "refuse"
         }
       ]
     },

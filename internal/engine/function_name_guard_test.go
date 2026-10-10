@@ -3,6 +3,8 @@ package engine
 import (
 	"strings"
 	"testing"
+
+	"github.com/IlyaGulya/chgen/internal/apiinventory"
 )
 
 // The function-name guard.
@@ -98,13 +100,25 @@ var serverCombinatorNamesLowered = []string{
 	"uniqexactif",
 }
 
-func knownServerFunctions() map[string]bool {
+func knownServerFunctions(t *testing.T) map[string]bool {
+	t.Helper()
 	known := make(map[string]bool, len(serverFunctionNamesLowered)+len(serverCombinatorNamesLowered))
 	for _, name := range serverFunctionNamesLowered {
 		known[name] = true
 	}
 	for _, name := range serverCombinatorNamesLowered {
 		known[name] = true
+	}
+	// The independently measured API inventory avoids another manual name
+	// update for every generated rule. It does not come from the registry.
+	inventory, err := apiinventory.Load(moduleRootPath("testdata", "clickhouse-api-inventory.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, functions := range [][]apiinventory.Function{inventory.Functions.BuiltIn.Canonical, inventory.Functions.BuiltIn.Aliases} {
+		for _, function := range functions {
+			known[strings.ToLower(function.Name)] = true
+		}
 	}
 	return known
 }
@@ -114,7 +128,7 @@ func knownServerFunctions() map[string]bool {
 // function must add the name to the list above, and the name must first
 // be measured against a server.
 func TestEveryRuleNamesARealFunction(t *testing.T) {
-	known := knownServerFunctions()
+	known := knownServerFunctions(t)
 
 	tables := []struct {
 		table string
@@ -133,7 +147,7 @@ func TestEveryRuleNamesARealFunction(t *testing.T) {
 			}
 			if !known[name] {
 				t.Errorf("%s: rule names function %q, which ClickHouse 25.8.29.51 does not have; "+
-					"remove the rule, or correct the spelling, or measure the name and add it to serverFunctionNamesLowered",
+					"remove the rule, correct the spelling, or remeasure the pinned API inventory",
 					entry.table, name)
 			}
 		}

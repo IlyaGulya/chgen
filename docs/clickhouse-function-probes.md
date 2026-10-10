@@ -7,8 +7,12 @@ function and each function candidate in the registry.
 The builder reads the current real-column fixture and the executable function
 signature. It creates the legal and illegal argument pools from one domain.
 It records each accepted argument form, repeated group, aggregate parameter
-form, linked argument rule, and placement rule. The current catalog has 232
-functions and 1577 probes.
+form, linked argument rule, and placement rule. The current catalog has 250
+functions and 1671 probes.
+
+For automatic real-column measurements and candidate registry rules, see
+[Automatic function rule measurement](function-rule-generation.md). The
+candidate generator does not replace this independent catalog oracle.
 
 The generator recipe is only a useful random call. The executable signature
 is the complete measured call shape. Inference and this catalog read the same

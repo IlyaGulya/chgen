@@ -10,6 +10,9 @@ import (
 
 func (r *runner) offline(_ options) {
 	r.command("verify", nil, "bash", "scripts/verify.sh")
+	if tool := r.tool("functionrules"); tool != "" {
+		r.gate("generated-function-rules", tool, "-evidence", "testdata/clickhouse-function-rules.json", "-check")
+	}
 	if tool := r.tool("supportmanifest"); tool != "" {
 		if r.gate("support-manifest", tool, "-check") {
 			r.output("api-coverage", "api-support-coverage.json", nil, tool, "-report")

@@ -144,6 +144,7 @@ func expectedToolingCommands() []string {
 		"apiinventory",
 		"drivercompat",
 		"execoraclegate",
+		"functionrules",
 		"gensemantics",
 		"oraclediff",
 		"oraclegate",

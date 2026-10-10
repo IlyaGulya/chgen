@@ -424,7 +424,7 @@ func validateFunctionCallSignature(name, displayName string, function *clickhous
 				}
 			}
 			base := domainBaseType(argumentType)
-			valid := sort == argSortNumber && numberBaseType(base) ||
+			valid := sort == argSortNumber && numberValueBaseType(base) && !branchArgumentNullable(argumentType) ||
 				sort == argSortOffset && offsetBaseType(base) ||
 				sort == argSortIntegerOffset && indexBaseType(base) || sort == argSortIndex && indexBaseType(base)
 			if err != nil || !valid {

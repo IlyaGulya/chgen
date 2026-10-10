@@ -199,7 +199,7 @@ func poolDomainForSort(sort argSort) (*argumentDomain, bool) {
 	case argSortValue:
 		return nil, true
 	case argSortNumber:
-		return &argumentDomain{name: "numeric value", accepts: numberBaseType}, true
+		return &argumentDomain{name: "numeric value", accepts: numberValueBaseType}, true
 	case argSortOffset:
 		return &argumentDomain{name: "offset value", accepts: offsetBaseType}, true
 	case argSortIntegerOffset:

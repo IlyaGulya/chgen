@@ -1,16 +1,16 @@
 {
   "format_version": 2,
-  "catalog_sha256": "b156361811e67029230e19c67b30a474a5e7a2e3934834675a3360cf271d572f",
+  "catalog_sha256": "eae2e4f4d7a0d4572408bf8b382b77832a531415707f79510a79931e5bf2abc8",
   "report": {
     "metadata": {
       "server": {
         "version": "25.8.29.51",
-        "server_run": 1791540496,
-        "server_uptime_s": 606
+        "server_run": 1791619303,
+        "server_uptime_s": 4217
       },
       "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
       "seed_hash": "92d8066c8fa76055871158c665f36ddd75e6c6512d8f05ec38a720cbe014c7d9",
-      "matrix_hash": "13e764097ec3cf819f51185c3dfeb9c92901ad2cd6691ab24fb327fe333e0cb0",
+      "matrix_hash": "a87df5e3599942dd2d74cd790054de167a297fe23aa9827606c9bc9e44851564",
       "fixture_columns": [
         {
           "table": "t",
@@ -1873,6 +1873,126 @@
           "raw": "UInt8",
           "canonical": {
             "Name": "UInt8",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "acos/illegal_arity/a0/p-1",
+        "expression": "acos()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function acos rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "acos/illegal_arity/a2/p-1",
+        "expression": "acos(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function acos rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "acos/illegal_domain/a1/p0",
+        "expression": "acos(s)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function acos does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "acos/legal/a1/p0",
+        "expression": "acos(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "acos/legal_result/a1/p-1",
+        "expression": "acos(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
             "Args": null
           }
         },
@@ -12460,6 +12580,126 @@
         }
       },
       {
+        "id": "asin/illegal_arity/a0/p-1",
+        "expression": "asin()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function asin rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "asin/illegal_arity/a2/p-1",
+        "expression": "asin(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function asin rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "asin/illegal_domain/a1/p0",
+        "expression": "asin(s)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function asin does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "asin/legal/a1/p0",
+        "expression": "asin(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "asin/legal_result/a1/p-1",
+        "expression": "asin(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
         "id": "assumenotnull/illegal_arity/a0/p-1",
         "expression": "assumeNotNull()",
         "table": "t",
@@ -12547,6 +12787,126 @@
           "raw": "Int8",
           "canonical": {
             "Name": "Int8",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "atan/illegal_arity/a0/p-1",
+        "expression": "atan()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function atan rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "atan/illegal_arity/a2/p-1",
+        "expression": "atan(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function atan rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "atan/illegal_domain/a1/p0",
+        "expression": "atan(s)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function atan does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "atan/legal/a1/p0",
+        "expression": "atan(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "atan/legal_result/a1/p-1",
+        "expression": "atan(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
             "Args": null
           }
         },
@@ -13422,6 +13782,126 @@
           "raw": "String",
           "canonical": {
             "Name": "String",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "cos/illegal_arity/a0/p-1",
+        "expression": "cos()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function cos rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "cos/illegal_arity/a2/p-1",
+        "expression": "cos(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function cos rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "cos/illegal_domain/a1/p0",
+        "expression": "cos(s)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function cos does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "cos/legal/a1/p0",
+        "expression": "cos(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "cos/legal_result/a1/p-1",
+        "expression": "cos(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
             "Args": null
           }
         },
@@ -15165,6 +15645,126 @@
           "raw": "UInt8",
           "canonical": {
             "Name": "UInt8",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "exp/illegal_arity/a0/p-1",
+        "expression": "exp()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function exp rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "exp/illegal_arity/a2/p-1",
+        "expression": "exp(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function exp rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "exp/illegal_domain/a1/p0",
+        "expression": "exp(s)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function exp does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "exp/legal/a1/p0",
+        "expression": "exp(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "exp/legal_result/a1/p-1",
+        "expression": "exp(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
             "Args": null
           }
         },
@@ -21355,6 +21955,366 @@
           "raw": "UInt8",
           "canonical": {
             "Name": "UInt8",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log/illegal_arity/a0/p-1",
+        "expression": "log()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function log rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log/illegal_arity/a2/p-1",
+        "expression": "log(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function log rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log/illegal_domain/a1/p0",
+        "expression": "log(s)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function log does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log/legal/a1/p0",
+        "expression": "log(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log/legal_result/a1/p-1",
+        "expression": "log(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log10/illegal_arity/a0/p-1",
+        "expression": "log10()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function log10 rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log10/illegal_arity/a2/p-1",
+        "expression": "log10(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function log10 rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log10/illegal_domain/a1/p0",
+        "expression": "log10(s)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function log10 does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log10/legal/a1/p0",
+        "expression": "log10(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log10/legal_result/a1/p-1",
+        "expression": "log10(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log2/illegal_arity/a0/p-1",
+        "expression": "log2()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function log2 rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log2/illegal_arity/a2/p-1",
+        "expression": "log2(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function log2 rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log2/illegal_domain/a1/p0",
+        "expression": "log2(s)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function log2 does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log2/legal/a1/p0",
+        "expression": "log2(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "log2/legal_result/a1/p-1",
+        "expression": "log2(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
             "Args": null
           }
         },
@@ -27652,6 +28612,366 @@
         }
       },
       {
+        "id": "sign/illegal_arity/a0/p-1",
+        "expression": "sign()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function sign rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sign/illegal_arity/a2/p-1",
+        "expression": "sign(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function sign rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sign/illegal_domain/a1/p0",
+        "expression": "sign(s)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function sign does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sign/legal/a1/p0",
+        "expression": "sign(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Int8",
+          "canonical": {
+            "Name": "Int8",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Int8",
+          "canonical": {
+            "Name": "Int8",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sign/legal_result/a1/p-1",
+        "expression": "sign(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Int8",
+          "canonical": {
+            "Name": "Int8",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Int8",
+          "canonical": {
+            "Name": "Int8",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sin/illegal_arity/a0/p-1",
+        "expression": "sin()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function sin rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sin/illegal_arity/a2/p-1",
+        "expression": "sin(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function sin rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sin/illegal_domain/a1/p0",
+        "expression": "sin(s)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function sin does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sin/legal/a1/p0",
+        "expression": "sin(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sin/legal_result/a1/p-1",
+        "expression": "sin(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sqrt/illegal_arity/a0/p-1",
+        "expression": "sqrt()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function sqrt rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sqrt/illegal_arity/a2/p-1",
+        "expression": "sqrt(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function sqrt rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sqrt/illegal_domain/a1/p0",
+        "expression": "sqrt(s)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function sqrt does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sqrt/legal/a1/p0",
+        "expression": "sqrt(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "sqrt/legal_result/a1/p-1",
+        "expression": "sqrt(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
         "id": "substring/illegal_arity/a1/p-1",
         "expression": "substring(s)",
         "table": "t",
@@ -29804,6 +31124,246 @@
           "raw": "Int8",
           "canonical": {
             "Name": "Int8",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "tan/illegal_arity/a0/p-1",
+        "expression": "tan()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function tan rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "tan/illegal_arity/a2/p-1",
+        "expression": "tan(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function tan rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "tan/illegal_domain/a1/p0",
+        "expression": "tan(s)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function tan does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "tan/legal/a1/p0",
+        "expression": "tan(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "tan/legal_result/a1/p-1",
+        "expression": "tan(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "tanh/illegal_arity/a0/p-1",
+        "expression": "tanh()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function tanh rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "tanh/illegal_arity/a2/p-1",
+        "expression": "tanh(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function tanh rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "tanh/illegal_domain/a1/p0",
+        "expression": "tanh(s)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function tanh does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "tanh/legal/a1/p0",
+        "expression": "tanh(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "tanh/legal_result/a1/p-1",
+        "expression": "tanh(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
+            "Args": null
+          }
+        },
+        "server_analysis": {
+          "raw": "Float64",
+          "canonical": {
+            "Name": "Float64",
             "Args": null
           }
         },
@@ -47061,6 +48621,8 @@
   "execution_types": {
     "abs/legal/a1/p0": "UInt8",
     "abs/legal_result/a1/p-1": "UInt8",
+    "acos/legal/a1/p0": "Float64",
+    "acos/legal_result/a1/p-1": "Float64",
     "adddays/legal/a2/p0": "Date",
     "adddays/legal/a2/p1": "Date",
     "adddays/legal_result/a2/p-1": "Date",
@@ -47261,8 +48823,12 @@
     "arraysum/legal/a2/p1": "Int64",
     "arraysum/legal_lambda/a2/p-1": "Int64",
     "arraysum/legal_result/a2/p-1": "Int64",
+    "asin/legal/a1/p0": "Float64",
+    "asin/legal_result/a1/p-1": "Float64",
     "assumenotnull/legal/a1/p0": "Int8",
     "assumenotnull/legal_result/a1/p-1": "Int8",
+    "atan/legal/a1/p0": "Float64",
+    "atan/legal_result/a1/p-1": "Float64",
     "avg/legal/a1/p0": "Float64",
     "avg/legal_placement/a1/p-1": "Float64",
     "avg/legal_result/a1/p-1": "Float64",
@@ -47284,6 +48850,8 @@
     "concat/legal/a1/p0": "String",
     "concat/legal_result/a0/p-1": "String",
     "concat/legal_result/a1/p-1": "String",
+    "cos/legal/a1/p0": "Float64",
+    "cos/legal_result/a1/p-1": "Float64",
     "count/legal/a1/p0": "UInt64",
     "count/legal_placement/a0/p-1": "UInt64",
     "count/legal_result/a0/p-1": "UInt64",
@@ -47329,6 +48897,8 @@
     "equals/legal/a2/p0": "UInt8",
     "equals/legal/a2/p1": "UInt8",
     "equals/legal_result/a2/p-1": "UInt8",
+    "exp/legal/a1/p0": "Float64",
+    "exp/legal_result/a1/p-1": "Float64",
     "first_value/legal/a1/p0": "Int8",
     "first_value/legal_bare_placement/a1/p-1": "Int8",
     "first_value/legal_placement/a1/p-1": "Int8",
@@ -47468,6 +49038,12 @@
     "lessorequals/legal/a2/p0": "UInt8",
     "lessorequals/legal/a2/p1": "UInt8",
     "lessorequals/legal_result/a2/p-1": "UInt8",
+    "log/legal/a1/p0": "Float64",
+    "log/legal_result/a1/p-1": "Float64",
+    "log10/legal/a1/p0": "Float64",
+    "log10/legal_result/a1/p-1": "Float64",
+    "log2/legal/a1/p0": "Float64",
+    "log2/legal_result/a1/p-1": "Float64",
     "lower/legal/a1/p0": "String",
     "lower/legal_result/a1/p-1": "String",
     "map/legal/a2/p0": "Map(Int8, Int8)",
@@ -47590,6 +49166,12 @@
     "row_number/legal_placement/a0/p-1": "UInt64",
     "row_number/legal_result/a0/p-1": "UInt64",
     "row_number/legal_result/a1/p-1": "UInt64",
+    "sign/legal/a1/p0": "Int8",
+    "sign/legal_result/a1/p-1": "Int8",
+    "sin/legal/a1/p0": "Float64",
+    "sin/legal_result/a1/p-1": "Float64",
+    "sqrt/legal/a1/p0": "Float64",
+    "sqrt/legal_result/a1/p-1": "Float64",
     "substring/legal/a2/p0": "String",
     "substring/legal/a2/p1": "String",
     "substring/legal/a3/p0": "String",
@@ -47631,6 +49213,10 @@
     "sumwithoverflow/legal/a1/p0": "Int8",
     "sumwithoverflow/legal_placement/a1/p-1": "Int8",
     "sumwithoverflow/legal_result/a1/p-1": "Int8",
+    "tan/legal/a1/p0": "Float64",
+    "tan/legal_result/a1/p-1": "Float64",
+    "tanh/legal/a1/p0": "Float64",
+    "tanh/legal_result/a1/p-1": "Float64",
     "todate/legal/a1/p0": "Date",
     "todate/legal_result/a1/p-1": "Date",
     "todate32/legal/a1/p0": "Date32",

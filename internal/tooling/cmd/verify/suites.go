@@ -21,6 +21,13 @@ func (r *runner) types(o options) {
 		}
 	}
 	r.test("settings", env, "fuzzoracle", "^TestSettingsReadControlsAgainstClickHouse$", "./internal/engine")
+	if tool := r.tool("functionrules"); tool != "" {
+		name := "function-measurements.json"
+		r.gate("function-measurements", tool, "-url", o.http, "-check", "-evidence", "testdata/clickhouse-function-rules.json", "-report", filepath.Join(r.out, name))
+		r.artifact(name)
+	}
+	r.test("function-rules-runtime", env, "", "^TestFunctionRulesGeneratedRuntime$", "./internal/functionrules")
+	r.test("function-regressions", env, "fuzzoracle", "^(TestAggregateGeoAliasesAgainstClickHouse|TestArrayResizeSizeDomainAgainstClickHouse)$", "./internal/engine")
 	if r.sql("flush-system-logs", o.http, "SYSTEM FLUSH LOGS") {
 		if tool := r.tool("systemcatalog"); tool != "" {
 			r.command("system-catalog", env, tool, "-check")
