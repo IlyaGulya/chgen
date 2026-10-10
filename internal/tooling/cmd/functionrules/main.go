@@ -15,20 +15,54 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/IlyaGulya/chgen/internal/apiinventory"
 	"github.com/IlyaGulya/chgen/internal/functionrules"
+	"github.com/IlyaGulya/chgen/internal/supportmanifest"
 )
 
 func main() {
 	endpoint := flag.String("url", "", "disposable ClickHouse HTTP endpoint (measurement mode)")
 	evidence := flag.String("evidence", "", "measurement JSON input/output path")
 	selected := flag.String("functions", "", "comma-separated safe recipes (default: all)")
+	profile := flag.String("profile", functionrules.Profile, "safe measurement profile (inferred from saved evidence when checking)")
 	registry := flag.String("registry", "internal/engine/registry.go", "central registry source")
 	output := flag.String("out", "", "candidate registry output path (generation mode)")
 	check := flag.Bool("check", false, "check generated rules, or re-measure saved evidence with -url")
 	reportPath := flag.String("report", "", "fresh live-check artifact path (never overwrites pinned evidence)")
+	gaps := flag.Bool("gaps", false, "report function gaps without executing discovered functions")
+	inventoryPath := flag.String("inventory", "testdata/clickhouse-api-inventory.json", "pinned discovery inventory for -gaps")
+	manifestPath := flag.String("manifest", "testdata/clickhouse-support-manifest.json", "measured support manifest for -gaps")
 	flag.Parse()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
+	if *gaps {
+		if *evidence != "" || *selected != "" || *output != "" || *check || *reportPath != "" {
+			fail(fmt.Errorf("-gaps is a read-only report; do not combine it with measurement or generation"))
+		}
+		manifest, err := supportmanifest.Load(*manifestPath)
+		if err != nil {
+			fail(err)
+		}
+		var inventory apiinventory.Inventory
+		if *endpoint == "" {
+			inventory, err = apiinventory.Load(*inventoryPath)
+		} else {
+			inventory, err = apiinventory.NewCollector(*endpoint).Collect(ctx)
+		}
+		if err != nil {
+			fail(err)
+		}
+		report, err := functionrules.Gaps(inventory, manifest)
+		if err != nil {
+			fail(err)
+		}
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(report); err != nil {
+			fail(err)
+		}
+		return
+	}
 	if *evidence == "" {
 		fail(fmt.Errorf("provide -evidence"))
 	}
@@ -47,6 +81,7 @@ func main() {
 			if err != nil {
 				fail(err)
 			}
+			*profile = expected.Profile
 			for _, function := range expected.Functions {
 				names = append(names, function.Name)
 			}
@@ -54,7 +89,7 @@ func main() {
 		if *selected != "" {
 			names = strings.Split(*selected, ",")
 		}
-		report, err := functionrules.Measure(ctx, *endpoint, names)
+		report, err := functionrules.MeasureProfile(ctx, *endpoint, *profile, names)
 		if err != nil {
 			fail(err)
 		}
@@ -114,7 +149,7 @@ func main() {
 	}
 	for _, function := range report.Functions {
 		if !slices.Contains(added, function.Name) {
-			fmt.Fprintf(os.Stderr, "DEFERRED %s: measured profile does not prove a compatible production signature\n", function.Name)
+			fmt.Fprintf(os.Stderr, "DEFERRED %s: %s\n", function.Name, functionrules.DeclineReason(report.Profile, function))
 		}
 	}
 	if *check {

@@ -53,9 +53,11 @@ compilers and healthy servers and calls these adapters. The previous offline
 script remains in use underneath the `offline` adapter.
 
 The offline suite checks deterministic regeneration of measured function
-rules. The type suite remeasures the pinned function profile and saves
-`function-measurements.json`, then executes generated function queries with
-the supported drivers. See [Automatic function rule measurement](function-rule-generation.md)
+rules from both numeric and string profiles. The type suite remeasures them
+and saves `function-measurements.json` and `string-function-measurements.json`,
+then executes generated function queries with the supported drivers. Both
+suites save `function-gaps.json`; the live suite discovers names from the
+actual server. See [Automatic function rule measurement](function-rule-generation.md)
 for the separate maintainer workflow that prepares candidates.
 
 ## Read the result

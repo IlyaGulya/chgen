@@ -117,6 +117,9 @@ type functionSpec struct {
 	// exactSpelling pins a measured case-sensitive server name.
 	// Empty retains the existing case-insensitive lookup policy.
 	exactSpelling string
+	// transport reuses a measured wrapper contract when the profile differs
+	// from the default class transport.
+	transport *wrapperTransport
 	// family selects one reusable result and probe contract.
 	family functionSemanticFamily
 	// The derived fields seal the family contract on the production spec.
@@ -1088,12 +1091,13 @@ var functionSemanticSpecs = map[string]functionSpec{
 	"greaterorequals": {family: semanticFamilyPredicate, rule: fixedFunctionType("UInt8"), class: wrapperTransparent, strategy: argsIndependent, gen: scalarCall("greaterOrEquals", 2), measuredFacts: measuredFacts(functionFactComparesArgPair | functionFactDynamicForcesNullable), resultMode: resultRuleGeneric, domainMode: argumentDomainUnrestricted, parameterPolicy: parameterResultCurated, evidence: registryMeasurementEvidence},
 	"sin": {
 
-		family:   semanticFamilyFixedResult,
-		rule:     fixedFunctionType("Float64"),
-		class:    wrapperTransparent,
+		family: semanticFamilyFixedResult,
+		rule:   fixedFunctionType("Float64"),
+		class:  wrapperTransparent,
+
 		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1118,12 +1122,13 @@ var functionSemanticSpecs = map[string]functionSpec{
 	},
 	"acos": {
 
-		family:   semanticFamilyFixedResult,
-		rule:     fixedFunctionType("Float64"),
-		class:    wrapperTransparent,
+		family: semanticFamilyFixedResult,
+		rule:   fixedFunctionType("Float64"),
+		class:  wrapperTransparent,
+
 		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1148,12 +1153,13 @@ var functionSemanticSpecs = map[string]functionSpec{
 	},
 	"asin": {
 
-		family:   semanticFamilyFixedResult,
-		rule:     fixedFunctionType("Float64"),
-		class:    wrapperTransparent,
+		family: semanticFamilyFixedResult,
+		rule:   fixedFunctionType("Float64"),
+		class:  wrapperTransparent,
+
 		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1178,12 +1184,13 @@ var functionSemanticSpecs = map[string]functionSpec{
 	},
 	"atan": {
 
-		family:   semanticFamilyFixedResult,
-		rule:     fixedFunctionType("Float64"),
-		class:    wrapperTransparent,
+		family: semanticFamilyFixedResult,
+		rule:   fixedFunctionType("Float64"),
+		class:  wrapperTransparent,
+
 		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1208,12 +1215,13 @@ var functionSemanticSpecs = map[string]functionSpec{
 	},
 	"cos": {
 
-		family:   semanticFamilyFixedResult,
-		rule:     fixedFunctionType("Float64"),
-		class:    wrapperTransparent,
+		family: semanticFamilyFixedResult,
+		rule:   fixedFunctionType("Float64"),
+		class:  wrapperTransparent,
+
 		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1238,12 +1246,13 @@ var functionSemanticSpecs = map[string]functionSpec{
 	},
 	"exp": {
 
-		family:   semanticFamilyFixedResult,
-		rule:     fixedFunctionType("Float64"),
-		class:    wrapperTransparent,
+		family: semanticFamilyFixedResult,
+		rule:   fixedFunctionType("Float64"),
+		class:  wrapperTransparent,
+
 		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1268,12 +1277,13 @@ var functionSemanticSpecs = map[string]functionSpec{
 	},
 	"log": {
 
-		family:   semanticFamilyFixedResult,
-		rule:     fixedFunctionType("Float64"),
-		class:    wrapperTransparent,
+		family: semanticFamilyFixedResult,
+		rule:   fixedFunctionType("Float64"),
+		class:  wrapperTransparent,
+
 		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1298,12 +1308,13 @@ var functionSemanticSpecs = map[string]functionSpec{
 	},
 	"log10": {
 
-		family:   semanticFamilyFixedResult,
-		rule:     fixedFunctionType("Float64"),
-		class:    wrapperTransparent,
+		family: semanticFamilyFixedResult,
+		rule:   fixedFunctionType("Float64"),
+		class:  wrapperTransparent,
+
 		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1328,12 +1339,13 @@ var functionSemanticSpecs = map[string]functionSpec{
 	},
 	"log2": {
 
-		family:   semanticFamilyFixedResult,
-		rule:     fixedFunctionType("Float64"),
-		class:    wrapperTransparent,
+		family: semanticFamilyFixedResult,
+		rule:   fixedFunctionType("Float64"),
+		class:  wrapperTransparent,
+
 		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1358,12 +1370,13 @@ var functionSemanticSpecs = map[string]functionSpec{
 	},
 	"sign": {
 
-		family:   semanticFamilyFixedResult,
-		rule:     fixedFunctionType("Int8"),
-		class:    wrapperTransparent,
+		family: semanticFamilyFixedResult,
+		rule:   fixedFunctionType("Int8"),
+		class:  wrapperTransparent,
+
 		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1388,12 +1401,13 @@ var functionSemanticSpecs = map[string]functionSpec{
 	},
 	"sqrt": {
 
-		family:   semanticFamilyFixedResult,
-		rule:     fixedFunctionType("Float64"),
-		class:    wrapperTransparent,
+		family: semanticFamilyFixedResult,
+		rule:   fixedFunctionType("Float64"),
+		class:  wrapperTransparent,
+
 		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1418,12 +1432,13 @@ var functionSemanticSpecs = map[string]functionSpec{
 	},
 	"tan": {
 
-		family:   semanticFamilyFixedResult,
-		rule:     fixedFunctionType("Float64"),
-		class:    wrapperTransparent,
+		family: semanticFamilyFixedResult,
+		rule:   fixedFunctionType("Float64"),
+		class:  wrapperTransparent,
+
 		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1448,12 +1463,13 @@ var functionSemanticSpecs = map[string]functionSpec{
 	},
 	"tanh": {
 
-		family:   semanticFamilyFixedResult,
-		rule:     fixedFunctionType("Float64"),
-		class:    wrapperTransparent,
+		family: semanticFamilyFixedResult,
+		rule:   fixedFunctionType("Float64"),
+		class:  wrapperTransparent,
+
 		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1481,9 +1497,10 @@ var functionSemanticSpecs = map[string]functionSpec{
 		family:        semanticFamilyFixedResult,
 		rule:          fixedFunctionType("Float64"),
 		class:         wrapperTransparent,
-		strategy:      argsIndependent,
+
+		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1511,9 +1528,10 @@ var functionSemanticSpecs = map[string]functionSpec{
 		family:        semanticFamilyFixedResult,
 		rule:          fixedFunctionType("Float64"),
 		class:         wrapperTransparent,
-		strategy:      argsIndependent,
+
+		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1541,9 +1559,10 @@ var functionSemanticSpecs = map[string]functionSpec{
 		family:        semanticFamilyFixedResult,
 		rule:          fixedFunctionType("Float64"),
 		class:         wrapperTransparent,
-		strategy:      argsIndependent,
+
+		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1571,9 +1590,10 @@ var functionSemanticSpecs = map[string]functionSpec{
 		family:        semanticFamilyFixedResult,
 		rule:          fixedFunctionType("Float64"),
 		class:         wrapperTransparent,
-		strategy:      argsIndependent,
+
+		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1601,9 +1621,10 @@ var functionSemanticSpecs = map[string]functionSpec{
 		family:        semanticFamilyFixedResult,
 		rule:          fixedFunctionType("Float64"),
 		class:         wrapperTransparent,
-		strategy:      argsIndependent,
+
+		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1631,9 +1652,10 @@ var functionSemanticSpecs = map[string]functionSpec{
 		family:        semanticFamilyFixedResult,
 		rule:          fixedFunctionType("Float64"),
 		class:         wrapperTransparent,
-		strategy:      argsIndependent,
+
+		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1661,9 +1683,10 @@ var functionSemanticSpecs = map[string]functionSpec{
 		family:        semanticFamilyFixedResult,
 		rule:          fixedFunctionType("Float64"),
 		class:         wrapperTransparent,
-		strategy:      argsIndependent,
+
+		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1691,9 +1714,10 @@ var functionSemanticSpecs = map[string]functionSpec{
 		family:        semanticFamilyFixedResult,
 		rule:          fixedFunctionType("Float64"),
 		class:         wrapperTransparent,
-		strategy:      argsIndependent,
+
+		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1721,9 +1745,10 @@ var functionSemanticSpecs = map[string]functionSpec{
 		family:        semanticFamilyFixedResult,
 		rule:          fixedFunctionType("Float64"),
 		class:         wrapperTransparent,
-		strategy:      argsIndependent,
+
+		strategy: argsIndependent,
 		domain: &argumentDomain{
-			name: "measured numeric domain",
+			name: "measured argument domain",
 			accepts: func(value CHType) bool {
 				if arithmeticDecimalType(value) {
 					return true
@@ -1745,6 +1770,279 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
 		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+	},
+	"base64encode": {
+		exactSpelling: "base64Encode",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("String"),
+		class:         wrapperTransparent,
+
+		strategy: argsIndependent,
+		domain: &argumentDomain{
+			name: "measured argument domain",
+			accepts: func(value CHType) bool {
+				return (value.normalizedName() == "string" && len(value.Params) == 0) || (value.normalizedName() == "fixedstring" && len(value.Params) == 1)
+			},
+			expected: "String, FixedString",
+		},
+		gen:             scalarCall("base64Encode", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+	},
+	"decodeurlcomponent": {
+		exactSpelling: "decodeURLComponent",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("String"),
+		class:         wrapperTransparent,
+		transport:     &caseFoldingTransport,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured argument domain",
+			accepts: func(value CHType) bool {
+				return value.normalizedName() == "string" && len(value.Params) == 0
+			},
+			expected: "String",
+		},
+		gen:             scalarCall("decodeURLComponent", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+	},
+	"encodeurlcomponent": {
+		exactSpelling: "encodeURLComponent",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("String"),
+		class:         wrapperTransparent,
+		transport:     &caseFoldingTransport,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured argument domain",
+			accepts: func(value CHType) bool {
+				return value.normalizedName() == "string" && len(value.Params) == 0
+			},
+			expected: "String",
+		},
+		gen:             scalarCall("encodeURLComponent", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+	},
+	"lowerutf8": {
+		exactSpelling: "lowerUTF8",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("String"),
+		class:         wrapperTransparent,
+		transport:     &caseFoldingTransport,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured argument domain",
+			accepts: func(value CHType) bool {
+				return value.normalizedName() == "string" && len(value.Params) == 0
+			},
+			expected: "String",
+		},
+		gen:             scalarCall("lowerUTF8", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+	},
+	"normalizeutf8nfc": {
+		exactSpelling: "normalizeUTF8NFC",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("String"),
+		class:         wrapperTransparent,
+		transport:     &caseFoldingTransport,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured argument domain",
+			accepts: func(value CHType) bool {
+				return value.normalizedName() == "string" && len(value.Params) == 0
+			},
+			expected: "String",
+		},
+		gen:             scalarCall("normalizeUTF8NFC", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+	},
+	"normalizeutf8nfd": {
+		exactSpelling: "normalizeUTF8NFD",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("String"),
+		class:         wrapperTransparent,
+		transport:     &caseFoldingTransport,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured argument domain",
+			accepts: func(value CHType) bool {
+				return value.normalizedName() == "string" && len(value.Params) == 0
+			},
+			expected: "String",
+		},
+		gen:             scalarCall("normalizeUTF8NFD", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+	},
+	"normalizeutf8nfkc": {
+		exactSpelling: "normalizeUTF8NFKC",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("String"),
+		class:         wrapperTransparent,
+		transport:     &caseFoldingTransport,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured argument domain",
+			accepts: func(value CHType) bool {
+				return value.normalizedName() == "string" && len(value.Params) == 0
+			},
+			expected: "String",
+		},
+		gen:             scalarCall("normalizeUTF8NFKC", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+	},
+	"normalizeutf8nfkd": {
+		exactSpelling: "normalizeUTF8NFKD",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("String"),
+		class:         wrapperTransparent,
+		transport:     &caseFoldingTransport,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured argument domain",
+			accepts: func(value CHType) bool {
+				return value.normalizedName() == "string" && len(value.Params) == 0
+			},
+			expected: "String",
+		},
+		gen:             scalarCall("normalizeUTF8NFKD", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+	},
+	"regexpquotemeta": {
+		exactSpelling: "regexpQuoteMeta",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("String"),
+		class:         wrapperTransparent,
+
+		strategy: argsIndependent,
+		domain: &argumentDomain{
+			name: "measured argument domain",
+			accepts: func(value CHType) bool {
+				return value.normalizedName() == "string" && len(value.Params) == 0
+			},
+			expected: "String",
+		},
+		gen:             scalarCall("regexpQuoteMeta", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+	},
+	"reverseutf8": {
+		exactSpelling: "reverseUTF8",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("String"),
+		class:         wrapperTransparent,
+		transport:     &caseFoldingTransport,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured argument domain",
+			accepts: func(value CHType) bool {
+				return value.normalizedName() == "string" && len(value.Params) == 0
+			},
+			expected: "String",
+		},
+		gen:             scalarCall("reverseUTF8", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+	},
+	"soundex": {
+
+		family:    semanticFamilyFixedResult,
+		rule:      fixedFunctionType("String"),
+		class:     wrapperTransparent,
+		transport: &caseFoldingTransport,
+		strategy:  argsIndependent,
+		domain: &argumentDomain{
+			name: "measured argument domain",
+			accepts: func(value CHType) bool {
+				return value.normalizedName() == "string" && len(value.Params) == 0
+			},
+			expected: "String",
+		},
+		gen:             scalarCall("soundex", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+	},
+	"trybase64decode": {
+		exactSpelling: "tryBase64Decode",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("String"),
+		class:         wrapperTransparent,
+
+		strategy: argsIndependent,
+		domain: &argumentDomain{
+			name: "measured argument domain",
+			accepts: func(value CHType) bool {
+				return (value.normalizedName() == "string" && len(value.Params) == 0) || (value.normalizedName() == "fixedstring" && len(value.Params) == 1)
+			},
+			expected: "String, FixedString",
+		},
+		gen:             scalarCall("tryBase64Decode", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+	},
+	"upperutf8": {
+		exactSpelling: "upperUTF8",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("String"),
+		class:         wrapperTransparent,
+		transport:     &caseFoldingTransport,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured argument domain",
+			accepts: func(value CHType) bool {
+				return value.normalizedName() == "string" && len(value.Params) == 0
+			},
+			expected: "String",
+		},
+		gen:             scalarCall("upperUTF8", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
 	},
 }
 

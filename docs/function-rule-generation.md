@@ -6,6 +6,21 @@ Users receive the verified rules in the normal chgen distribution. This tool
 does not introduce a second resolver, downloadable support packages, or a
 requirement for users to run a server.
 
+## List function gaps
+
+```bash
+go run ./internal/tooling/cmd/functionrules -gaps
+go run ./internal/tooling/cmd/functionrules -gaps -url http://localhost:18123
+```
+
+The offline report compares the pinned `system.functions` inventory with the
+measured support manifest. The live form collects the actual inventory first.
+Both preserve canonical spelling, aliases, aggregate status, origin and case
+policy. Unsupported names include a reason: unmeasured, explicitly refused,
+partially measured, or outside the built-in contract. Discovery never invokes
+these functions. Coverage counts include aliases and are not a claim that all
+argument forms of a supported function are accepted.
+
 ## Measure and generate
 
 Use a disposable server with no credentials or application data. The command
@@ -50,8 +65,37 @@ Only uniform Float64 or Int8 results with the measured wrapper behavior become
 fixed-result rules. The profile generates all 22 rules, including an exact
 spelling contract for its nine case-sensitive names. Names declared
 case-insensitive by ClickHouse keep accepting case variants. Other function
-families need their own bounded recipes and signature contracts; discovery alone is not proof of
-support.
+families need their own bounded recipes and signature contracts; discovery
+alone is not proof of support.
+
+## String profile
+
+```bash
+go run ./internal/tooling/cmd/functionrules \
+  -profile string-unary-v1 -url http://localhost:18123 \
+  -evidence /tmp/string-measurements.json
+go run ./internal/tooling/cmd/functionrules \
+  -evidence /tmp/string-measurements.json -out /tmp/registry-candidate.go
+```
+
+The string profile measures 13 safe unary functions in 2,587 cells: UTF-8
+case conversion and reversal, four Unicode normalization forms, URL component
+encoding and decoding, Base64 encoding and non-throwing decoding, soundex,
+and regexp quoting. Real rows include ASCII, Unicode, empty strings and NULL.
+String and two FixedString widths are tested with Nullable, LowCardinality
+and SimpleAggregateFunction wrappers. Negative domains include all canonical
+decimal scales, primitive numbers, dates, enums, arrays, tuples and maps.
+
+Only a uniform String result with a witnessed wrapper contract becomes a
+rule. A profile may reuse the existing case-folding wrapper transport when
+the server preserves a non-nullable SimpleAggregateFunction marker. No
+per-function inference exceptions are generated. FixedString is excluded
+when execution refuses it, even if nullable analysis advertises a type.
+Unrelated server failures never count as an argument-domain proof.
+
+Both profiles own only their own generated rules. A partial snapshot cannot
+orphan another rule in the same profile, and generation cannot overwrite a
+manual rule or a rule owned by another profile.
 
 ## Verify without changing evidence
 
@@ -63,6 +107,13 @@ go run ./internal/tooling/cmd/functionrules \
   -url http://localhost:18123 \
   -evidence testdata/clickhouse-function-rules.json -check \
   -report /tmp/function-live-report.json
+
+go run ./internal/tooling/cmd/functionrules \
+  -evidence testdata/clickhouse-string-function-rules.json -check
+go run ./internal/tooling/cmd/functionrules \
+  -url http://localhost:18123 \
+  -evidence testdata/clickhouse-string-function-rules.json -check \
+  -report /tmp/string-function-live-report.json
 ```
 
 The live report path must be new. Live comparison does not overwrite pinned

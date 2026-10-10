@@ -7,8 +7,8 @@ function and each function candidate in the registry.
 The builder reads the current real-column fixture and the executable function
 signature. It creates the legal and illegal argument pools from one domain.
 It records each accepted argument form, repeated group, aggregate parameter
-form, linked argument rule, and placement rule. The current catalog has 259
-functions and 1716 probes.
+form, linked argument rule, and placement rule. The current catalog has 272
+functions and 1781 probes.
 
 For automatic real-column measurements and candidate registry rules, see
 [Automatic function rule measurement](function-rule-generation.md). The

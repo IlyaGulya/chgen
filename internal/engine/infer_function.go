@@ -295,7 +295,7 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 				// exception for the transport question.
 				_, keepsMarker := valuePreservingDomainFunctions[name]
 				if !keepsMarker {
-					_, keepsMarker = wrapperTransportOverrides[name]
+					keepsMarker = hasFunctionTransportOverride(name)
 				}
 				if inner, ok := simpleAggregateWrapperInner(base); ok {
 					if keepsMarker {
@@ -435,7 +435,7 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 			// LowCardinality rule. greatest and least keep their own
 			// arity condition and are not resolved here.
 			transport := transportForFunction(name, class)
-			if _, special := wrapperTransportOverrides[name]; !special {
+			if !hasFunctionTransportOverride(name) {
 				transport = transport.withResolvedLowCardinality(argumentStack.lowCardinality)
 			}
 			return applyWrapperTransport(

@@ -638,16 +638,29 @@ func transportForClass(class functionWrapperClass) wrapperTransport {
 //
 // Almost every function uses the transport that its class implies. Only
 // a function whose MEASURED behaviour differs from its class carries its
-// own entry here, and each such entry states the measurement.
+// own central-spec transport or a legacy override entry, each backed by a
+// measurement. Generated profiles reuse a contract rather than extending the
+// name-based override table.
 //
 // This is the replacement for the name-based special case that used to
 // live inside the applier. The applier now asks for a transport and
 // applies it; it knows no names.
 func transportForFunction(name string, class functionWrapperClass) wrapperTransport {
+	if spec, found := functionRegistry[name]; found && spec.transport != nil {
+		return *spec.transport
+	}
 	if transport, special := wrapperTransportOverrides[name]; special {
 		return transport
 	}
 	return transportForClass(class)
+}
+
+func hasFunctionTransportOverride(name string) bool {
+	if spec, found := functionRegistry[name]; found && spec.transport != nil {
+		return true
+	}
+	_, found := wrapperTransportOverrides[name]
+	return found
 }
 
 // wrapperTransportOverrides holds the functions whose measured transport

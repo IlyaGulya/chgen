@@ -75,17 +75,19 @@ var requiredSamplingSemanticFamilies = []string{
 
 func measuredScalarSamplingExpansion(t *testing.T) []string {
 	t.Helper()
-	data, err := os.ReadFile(moduleRootPath("testdata", "clickhouse-function-rules.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	report, err := functionrules.Decode(data)
-	if err != nil {
-		t.Fatal(err)
-	}
 	var names []string
-	for _, function := range report.Functions {
-		names = append(names, function.Name)
+	for _, path := range []string{"clickhouse-function-rules.json", "clickhouse-string-function-rules.json"} {
+		data, err := os.ReadFile(moduleRootPath("testdata", path))
+		if err != nil {
+			t.Fatal(err)
+		}
+		report, err := functionrules.Decode(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, function := range report.Functions {
+			names = append(names, strings.ToLower(function.Name))
+		}
 	}
 	return names
 }

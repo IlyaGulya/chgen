@@ -20,8 +20,8 @@ func TestFunctionRulesGeneratedRuntime(t *testing.T) {
 	schema := filepath.Join(directory, "schema.sql")
 	sql := filepath.Join(directory, "queries.sql")
 	for path, content := range map[string]string{
-		schema: "CREATE TABLE t (id UInt8, v Nullable(Float64), d Decimal(9, 2)) ENGINE=Memory",
-		sql:    "-- name: ReadMath :many\n-- result: CubeRoot cube_root\n-- result: Cos cos_value\n-- result: Sign sign_value\n-- result: DecimalSin decimal_sin\nSELECT cbrt(v) AS cube_root, cos(v) AS cos_value, sign(v) AS sign_value, sin(d) AS decimal_sin FROM t ORDER BY id",
+		schema: "CREATE TABLE t (id UInt8, v Nullable(Float64), d Decimal(9, 2), s Nullable(String)) ENGINE=Memory",
+		sql:    runtimeQueries,
 	} {
 		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 			t.Fatal(err)
@@ -68,6 +68,38 @@ func TestFunctionRulesGeneratedRuntime(t *testing.T) {
 	}
 }
 
+const runtimeQueries = `-- name: ReadMath :many
+-- result: CubeRoot cube_root
+-- result: Cos cos_value
+-- result: Sign sign_value
+-- result: DecimalSin decimal_sin
+SELECT cbrt(v) AS cube_root, cos(v) AS cos_value, sign(v) AS sign_value, sin(d) AS decimal_sin
+FROM t WHERE id < 3 ORDER BY id;
+
+-- name: ReadStrings :many
+-- result: Encoded encoded
+-- result: Decoded decoded
+-- result: URL url
+-- result: URLDecoded url_decoded
+-- result: Lower lower_value
+-- result: Upper upper_value
+-- result: Reverse reverse_value
+-- result: Soundex soundex_value
+-- result: Quoted quoted
+-- result: NFC nfc
+-- result: NFD nfd
+-- result: NFKC nfkc
+-- result: NFKD nfkd
+SELECT base64Encode(s) AS encoded, tryBase64Decode(s) AS decoded,
+ encodeURLComponent(s) AS url, decodeURLComponent(s) AS url_decoded,
+ lowerUTF8(s) AS lower_value, upperUTF8(s) AS upper_value,
+ reverseUTF8(s) AS reverse_value, soundex(s) AS soundex_value,
+ regexpQuoteMeta(s) AS quoted, normalizeUTF8NFC(s) AS nfc,
+ normalizeUTF8NFD(s) AS nfd, normalizeUTF8NFKC(s) AS nfkc,
+ normalizeUTF8NFKD(s) AS nfkd
+FROM t ORDER BY id;
+`
+
 const runtimeConsumer = `package contracts
 import (
  "crypto/rand"
@@ -93,11 +125,26 @@ func TestMeasuredMath(t *testing.T) {
  conn, err := clickhouse.Open(&clickhouse.Options{Addr: []string{address}, Auth: clickhouse.Auth{Database: database}})
  if err != nil { t.Fatal(err) }
  defer conn.Close()
- if err := conn.Exec(ctx, "CREATE TABLE t (id UInt8, v Nullable(Float64), d Decimal(9, 2)) ENGINE=Memory"); err != nil { t.Fatal(err) }
- if err := conn.Exec(ctx, "INSERT INTO t VALUES (1,0,0),(2,NULL,0)"); err != nil { t.Fatal(err) }
+ if err := conn.Exec(ctx, "CREATE TABLE t (id UInt8, v Nullable(Float64), d Decimal(9, 2), s Nullable(String)) ENGINE=Memory"); err != nil { t.Fatal(err) }
+ if err := conn.Exec(ctx, "INSERT INTO t VALUES (1,0,0,'AbC'),(2,NULL,0,NULL),(3,1,0,'Привет café')"); err != nil { t.Fatal(err) }
  rows, err := New(conn).ReadMath(ctx, ReadMathParams{})
  if err != nil { t.Fatal(err) }
  if len(rows)!=2 || rows[0].CubeRoot==nil || *rows[0].CubeRoot!=0 || rows[0].Cos==nil || *rows[0].Cos!=1 || rows[1].CubeRoot!=nil || rows[1].Cos!=nil { t.Fatalf("wrong generated values: %+v", rows) }
  if rows[0].Sign==nil || *rows[0].Sign!=0 || rows[1].Sign!=nil || rows[0].DecimalSin!=0 || rows[1].DecimalSin!=0 { t.Fatalf("wrong generated Int8/Decimal values: %+v", rows) }
+ strings, err := New(conn).ReadStrings(ctx, ReadStringsParams{})
+ if err != nil { t.Fatal(err) }
+ if len(strings)!=3 { t.Fatalf("wrong string rows: %+v", strings) }
+ first, null := strings[0], strings[1]
+ for _, check := range []struct{actual, null *string; want string}{
+  {first.Encoded,null.Encoded,"QWJD"},{first.Decoded,null.Decoded,""},
+  {first.URL,null.URL,"AbC"},{first.URLDecoded,null.URLDecoded,"AbC"},
+  {first.Lower,null.Lower,"abc"},{first.Upper,null.Upper,"ABC"},
+  {first.Reverse,null.Reverse,"CbA"},{first.Soundex,null.Soundex,"A120"},
+  {first.Quoted,null.Quoted,"AbC"},{first.NFC,null.NFC,"AbC"},
+  {first.NFD,null.NFD,"AbC"},{first.NFKC,null.NFKC,"AbC"},{first.NFKD,null.NFKD,"AbC"},
+ } {
+  if check.actual==nil || *check.actual!=check.want || check.null!=nil { t.Fatalf("string value: got %v, null %v; want %q",check.actual,check.null,check.want) }
+ }
+ if strings[2].Lower==nil || *strings[2].Lower!="привет café" || strings[2].Reverse==nil || *strings[2].Reverse!="éfac тевирП" { t.Fatalf("wrong Unicode: %+v",strings[2]) }
 }
 `

@@ -27,6 +27,25 @@ func TestMeasuredScalarSpelling(t *testing.T) {
 	}
 }
 
+func TestGeneratedStringRuleIsUsedByPublicInference(t *testing.T) {
+	ddl := "CREATE TABLE t (s String, n Nullable(String), lc LowCardinality(String), f FixedString(8), i Int32, a SimpleAggregateFunction(anyLast, String), an SimpleAggregateFunction(anyLast, Nullable(String))) ENGINE=Memory"
+	for _, test := range []struct{ expression, want string }{
+		{"lowerUTF8(s)", "String"}, {"lowerUTF8(n)", "Nullable(String)"},
+		{"lowerUTF8(lc)", "LowCardinality(String)"},
+		{"lowerUTF8(a)", "SimpleAggregateFunction(anyLast, String)"}, {"lowerUTF8(an)", "Nullable(String)"},
+	} {
+		got, err := chgen.InferExpressionType(ddl, "t", test.expression)
+		if err != nil || got.String() != test.want {
+			t.Errorf("%s: %s, %v; want %s", test.expression, got.String(), err, test.want)
+		}
+	}
+	for _, expression := range []string{"lowerutf8(s)", "LOWERUTF8(s)", "lowerUTF8(i)", "lowerUTF8(f)", "lowerUTF8(s,s)", "lowerUTF8()"} {
+		if _, err := chgen.InferExpressionType(ddl, "t", expression); err == nil {
+			t.Errorf("unproved string call accepted: %s", expression)
+		}
+	}
+}
+
 func TestGeneratedMeasuredRuleIsUsedByPublicInference(t *testing.T) {
 	ddl := "CREATE TABLE t (i Int32, n Nullable(Int32), lc LowCardinality(Int32), d Decimal(9, 2), s String) ENGINE = Memory"
 	for _, test := range []struct{ expression, want string }{

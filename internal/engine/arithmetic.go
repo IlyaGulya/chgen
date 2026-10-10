@@ -1272,8 +1272,8 @@ func applyFunctionWrappers(result CHType, class functionWrapperClass, name strin
 	// transport of an aggregate keeps the marker by default (measured:
 	// avg(sagg) is Float64, not SimpleAggregateFunction(sum, Float64)).
 	// "Has a measured argument domain" is the proxy for "computes from
-	// the value", and an explicit entry in wrapperTransportOverrides
-	// marks the measured exception. This is the same test that the
+	// the value", and an explicit transport on the spec or in the legacy
+	// override table marks the measured exception. This is the same test that the
 	// argsFirstOnly path in inferFunctionType applies, so that the two
 	// paths cannot disagree.
 	// A FIXED rule answers the same type for every argument, thus it
@@ -1282,7 +1282,7 @@ func applyFunctionWrappers(result CHType, class functionWrapperClass, name strin
 	// class wrapperAggregate and no argument domain, so the domain test
 	// alone does not catch it. See fixedResultFunctionType.
 	base, firstStack := splitWrapperStack(firstArgTypeOrZero(argTypes))
-	if _, keepsMarker := wrapperTransportOverrides[name]; !keepsMarker {
+	if !hasFunctionTransportOverride(name) {
 		_, constrained := argumentDomainFor(name)
 		rule, hasRule := functionRuleFor(name)
 		if constrained || (hasRule && fixedResultFunctionType(rule)) {

@@ -19,9 +19,29 @@ func TestMeasuredScalarSpellingAgainstClickHouse(t *testing.T) {
 	if endpoint == "" {
 		t.Skip("CHGEN_ORACLE_URL is not set")
 	}
+	type call struct {
+		name, argument  string
+		caseInsensitive bool
+	}
+	var calls []call
 	for _, name := range []string{"cbrt", "cosh", "erf", "erfc", "exp10", "exp2", "lgamma", "sinh", "tgamma"} {
+		calls = append(calls, call{name: name, argument: "toInt32(1)"})
+	}
+	data, err := os.ReadFile("../../testdata/clickhouse-string-function-rules.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	report, err := functionrules.Decode(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, function := range report.Functions {
+		calls = append(calls, call{name: function.Name, argument: "'AbC'", caseInsensitive: function.CaseInsensitive})
+	}
+	for _, call := range calls {
+		name := call.name
 		for _, spelling := range []string{name, strings.ToUpper(name), strings.ToUpper(name[:1]) + name[1:]} {
-			request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, endpoint, strings.NewReader("SELECT "+spelling+"(toInt32(1))"))
+			request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, endpoint, strings.NewReader("SELECT "+spelling+"("+call.argument+")"))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -34,7 +54,7 @@ func TestMeasuredScalarSpellingAgainstClickHouse(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if spelling == name {
+			if spelling == name || call.caseInsensitive {
 				if response.StatusCode != http.StatusOK {
 					t.Fatalf("%s: %s", spelling, body)
 				}

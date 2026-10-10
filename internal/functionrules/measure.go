@@ -160,17 +160,26 @@ func (s server) query(ctx context.Context, sql string) (string, int, error) {
 // Measure uses real Memory-table columns on an explicitly supplied disposable
 // server. It creates and removes only its uniquely named fixture table.
 func Measure(ctx context.Context, endpoint string, selected []string) (report Report, err error) {
+	return MeasureProfile(ctx, endpoint, Profile, selected)
+}
+
+// MeasureProfile measures only the explicit safe recipes of a known profile.
+func MeasureProfile(ctx context.Context, endpoint, profile string, selected []string) (report Report, err error) {
+	allowed, err := profileNames(profile)
+	if err != nil {
+		return report, err
+	}
 	address, err := url.Parse(endpoint)
 	if err != nil || (address.Scheme != "http" && address.Scheme != "https") || address.Host == "" || address.User != nil || address.RawQuery != "" || address.Fragment != "" || (address.Path != "" && address.Path != "/") {
 		return report, fmt.Errorf("use an explicit HTTP endpoint without credentials, query, or path")
 	}
 	if len(selected) == 0 {
-		selected = Names()
+		selected = allowed
 	}
 	selected = slices.Clone(selected)
 	slices.Sort(selected)
 	for i, name := range selected {
-		if !slices.Contains(names, name) || (i > 0 && selected[i-1] == name) {
+		if !slices.Contains(allowed, name) || (i > 0 && selected[i-1] == name) {
 			return report, fmt.Errorf("unknown or repeated safe recipe %q", name)
 		}
 	}
@@ -181,7 +190,7 @@ func Measure(ctx context.Context, endpoint string, selected []string) (report Re
 	if inventory.Source.Version != Version {
 		return report, fmt.Errorf("server version %s, require %s", inventory.Source.Version, Version)
 	}
-	report = Report{Format: 1, Profile: Profile, Source: inventory.Source}
+	report = Report{Format: 1, Profile: profile, Source: inventory.Source}
 	var nonce [12]byte
 	if _, err := rand.Read(nonce[:]); err != nil {
 		return report, err
@@ -199,7 +208,7 @@ func Measure(ctx context.Context, endpoint string, selected []string) (report Re
 	columns := make(map[string]string)
 	var declarations []string
 	rows := make([][]string, 4)
-	for _, probe := range plan(selected[0]) {
+	for _, probe := range profilePlan(profile, selected[0]) {
 		if _, exists := columns[probe.input]; exists {
 			continue
 		}
@@ -232,14 +241,18 @@ func Measure(ctx context.Context, endpoint string, selected []string) (report Re
 			return report, fmt.Errorf("safe scalar recipe %s is not a canonical server function", name)
 		}
 		function := Function{Name: name, CaseInsensitive: metadata.CaseInsensitive}
-		probes := plan(name)
-		numericProbeCount := 0
-		for _, base := range numericCases() {
-			numericProbeCount += len(wrappers(base))
+		probes := profilePlan(profile, name)
+		positiveBases := numericCases()
+		if profile == StringProfile {
+			positiveBases = stringBases
+		}
+		positiveProbeCount := 0
+		for _, base := range positiveBases {
+			positiveProbeCount += len(wrappers(base))
 		}
 		retryIndividuallyUntil := 0
 		for start := 0; start < len(probes); {
-			end := min(start+64, numericProbeCount)
+			end := min(start+64, positiveProbeCount)
 			if start < end && start >= retryIndividuallyUntil {
 				cells, ok, err := s.batch(ctx, table, columns, probes[start:end])
 				if err != nil {

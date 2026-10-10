@@ -28,16 +28,17 @@ func Decode(data []byte) (Report, error) {
 	if err := decoder.Decode(new(any)); err != io.EOF {
 		return report, fmt.Errorf("evidence must contain exactly one JSON document")
 	}
-	if report.Format != 1 || report.Profile != Profile || report.Source.Version != Version || report.Source.Revision == 0 || report.Source.BuildID == "" || len(report.Functions) == 0 {
+	allowed, profileErr := profileNames(report.Profile)
+	if profileErr != nil || report.Format != 1 || report.Source.Version != Version || report.Source.Revision == 0 || report.Source.BuildID == "" || len(report.Functions) == 0 {
 		return report, fmt.Errorf("incomplete or incompatible measurement provenance")
 	}
 	seen := make(map[string]bool)
 	for _, function := range report.Functions {
-		if !slices.Contains(names, function.Name) || seen[function.Name] {
+		if !slices.Contains(allowed, function.Name) || seen[function.Name] {
 			return report, fmt.Errorf("unknown or duplicate function recipe %q", function.Name)
 		}
 		seen[function.Name] = true
-		probes := plan(function.Name)
+		probes := profilePlan(report.Profile, function.Name)
 		if len(function.Cells) != len(probes) {
 			return report, fmt.Errorf("%s has an incomplete probe matrix", function.Name)
 		}
@@ -144,6 +145,30 @@ func specification(function Function, digest string) (string, error) {
 	for i, name := range accepted {
 		quoted[i] = strconv.Quote(name)
 	}
+	domain := fmt.Sprintf(`if arithmeticDecimalType(value) { return true }
+if len(value.Params) != 0 { return false }
+switch value.normalizedName() { case %s: return true }
+return false`, strings.Join(quoted, ", "))
+	return renderSpecification(function, digest, Profile, result, domain, strings.Join(accepted, ", ")+", Decimal", ""), nil
+}
+
+func profileSpecification(profile string, function Function, digest string) (string, error) {
+	if profile == StringProfile {
+		return stringSpecification(function, digest)
+	}
+	return specification(function, digest)
+}
+
+// DeclineReason explains why measured behavior cannot become a production rule.
+func DeclineReason(profile string, function Function) string {
+	_, err := profileSpecification(profile, function, "")
+	if err == nil {
+		return ""
+	}
+	return err.Error()
+}
+
+func renderSpecification(function Function, digest, profile, result, domain, expected, transport string) string {
 	spelling := ""
 	if !function.CaseInsensitive {
 		spelling = "exactSpelling: " + strconv.Quote(function.Name) + ","
@@ -153,16 +178,12 @@ func specification(function Function, digest string) (string, error) {
 family: semanticFamilyFixedResult,
 rule: fixedFunctionType(%q),
 class: wrapperTransparent,
+%s
 strategy: argsIndependent,
 domain: &argumentDomain{
-name: "measured numeric domain",
+name: "measured argument domain",
 accepts: func(value CHType) bool {
-if arithmeticDecimalType(value) { return true }
-if len(value.Params) != 0 { return false }
-switch value.normalizedName() {
-case %s: return true
-}
-return false
+%s
 },
 expected: %q,
 },
@@ -172,10 +193,10 @@ domainMode: argumentDomainRestricted,
 domainArgs: []int{0},
 parameterPolicy: parameterResultCurated,
 evidence: %q,
-},`, function.Name, spelling, result, strings.Join(quoted, ", "), strings.Join(accepted, ", ")+", Decimal", function.Name, "functionrules/"+Profile+"/"+digest), nil
+},`, strings.ToLower(function.Name), spelling, result, transport, domain, expected, function.Name, "functionrules/"+profile+"/"+digest)
 }
 
-func owns(entry ast.Expr) bool {
+func owns(entry ast.Expr, profile string) bool {
 	pair, ok := entry.(*ast.KeyValueExpr)
 	if !ok {
 		return false
@@ -198,7 +219,7 @@ func owns(entry ast.Expr) bool {
 			return false
 		}
 		evidence, err := strconv.Unquote(literal.Value)
-		return err == nil && strings.HasPrefix(evidence, "functionrules/"+Profile+"/")
+		return err == nil && strings.HasPrefix(evidence, "functionrules/"+profile+"/")
 	}
 	return false
 }
@@ -234,14 +255,14 @@ func Generate(source []byte, report Report) ([]byte, []string, error) {
 	}
 	measured := make(map[string]bool)
 	for _, function := range report.Functions {
-		measured[function.Name] = true
+		measured[strings.ToLower(function.Name)] = true
 	}
 	existing := make(map[string]int)
 	for i, element := range literal.Elts {
 		if entry, ok := element.(*ast.KeyValueExpr); ok {
 			if key, ok := entry.Key.(*ast.BasicLit); ok {
 				name, _ := strconv.Unquote(key.Value)
-				if owns(element) && !measured[name] {
+				if owns(element, report.Profile) && !measured[name] {
 					return nil, nil, fmt.Errorf("missing evidence for owned rule %s; measure the complete generated roster", name)
 				}
 				existing[name] = i
@@ -256,15 +277,16 @@ func Generate(source []byte, report Report) ([]byte, []string, error) {
 	var additions strings.Builder
 	var added []string
 	for _, function := range report.Functions {
-		text, err := specification(function, digest)
+		text, err := profileSpecification(report.Profile, function, digest)
+		key := strings.ToLower(function.Name)
 		if err != nil {
-			if i, exists := existing[function.Name]; exists && owns(literal.Elts[i]) {
+			if i, exists := existing[key]; exists && owns(literal.Elts[i], report.Profile) {
 				return nil, nil, fmt.Errorf("generated rule %s no longer satisfies its contract: %w", function.Name, err)
 			}
 			continue
 		}
-		if i, found := existing[function.Name]; found {
-			if !owns(literal.Elts[i]) {
+		if i, found := existing[key]; found {
+			if !owns(literal.Elts[i], report.Profile) {
 				return nil, nil, fmt.Errorf("refuse to overwrite existing manual rule %s", function.Name)
 			}
 			start := files.Position(literal.Elts[i].Pos()).Offset

@@ -12,6 +12,8 @@ func (r *runner) offline(_ options) {
 	r.command("verify", nil, "bash", "scripts/verify.sh")
 	if tool := r.tool("functionrules"); tool != "" {
 		r.gate("generated-function-rules", tool, "-evidence", "testdata/clickhouse-function-rules.json", "-check")
+		r.gate("generated-string-function-rules", tool, "-evidence", "testdata/clickhouse-string-function-rules.json", "-check")
+		r.output("function-gaps", "function-gaps.json", nil, tool, "-gaps")
 	}
 	if tool := r.tool("supportmanifest"); tool != "" {
 		if r.gate("support-manifest", tool, "-check") {
