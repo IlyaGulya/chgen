@@ -127,10 +127,10 @@ func stringSpecification(function Function, digest string) (string, error) {
 			return "", fmt.Errorf("negative domain %s is not proved", cell.Input)
 		}
 	}
-	domain := `return value.normalizedName() == "string" && len(value.Params) == 0`
+	domain := `primitives: "string",`
 	expected := "String"
 	if fixed {
-		domain = `return (value.normalizedName() == "string" && len(value.Params) == 0) || (value.normalizedName() == "fixedstring" && len(value.Params) == 1)`
+		domain += "\nfixedString: true,"
 		expected += ", FixedString"
 	}
 	transport := ""

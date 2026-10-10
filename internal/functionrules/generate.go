@@ -152,21 +152,14 @@ func specification(function Function, digest string) (string, error) {
 		return "", fmt.Errorf("missing representative legal numeric types")
 	}
 	slices.Sort(accepted)
-	quoted := make([]string, len(accepted))
-	for i, name := range accepted {
-		quoted[i] = strconv.Quote(name)
-	}
-	domain := fmt.Sprintf(`if arithmeticDecimalType(value) { return true }
-if len(value.Params) != 0 { return false }
-switch value.normalizedName() { case %s: return true }
-return false`, strings.Join(quoted, ", "))
+	domain := fmt.Sprintf("primitives: %q,\ndecimal: true,", strings.Join(accepted, " "))
 	text := renderSpecification(function, digest, Profile, result, domain, strings.Join(accepted, ", ")+", Decimal", "")
 	if len(excluded) != 0 {
 		var quoted []string
 		for _, input := range excluded {
 			quoted = append(quoted, strconv.Quote(input))
 		}
-		text = strings.Replace(text, "strategy: argsIndependent,", "strategy: argsIndependent,\nnonPortableInputs: []string{"+strings.Join(quoted, ",")+"},", 1)
+		text = strings.Replace(text, "spelling:", "nonPortableInputs: []string{"+strings.Join(quoted, ",")+"},\nspelling:", 1)
 	}
 	return text, nil
 }
@@ -190,29 +183,18 @@ func DeclineReason(profile string, function Function) string {
 func renderSpecification(function Function, digest, profile, result, domain, expected, transport string) string {
 	spelling := ""
 	if !function.CaseInsensitive {
-		spelling = "exactSpelling: " + strconv.Quote(function.Name) + ","
+		spelling = "exactSpelling: " + strconv.Quote(function.Name) + ",\n"
 	}
-	return fmt.Sprintf(`%q: {
+	return fmt.Sprintf(`%q: measuredUnarySpec(measuredUnaryFamily{
+result: %q,
 %s
-family: semanticFamilyFixedResult,
-rule: fixedFunctionType(%q),
-class: wrapperTransparent,
-%s
-strategy: argsIndependent,
-domain: &argumentDomain{
-name: "measured argument domain",
-accepts: func(value CHType) bool {
-%s
-},
 expected: %q,
-},
-gen: scalarCall(%q, 1),
-resultMode: resultRuleGeneric,
-domainMode: argumentDomainRestricted,
-domainArgs: []int{0},
-parameterPolicy: parameterResultCurated,
+%s
+}, measuredUnaryMember{
+spelling: %q,
+%s
 evidence: %q,
-},`, strings.ToLower(function.Name), spelling, result, transport, domain, expected, function.Name, "functionrules/"+profile+"/"+digest)
+}),`, strings.ToLower(function.Name), result, domain, expected, transport, function.Name, spelling, "functionrules/"+profile+"/"+digest)
 }
 
 func owns(entry ast.Expr, profile string) bool {
@@ -222,7 +204,18 @@ func owns(entry ast.Expr, profile string) bool {
 	}
 	value, ok := pair.Value.(*ast.CompositeLit)
 	if !ok {
-		return false
+		call, valid := pair.Value.(*ast.CallExpr)
+		if !valid || len(call.Args) != 2 {
+			return false
+		}
+		helper, valid := call.Fun.(*ast.Ident)
+		if !valid || helper.Name != "measuredUnarySpec" {
+			return false
+		}
+		value, ok = call.Args[1].(*ast.CompositeLit)
+		if !ok {
+			return false
+		}
 	}
 	for _, element := range value.Elts {
 		field, ok := element.(*ast.KeyValueExpr)

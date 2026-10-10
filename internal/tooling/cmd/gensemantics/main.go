@@ -83,6 +83,9 @@ func generate(root string) ([]byte, error) {
 							(helper.Name == "higherOrderSpecialSpec" || helper.Name == "higherOrderPartialSortSpec") {
 							families[name] = semanticFamilyDisplayName("semanticFamilyLambdaDedicated")
 						}
+						if helper, helperOK := call.Fun.(*ast.Ident); helperOK && helper.Name == "measuredUnarySpec" {
+							families[name] = semanticFamilyDisplayName("semanticFamilyFixedResult")
+						}
 					}
 					continue
 				}

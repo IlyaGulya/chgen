@@ -24,6 +24,7 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 		return result, err
 	}
 	args := functionArgs(function)
+	call := newCallContext(args, scope)
 	if higherOrder, known := higherOrderArrayFunctions[name]; known && function.Name.Name != higherOrder.spelling {
 		return CHType{}, fmt.Errorf("function %s does not match the measured case-sensitive spelling %s; %s", function.Name.Name, higherOrder.spelling, pinTypeHint)
 	}
@@ -35,18 +36,18 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 	if err := checkNestedAggregateArgs(name, function.Name.Name, args); err != nil {
 		return CHType{}, err
 	}
-	if err := validateFunctionCallSignature(name, function.Name.Name, function, scope, window); err != nil {
+	if err := validateFunctionCallSignature(name, function.Name.Name, function, call, window); err != nil {
 		return CHType{}, err
 	}
 	switch name {
 	case "if", "multiif", "coalesce", "ifnull":
-		return inferConditionalFamilyType(name, function.Name.Name, args, scope)
+		return inferConditionalFamilyType(name, function.Name.Name, call)
 	}
 	if route, ok := expressionFunctionRoutes[name]; ok {
-		return route(function, scope)
+		return route(function, call)
 	}
 	if _, isShift := temporalShiftFunctions[name]; isShift {
-		return inferTemporalShiftType(name, function.Name.Name, args, scope)
+		return inferTemporalShiftType(name, function.Name.Name, call)
 	}
 	// A higher-order function whose first argument is a lambda needs the
 	// lambda parameter in scope before any argument is typed. The generic
@@ -66,7 +67,7 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 	// from a constant argument. They are handled before the generic
 	// rule lookup for that reason.
 	if spec, sized := sizedConstructors[name]; sized {
-		return inferSizedConstructorType(spec, name, function.Name.Name, args, scope)
+		return inferSizedConstructorType(spec, name, function.Name.Name, call)
 	}
 	if spec, registered := functionRegistry[name]; registered {
 		if spec.resultMode == resultRuleUnknown {
@@ -127,7 +128,7 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 				domainErr := checkArgumentDomainAt(
 					function.Name.Name, domain, domainArgumentIndexes(name), len(args),
 					func(index int) (CHType, bool) {
-						argumentType, argErr := inferExprType(args[index], scope)
+						argumentType, argErr := call.argumentType(index)
 						if argErr != nil {
 							return CHType{}, false
 						}
@@ -162,7 +163,7 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 				if isStarArgument(arg) {
 					continue
 				}
-				inferred, argErr := inferExprType(arg, scope)
+				inferred, argErr := call.argumentType(index)
 				if argErr != nil {
 					// A placeholder argument keeps the bare
 					// fixed result, so countIf(a = ?) works.
@@ -216,7 +217,7 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 			if len(args) == 0 {
 				return CHType{}, fmt.Errorf("function %s has no arguments", function.Name.Name)
 			}
-			first, err := inferExprType(args[0], scope)
+			first, err := call.argumentType(0)
 			if err != nil {
 				return CHType{}, fmt.Errorf("function %s first argument: %w", function.Name.Name, err)
 			}
@@ -404,9 +405,9 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 					}
 				}
 			}
-			for offset, extra := range args[1:aggregateDataArgCount(name, len(args))] {
+			for offset := range args[1:aggregateDataArgCount(name, len(args))] {
 				index := offset + 1
-				extraType, extraErr := inferExprType(extra, scope)
+				extraType, extraErr := call.argumentType(index)
 				if extraErr != nil {
 					if errors.Is(extraErr, errPlaceholderResultType) {
 						continue
@@ -458,8 +459,8 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 		}
 	}
 	argTypes := make([]CHType, 0, len(args))
-	for _, arg := range args {
-		inferred, err := inferExprType(arg, scope)
+	for index := range args {
+		inferred, err := call.argumentType(index)
 		if err != nil {
 			return CHType{}, fmt.Errorf("function %s argument: %w", function.Name.Name, err)
 		}
@@ -1339,7 +1340,8 @@ func withoutNullableFunctionArgument(args []CHType) (CHType, error) {
 //   - ifNull: the result is Nullable only when the second argument is.
 //
 
-func inferConditionalFamilyType(name, displayName string, args []clickhouse.Expr, scope queryScope) (CHType, error) {
+func inferConditionalFamilyType(name, displayName string, call *CallContext) (CHType, error) {
+	args, scope := call.args, call.scope
 	var valueIndexes []int
 	switch name {
 	case "if":
@@ -1387,8 +1389,8 @@ func inferConditionalFamilyType(name, displayName string, args []clickhouse.Expr
 			if truth {
 				liveIndex, deadIndex = 1, 2
 			}
-			if _, err := inferExprType(args[deadIndex], scope); err != nil {
-				liveType, liveErr := inferExprType(args[liveIndex], scope)
+			if _, err := call.argumentType(deadIndex); err != nil {
+				liveType, liveErr := call.argumentType(liveIndex)
 				if liveErr != nil {
 					return CHType{}, fmt.Errorf("function %s argument: %w", displayName, liveErr)
 				}
@@ -1413,13 +1415,13 @@ func inferConditionalFamilyType(name, displayName string, args []clickhouse.Expr
 		if valueSlot[index] {
 			continue
 		}
-		if _, err := inferExprType(args[index], scope); err != nil && !errors.Is(err, errPlaceholderResultType) {
+		if _, err := call.argumentType(index); err != nil && !errors.Is(err, errPlaceholderResultType) {
 			return CHType{}, fmt.Errorf("function %s condition: %w", displayName, err)
 		}
 	}
 	valueTypes := make([]CHType, 0, len(valueIndexes))
 	for _, index := range valueIndexes {
-		valueType, err := inferExprType(args[index], scope)
+		valueType, err := call.argumentType(index)
 		if err != nil {
 			return CHType{}, fmt.Errorf("function %s argument: %w", displayName, err)
 		}
@@ -1637,7 +1639,8 @@ func branchArgumentLowCardinality(value CHType) bool {
 // the function's lowercase name. There is no per-call special case here:
 // this function only assembles the wrapperCall facts that the transport
 // needs.
-func inferLogicOperatorFunctionType(name, displayName string, args []clickhouse.Expr, scope queryScope) (CHType, error) {
+func inferLogicOperatorFunctionType(name, displayName string, call *CallContext) (CHType, error) {
+	args, scope := call.args, call.scope
 	if len(args) < 2 {
 		return CHType{}, fmt.Errorf(
 			"function %s needs at least 2 arguments, the call has %d; %s",
@@ -1656,8 +1659,8 @@ func inferLogicOperatorFunctionType(name, displayName string, args []clickhouse.
 			displayName, pinTypeHint,
 		)
 	}
-	for _, arg := range args {
-		argType, err := inferExprType(arg, scope)
+	for index, arg := range args {
+		argType, err := call.argumentType(index)
 		if err != nil {
 			if errors.Is(err, errPlaceholderResultType) {
 				othersConstant = false

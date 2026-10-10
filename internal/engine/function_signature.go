@@ -341,11 +341,11 @@ func functionSignatureFor(name string) (functionSignature, bool) {
 	return *spec.signature, true
 }
 
-func validateFunctionCallSignature(name, displayName string, function *clickhouse.FunctionExpr, scope queryScope, window bool) error {
+func validateFunctionCallSignature(name, displayName string, function *clickhouse.FunctionExpr, call *CallContext, window bool) error {
 	if spec, found := functionRegistry[name]; found && spec.exactSpelling != "" && displayName != spec.exactSpelling {
 		return fmt.Errorf("function %s does not match the measured case-sensitive spelling %s; %s", displayName, spec.exactSpelling, pinTypeHint)
 	}
-	args := functionArgs(function)
+	args := call.args
 	if higherOrder, found := higherOrderArrayFunctions[name]; found && len(args) > 0 &&
 		(isLambdaExpr(args[0]) || higherOrder.allowNoLambda) {
 		if window {
@@ -387,7 +387,7 @@ func validateFunctionCallSignature(name, displayName string, function *clickhous
 	if !window && !signature.allowBare {
 		return fmt.Errorf("function %s needs an OVER clause; %s", displayName, pinTypeHint)
 	}
-	for _, argument := range args {
+	for index, argument := range args {
 		unwrapped := unwrapColumnExpr(argument)
 		if isStarArgument(argument) || isLambdaExpr(unwrapped) {
 			continue
@@ -395,7 +395,7 @@ func validateFunctionCallSignature(name, displayName string, function *clickhous
 		if _, interval := unwrapped.(*clickhouse.IntervalExpr); interval {
 			continue
 		}
-		if _, err := inferExprType(argument, scope); err != nil && !errors.Is(err, errPlaceholderResultType) {
+		if _, err := call.argumentType(index); err != nil && !errors.Is(err, errPlaceholderResultType) {
 			return fmt.Errorf("function %s argument: %w", displayName, err)
 		}
 	}
@@ -416,7 +416,7 @@ func validateFunctionCallSignature(name, displayName string, function *clickhous
 			return err
 		}
 		if sort == argSortNumber || sort == argSortOffset || sort == argSortIntegerOffset || sort == argSortIndex {
-			argumentType, err := inferExprType(args[position], scope)
+			argumentType, err := call.argumentType(position)
 			if sort == argSortIntegerOffset {
 				offsetType := argumentType
 				if offsetType.normalizedName() == "lowcardinality" && len(offsetType.Params) == 1 {
@@ -478,7 +478,7 @@ func validateFunctionCallSignature(name, displayName string, function *clickhous
 	if err := checkSignatureConstantRanges(displayName, signature, args, parameters); err != nil {
 		return err
 	}
-	if err := checkSignatureRelations(displayName, signature, args, scope); err != nil {
+	if err := checkSignatureRelations(displayName, signature, call); err != nil {
 		return err
 	}
 	return nil
@@ -508,16 +508,17 @@ func checkSignatureConstantRanges(displayName string, signature functionSignatur
 	return nil
 }
 
-func checkSignatureRelations(displayName string, signature functionSignature, args []clickhouse.Expr, scope queryScope) error {
+func checkSignatureRelations(displayName string, signature functionSignature, call *CallContext) error {
+	args := call.args
 	for _, relation := range signature.relations {
 		if relation.left >= len(args) || relation.right >= len(args) {
 			continue
 		}
-		left, err := inferExprType(args[relation.left], scope)
+		left, err := call.argumentType(relation.left)
 		if err != nil {
 			return fmt.Errorf("function %s linked argument: %w", displayName, err)
 		}
-		right, err := inferExprType(args[relation.right], scope)
+		right, err := call.argumentType(relation.right)
 		if err != nil {
 			return fmt.Errorf("function %s linked argument: %w", displayName, err)
 		}

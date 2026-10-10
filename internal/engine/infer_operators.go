@@ -312,11 +312,12 @@ func inferIndexOperationType(expression *clickhouse.IndexOperation, scope queryS
 //	tupleElement(tup, 3, 'def')     String, the type of the default
 //
 // The function form never keeps the LowCardinality wrapper of the element.
-func inferTupleElementType(displayName string, args []clickhouse.Expr, scope queryScope) (CHType, error) {
+func inferTupleElementType(displayName string, call *CallContext) (CHType, error) {
+	args := call.args
 	if len(args) < 2 || len(args) > 3 {
 		return CHType{}, fmt.Errorf("function %s expects two or three arguments, got %d", displayName, len(args))
 	}
-	tupleType, err := inferExprType(args[0], scope)
+	tupleType, err := call.argumentType(0)
 	if err != nil {
 		return CHType{}, fmt.Errorf("function %s first argument: %w", displayName, err)
 	}
@@ -370,7 +371,7 @@ func inferTupleElementType(displayName string, args []clickhouse.Expr, scope que
 	// (measured on ClickHouse 25.8.29.51: tupleElement(tup, 3, 'def') is
 	// String, and tupleElement(named, 'zz', 5) is UInt8).
 	if len(args) == 3 {
-		defaultType, defaultErr := inferExprType(args[2], scope)
+		defaultType, defaultErr := call.argumentType(2)
 		if defaultErr != nil {
 			return CHType{}, fmt.Errorf("function %s default argument: %w", displayName, defaultErr)
 		}
@@ -475,7 +476,8 @@ func inferIntervalArithmeticType(operand clickhouse.Expr, interval *clickhouse.I
 // A unit of one week or more drops the timezone entirely (measured:
 // toStartOfInterval(dtz, INTERVAL 1 WEEK) is a bare Date), because the result
 // is date-only.
-func inferToStartOfIntervalType(displayName string, args []clickhouse.Expr, scope queryScope) (CHType, error) {
+func inferToStartOfIntervalType(displayName string, call *CallContext) (CHType, error) {
+	args := call.args
 	if len(args) < 2 {
 		return CHType{}, fmt.Errorf("function %s expects a value and an INTERVAL argument; %s", displayName, pinTypeHint)
 	}
@@ -483,7 +485,7 @@ func inferToStartOfIntervalType(displayName string, args []clickhouse.Expr, scop
 	if !ok || interval.Unit == nil {
 		return CHType{}, fmt.Errorf("function %s second argument is not an INTERVAL with a unit; %s", displayName, pinTypeHint)
 	}
-	valueType, err := inferExprType(args[0], scope)
+	valueType, err := call.argumentType(0)
 	if err != nil {
 		return CHType{}, fmt.Errorf("function %s first argument: %w", displayName, err)
 	}
@@ -557,7 +559,8 @@ func inferToStartOfIntervalType(displayName string, args []clickhouse.Expr, scop
 //   - a non-constant timezone argument is rejected with ILLEGAL_COLUMN
 //     ("must be a constant string"). The result type carries the zone NAME,
 //     so a non-constant zone has no static type at all.
-func inferToTimeZoneType(displayName string, args []clickhouse.Expr, scope queryScope) (CHType, error) {
+func inferToTimeZoneType(displayName string, call *CallContext) (CHType, error) {
+	args := call.args
 	if len(args) < 2 {
 		return CHType{}, fmt.Errorf("function %s expects a value and a timezone argument; %s", displayName, pinTypeHint)
 	}
@@ -565,7 +568,7 @@ func inferToTimeZoneType(displayName string, args []clickhouse.Expr, scope query
 	if !ok {
 		return CHType{}, fmt.Errorf("function %s needs a constant timezone; %s", displayName, pinTypeHint)
 	}
-	valueType, err := inferExprType(args[0], scope)
+	valueType, err := call.argumentType(0)
 	if err != nil {
 		return CHType{}, fmt.Errorf("function %s first argument: %w", displayName, err)
 	}
@@ -623,7 +626,8 @@ func inferToTimeZoneType(displayName string, args []clickhouse.Expr, scope query
 // An explicit timezone that is not a constant string stays a refusal: the
 // result type carries the zone name, so a non-constant zone has no static
 // type.
-func inferTimezoneCarryingType(name string, function *clickhouse.FunctionExpr, args []clickhouse.Expr, scope queryScope) (CHType, error) {
+func inferTimezoneCarryingType(name string, function *clickhouse.FunctionExpr, call *CallContext) (CHType, error) {
+	args := call.args
 	displayName := function.Name.Name
 	// stringLiteralAt returns the constant timezone at the given argument
 	// index, and whether that argument is present at all.
@@ -676,7 +680,7 @@ func inferTimezoneCarryingType(name string, function *clickhouse.FunctionExpr, a
 	if len(args) == 0 {
 		return CHType{}, fmt.Errorf("function %s has no arguments; %s", displayName, pinTypeHint)
 	}
-	valueType, err := inferExprType(args[0], scope)
+	valueType, err := call.argumentType(0)
 	if err != nil {
 		// A first argument that cannot be typed (for example a bare
 		// placeholder) keeps the historic bare result, exactly as the
@@ -920,7 +924,8 @@ var temporalShiftFunctions = map[string]bool{
 // is a value property, not a type property, so this domain refuses
 // String rather than crediting an execution-fragile answer, the same
 // choice the regression records for toFixedString's asymmetry.
-func inferTemporalShiftType(name, displayName string, args []clickhouse.Expr, scope queryScope) (CHType, error) {
+func inferTemporalShiftType(name, displayName string, call *CallContext) (CHType, error) {
+	args := call.args
 	subFineUnit, known := temporalShiftFunctions[name]
 	if !known {
 		return CHType{}, fmt.Errorf("function %s is not a recognised date-arithmetic function; %s", displayName, pinTypeHint)
@@ -928,7 +933,7 @@ func inferTemporalShiftType(name, displayName string, args []clickhouse.Expr, sc
 	if len(args) == 0 {
 		return CHType{}, fmt.Errorf("function %s has no arguments; %s", displayName, pinTypeHint)
 	}
-	valueType, err := inferExprType(args[0], scope)
+	valueType, err := call.argumentType(0)
 	if err != nil {
 		if errors.Is(err, errPlaceholderResultType) {
 			return CHType{Name: "DateTime"}, nil
@@ -946,7 +951,7 @@ func inferTemporalShiftType(name, displayName string, args []clickhouse.Expr, sc
 	lowCardinality := branchArgumentLowCardinality(valueType)
 	nullable := branchArgumentNullable(valueType)
 	if len(args) > 1 {
-		countType, err := inferExprType(args[1], scope)
+		countType, err := call.argumentType(1)
 		if err != nil && !errors.Is(err, errPlaceholderResultType) {
 			return CHType{}, fmt.Errorf("function %s shift count: %w", displayName, err)
 		}

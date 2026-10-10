@@ -35,11 +35,12 @@ func bitShiftRightFunctionType(args []CHType) (CHType, error) {
 	return CHType{Name: arithmeticIntegerTypeNames[result]}, nil
 }
 
-func inferUnixMillisecondsType(displayName string, args []clickhouse.Expr, scope queryScope) (CHType, error) {
+func inferUnixMillisecondsType(displayName string, call *CallContext) (CHType, error) {
+	args, scope := call.args, call.scope
 	if len(args) < 1 || len(args) > 2 {
 		return CHType{}, fmt.Errorf("function %s needs an integer and an optional constant timezone", displayName)
 	}
-	value, err := inferExprType(args[0], scope)
+	value, err := call.argumentType(0)
 	if err != nil {
 		return CHType{}, fmt.Errorf("function %s first argument: %w", displayName, err)
 	}

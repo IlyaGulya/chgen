@@ -261,7 +261,8 @@ func unwrapColumnExpr(expression clickhouse.Expr) clickhouse.Expr {
 // a constant. The exception is a result type that cannot go inside
 // LowCardinality, for example Decimal or DateTime64, which drops the
 // wrapper. See resultRejectsLowCardinality.
-func inferSizedConstructorType(spec sizedConstructor, name, displayName string, args []clickhouse.Expr, scope queryScope) (CHType, error) {
+func inferSizedConstructorType(spec sizedConstructor, name, displayName string, call *CallContext) (CHType, error) {
+	args, scope := call.args, call.scope
 	result, err := sizedConstructorResult(spec, displayName, args)
 	if err != nil {
 		return CHType{}, err
@@ -271,8 +272,8 @@ func inferSizedConstructorType(spec sizedConstructor, name, displayName string, 
 	// takes part in the LowCardinality "every other argument is a
 	// constant" test through transparentWrapperFlags.
 	argTypes := make([]CHType, 0, len(args))
-	for _, arg := range args {
-		inferred, argErr := inferExprType(arg, scope)
+	for index := range args {
+		inferred, argErr := call.argumentType(index)
 		if argErr != nil {
 			// A size argument is a constant literal, thus it always
 			// types. Any failure here is a real one and must refuse:
