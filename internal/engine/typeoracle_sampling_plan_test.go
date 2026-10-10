@@ -85,9 +85,7 @@ func measuredScalarSamplingExpansion(t *testing.T) []string {
 	}
 	var names []string
 	for _, function := range report.Functions {
-		if function.CaseInsensitive {
-			names = append(names, function.Name)
-		}
+		names = append(names, function.Name)
 	}
 	return names
 }

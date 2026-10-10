@@ -47,10 +47,10 @@ batch error to every expression. Negative domains, arity, aggregate parameter
 syntax and window placement are also measured.
 
 Only uniform Float64 or Int8 results with the measured wrapper behavior become
-fixed-result rules. Case-sensitive functions are deferred because the current
-generic registry folds function names. Consequently this profile generates
-13 rules, not all 22 measured names. Other function families need their own
-bounded recipes and signature contracts; discovery alone is not proof of
+fixed-result rules. The profile generates all 22 rules, including an exact
+spelling contract for its nine case-sensitive names. Names declared
+case-insensitive by ClickHouse keep accepting case variants. Other function
+families need their own bounded recipes and signature contracts; discovery alone is not proof of
 support.
 
 ## Verify without changing evidence

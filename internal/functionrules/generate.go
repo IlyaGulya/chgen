@@ -69,9 +69,6 @@ func expectedWrapper(input, result string) string {
 }
 
 func specification(function Function, digest string) (string, error) {
-	if !function.CaseInsensitive {
-		return "", fmt.Errorf("case-sensitive spelling requires a separate production signature contract")
-	}
 	byID := make(map[string]Cell)
 	for _, cell := range function.Cells {
 		byID[cell.ID] = cell
@@ -147,7 +144,12 @@ func specification(function Function, digest string) (string, error) {
 	for i, name := range accepted {
 		quoted[i] = strconv.Quote(name)
 	}
+	spelling := ""
+	if !function.CaseInsensitive {
+		spelling = "exactSpelling: " + strconv.Quote(function.Name) + ","
+	}
 	return fmt.Sprintf(`%q: {
+%s
 family: semanticFamilyFixedResult,
 rule: fixedFunctionType(%q),
 class: wrapperTransparent,
@@ -170,7 +172,7 @@ domainMode: argumentDomainRestricted,
 domainArgs: []int{0},
 parameterPolicy: parameterResultCurated,
 evidence: %q,
-},`, function.Name, result, strings.Join(quoted, ", "), strings.Join(accepted, ", ")+", Decimal", function.Name, "functionrules/"+Profile+"/"+digest), nil
+},`, function.Name, spelling, result, strings.Join(quoted, ", "), strings.Join(accepted, ", ")+", Decimal", function.Name, "functionrules/"+Profile+"/"+digest), nil
 }
 
 func owns(entry ast.Expr) bool {

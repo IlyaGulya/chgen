@@ -3,71 +3,74 @@
   "clickhouse_version": "25.8.29.51",
   "note": "Measured numeric unary expansion and array-size regressions on ClickHouse 25.8.29.51, seeds 1/7/42/99; accepted signatures and retirement audit unchanged",
   "cells": {
-    "current-combined-v1/seed-1/n-4516": {
+    "current-combined-v1/seed-1/n-4534": {
       "population": {
         "schema_version": 1,
         "profile_id": "current-combined-v1",
-        "profile_hash": "5a52870ab0e9596258ed1ead2a63142253b7effa1d70a9df99599270d26393c0"
+        "profile_hash": "0148cf75f7082f0793036f8dba77df37fac395f46d04860fe69c1d5039bcffe0"
       },
       "seed": 1,
-      "generated_expressions": 4516,
+      "generated_expressions": 4534,
       "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
       "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
-      "server_run": 1791619303,
-      "server_uptime_s": 4434,
-      "mismatch_signatures": [],
-      "blind43_signatures": [
-        "registry-fn-hex: chgen=String"
-      ]
-    },
-    "current-combined-v1/seed-42/n-4516": {
-      "population": {
-        "schema_version": 1,
-        "profile_id": "current-combined-v1",
-        "profile_hash": "5a52870ab0e9596258ed1ead2a63142253b7effa1d70a9df99599270d26393c0"
-      },
-      "seed": 42,
-      "generated_expressions": 4516,
-      "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
-      "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
-      "server_run": 1791619304,
-      "server_uptime_s": 4882,
-      "mismatch_signatures": [],
-      "blind43_signatures": [
-        "registry-fn-hex: chgen=String"
-      ]
-    },
-    "current-combined-v1/seed-7/n-4511": {
-      "population": {
-        "schema_version": 1,
-        "profile_id": "current-combined-v1",
-        "profile_hash": "5a52870ab0e9596258ed1ead2a63142253b7effa1d70a9df99599270d26393c0"
-      },
-      "seed": 7,
-      "generated_expressions": 4511,
-      "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
-      "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
-      "server_run": 1791619303,
-      "server_uptime_s": 4672,
-      "mismatch_signatures": [],
-      "blind43_signatures": [
-        "registry-fn-hex: chgen=String"
-      ]
-    },
-    "current-combined-v1/seed-99/n-4515": {
-      "population": {
-        "schema_version": 1,
-        "profile_id": "current-combined-v1",
-        "profile_hash": "5a52870ab0e9596258ed1ead2a63142253b7effa1d70a9df99599270d26393c0"
-      },
-      "seed": 99,
-      "generated_expressions": 4515,
-      "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
-      "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
-      "server_run": 1791619304,
-      "server_uptime_s": 5110,
+      "server_run": 1791625532,
+      "server_uptime_s": 220,
       "mismatch_signatures": [],
       "blind43_signatures": []
+    },
+    "current-combined-v1/seed-42/n-4534": {
+      "population": {
+        "schema_version": 1,
+        "profile_id": "current-combined-v1",
+        "profile_hash": "0148cf75f7082f0793036f8dba77df37fac395f46d04860fe69c1d5039bcffe0"
+      },
+      "seed": 42,
+      "generated_expressions": 4534,
+      "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
+      "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
+      "server_run": 1791625533,
+      "server_uptime_s": 378,
+      "mismatch_signatures": [],
+      "blind43_signatures": [
+        "registry-fn-greater: chgen=Nullable(UInt8)",
+        "registry-fn-hex: chgen=String",
+        "registry-fn-lessOrEquals: chgen=UInt8"
+      ]
+    },
+    "current-combined-v1/seed-7/n-4531": {
+      "population": {
+        "schema_version": 1,
+        "profile_id": "current-combined-v1",
+        "profile_hash": "0148cf75f7082f0793036f8dba77df37fac395f46d04860fe69c1d5039bcffe0"
+      },
+      "seed": 7,
+      "generated_expressions": 4531,
+      "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
+      "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
+      "server_run": 1791625532,
+      "server_uptime_s": 287,
+      "mismatch_signatures": [],
+      "blind43_signatures": [
+        "registry-fn-lessOrEquals: chgen=UInt8"
+      ]
+    },
+    "current-combined-v1/seed-99/n-4534": {
+      "population": {
+        "schema_version": 1,
+        "profile_id": "current-combined-v1",
+        "profile_hash": "0148cf75f7082f0793036f8dba77df37fac395f46d04860fe69c1d5039bcffe0"
+      },
+      "seed": 99,
+      "generated_expressions": 4534,
+      "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
+      "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
+      "server_run": 1791625533,
+      "server_uptime_s": 462,
+      "mismatch_signatures": [],
+      "blind43_signatures": [
+        "registry-fn-hex: chgen=String",
+        "registry-fn-less: chgen=UInt8"
+      ]
     }
   },
   "union_cells": {
@@ -75,7 +78,7 @@
       "population": {
         "schema_version": 1,
         "profile_id": "current-combined-v1",
-        "profile_hash": "5a52870ab0e9596258ed1ead2a63142253b7effa1d70a9df99599270d26393c0"
+        "profile_hash": "0148cf75f7082f0793036f8dba77df37fac395f46d04860fe69c1d5039bcffe0"
       },
       "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
       "fixture_signature": "rows=1 columns=i8:Int8,i16:Int16,i32:Int32,i64:Int64,u8:UInt8,u16:UInt16,u32:UInt32,u64:UInt64,f32:Float32,f64:Float64,dec:Decimal(18, 4),b:Bool,s:String,fs:FixedString(8),d:Date,dt:DateTime,dt64:DateTime64(3),ni32:Nullable(Int32),nf64:Nullable(Float64),ns:Nullable(String),arr_i:Array(Int32),arr_s:Array(String),m:Map(String, Int64),lc:LowCardinality(String),lcn:LowCardinality(Nullable(String)),e8:Enum8('a' = 1, 'zz' = 2),e16:Enum16('x' = 1, 'y' = 2),uid:UUID,ip4:IPv4,ip6:IPv6,i128:Int128,u128:UInt128,i256:Int256,u256:UInt256,d32:Decimal(9, 4),d64s:Decimal(18, 4),d128:Decimal(38, 4),tup:Tuple(Int32, String),dtz:DateTime('UTC'),dtz64:DateTime64(6, 'UTC'),dt32:Date32,dec256:Decimal(76, 4),sagg:SimpleAggregateFunction(sum, Int64),agg:AggregateFunction(uniq, UInt64),ni64:Nullable(Int64),arr_i64:Array(Int64),arr_n:Array(Nullable(Int32)),m_is:Map(Int32, String),nd:Nullable(Date),ndt:Nullable(DateTime),fs16:FixedString(16),nu64:Nullable(UInt64),ndec:Nullable(Decimal(18, 4)),aggif:AggregateFunction(sumIf, Int32, UInt8),variant:Variant(Int32, String),dyn:Dynamic,js:JSON,nst_a.a:Array(Int32),nst_a.b:Array(String),ntup:Tuple(x Int32, y String),m_arr:Map(String, Array(Int32)),m_tup:Map(String, Tuple(Int32, String)),dec76_0:Decimal(76, 0),dec76_76:Decimal(76, 76),api_aggregate_function:AggregateFunction(sum, Int64),api_array:Array(Int32),api_b_float16:BFloat16,api_bool:Bool,api_date:Date,api_date32:Date32,api_date_time:DateTime,api_date_time32:DateTime,api_date_time64:DateTime64(3),api_decimal:Decimal(18, 4),api_decimal128:Decimal(38, 4),api_decimal256:Decimal(76, 4),api_decimal32:Decimal(9, 4),api_decimal64:Decimal(18, 4),api_dynamic:Dynamic,api_enum:Enum8('a' = 1, 'b' = 2),api_enum16:Enum16('a' = 1, 'b' = 2),api_enum8:Enum8('a' = 1, 'b' = 2),api_fixed_string:FixedString(8),api_float32:Float32,api_float64:Float64,api_i_pv4:IPv4,api_i_pv6:IPv6,api_int128:Int128,api_int16:Int16,api_int256:Int256,api_int32:Int32,api_int64:Int64,api_int8:Int8,api_interval_day:IntervalDay,api_interval_hour:IntervalHour,api_interval_microsecond:IntervalMicrosecond,api_interval_millisecond:IntervalMillisecond,api_interval_minute:IntervalMinute,api_interval_month:IntervalMonth,api_interval_nanosecond:IntervalNanosecond,api_interval_quarter:IntervalQuarter,api_interval_second:IntervalSecond,api_interval_week:IntervalWeek,api_interval_year:IntervalYear,api_j_s_o_n:JSON,api_line_string:LineString,api_low_cardinality:LowCardinality(String),api_map:Map(String, Int32),api_multi_line_string:MultiLineString,api_multi_polygon:MultiPolygon,api_nested:Array(Tuple(a Int32, b String)),api_nullable:Nullable(Int32),api_point:Point,api_polygon:Polygon,api_ring:Ring,api_simple_aggregate_function:SimpleAggregateFunction(sum, Int64),api_string:String,api_tuple:Tuple(Int32, String),api_u_int128:UInt128,api_u_int16:UInt16,api_u_int256:UInt256,api_u_int32:UInt32,api_u_int64:UInt64,api_u_int8:UInt8,api_u_u_i_d:UUID,api_variant:Variant(Int32, String)",
@@ -85,7 +88,7 @@
         42,
         99
       ],
-      "server_run": 1791619304,
+      "server_run": 1791625533,
       "mismatch_signatures": [
         "registry-fn-addDays: chgen=Date ch=Nullable(Date)",
         "registry-fn-addDays: chgen=Date32 ch=Nullable(Date32)",

@@ -114,6 +114,9 @@ func measuredFacts(facts ...functionFact) []measuredFunctionFact {
 
 // functionSpec holds everything the resolver knows about one function.
 type functionSpec struct {
+	// exactSpelling pins a measured case-sensitive server name.
+	// Empty retains the existing case-insensitive lookup policy.
+	exactSpelling string
 	// family selects one reusable result and probe contract.
 	family functionSemanticFamily
 	// The derived fields seal the family contract on the production spec.
@@ -1084,6 +1087,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 	"greater":         {family: semanticFamilyPredicate, rule: fixedFunctionType("UInt8"), class: wrapperTransparent, strategy: argsIndependent, gen: scalarCall("greater", 2), measuredFacts: measuredFacts(functionFactComparesArgPair | functionFactDynamicForcesNullable), resultMode: resultRuleGeneric, domainMode: argumentDomainUnrestricted, parameterPolicy: parameterResultCurated, evidence: registryMeasurementEvidence},
 	"greaterorequals": {family: semanticFamilyPredicate, rule: fixedFunctionType("UInt8"), class: wrapperTransparent, strategy: argsIndependent, gen: scalarCall("greaterOrEquals", 2), measuredFacts: measuredFacts(functionFactComparesArgPair | functionFactDynamicForcesNullable), resultMode: resultRuleGeneric, domainMode: argumentDomainUnrestricted, parameterPolicy: parameterResultCurated, evidence: registryMeasurementEvidence},
 	"sin": {
+
 		family:   semanticFamilyFixedResult,
 		rule:     fixedFunctionType("Float64"),
 		class:    wrapperTransparent,
@@ -1113,6 +1117,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
 	},
 	"acos": {
+
 		family:   semanticFamilyFixedResult,
 		rule:     fixedFunctionType("Float64"),
 		class:    wrapperTransparent,
@@ -1142,6 +1147,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
 	},
 	"asin": {
+
 		family:   semanticFamilyFixedResult,
 		rule:     fixedFunctionType("Float64"),
 		class:    wrapperTransparent,
@@ -1171,6 +1177,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
 	},
 	"atan": {
+
 		family:   semanticFamilyFixedResult,
 		rule:     fixedFunctionType("Float64"),
 		class:    wrapperTransparent,
@@ -1200,6 +1207,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
 	},
 	"cos": {
+
 		family:   semanticFamilyFixedResult,
 		rule:     fixedFunctionType("Float64"),
 		class:    wrapperTransparent,
@@ -1229,6 +1237,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
 	},
 	"exp": {
+
 		family:   semanticFamilyFixedResult,
 		rule:     fixedFunctionType("Float64"),
 		class:    wrapperTransparent,
@@ -1258,6 +1267,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
 	},
 	"log": {
+
 		family:   semanticFamilyFixedResult,
 		rule:     fixedFunctionType("Float64"),
 		class:    wrapperTransparent,
@@ -1287,6 +1297,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
 	},
 	"log10": {
+
 		family:   semanticFamilyFixedResult,
 		rule:     fixedFunctionType("Float64"),
 		class:    wrapperTransparent,
@@ -1316,6 +1327,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
 	},
 	"log2": {
+
 		family:   semanticFamilyFixedResult,
 		rule:     fixedFunctionType("Float64"),
 		class:    wrapperTransparent,
@@ -1345,6 +1357,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
 	},
 	"sign": {
+
 		family:   semanticFamilyFixedResult,
 		rule:     fixedFunctionType("Int8"),
 		class:    wrapperTransparent,
@@ -1374,6 +1387,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
 	},
 	"sqrt": {
+
 		family:   semanticFamilyFixedResult,
 		rule:     fixedFunctionType("Float64"),
 		class:    wrapperTransparent,
@@ -1403,6 +1417,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
 	},
 	"tan": {
+
 		family:   semanticFamilyFixedResult,
 		rule:     fixedFunctionType("Float64"),
 		class:    wrapperTransparent,
@@ -1432,6 +1447,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
 	},
 	"tanh": {
+
 		family:   semanticFamilyFixedResult,
 		rule:     fixedFunctionType("Float64"),
 		class:    wrapperTransparent,
@@ -1454,6 +1470,276 @@ var functionSemanticSpecs = map[string]functionSpec{
 			expected: "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
 		},
 		gen:             scalarCall("tanh", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+	},
+	"cbrt": {
+		exactSpelling: "cbrt",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("Float64"),
+		class:         wrapperTransparent,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured numeric domain",
+			accepts: func(value CHType) bool {
+				if arithmeticDecimalType(value) {
+					return true
+				}
+				if len(value.Params) != 0 {
+					return false
+				}
+				switch value.normalizedName() {
+				case "bool", "float32", "float64", "int128", "int16", "int256", "int32", "int64", "int8", "uint128", "uint16", "uint256", "uint32", "uint64", "uint8":
+					return true
+				}
+				return false
+			},
+			expected: "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
+		},
+		gen:             scalarCall("cbrt", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+	},
+	"cosh": {
+		exactSpelling: "cosh",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("Float64"),
+		class:         wrapperTransparent,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured numeric domain",
+			accepts: func(value CHType) bool {
+				if arithmeticDecimalType(value) {
+					return true
+				}
+				if len(value.Params) != 0 {
+					return false
+				}
+				switch value.normalizedName() {
+				case "bool", "float32", "float64", "int128", "int16", "int256", "int32", "int64", "int8", "uint128", "uint16", "uint256", "uint32", "uint64", "uint8":
+					return true
+				}
+				return false
+			},
+			expected: "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
+		},
+		gen:             scalarCall("cosh", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+	},
+	"erf": {
+		exactSpelling: "erf",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("Float64"),
+		class:         wrapperTransparent,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured numeric domain",
+			accepts: func(value CHType) bool {
+				if arithmeticDecimalType(value) {
+					return true
+				}
+				if len(value.Params) != 0 {
+					return false
+				}
+				switch value.normalizedName() {
+				case "bool", "float32", "float64", "int128", "int16", "int256", "int32", "int64", "int8", "uint128", "uint16", "uint256", "uint32", "uint64", "uint8":
+					return true
+				}
+				return false
+			},
+			expected: "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
+		},
+		gen:             scalarCall("erf", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+	},
+	"erfc": {
+		exactSpelling: "erfc",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("Float64"),
+		class:         wrapperTransparent,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured numeric domain",
+			accepts: func(value CHType) bool {
+				if arithmeticDecimalType(value) {
+					return true
+				}
+				if len(value.Params) != 0 {
+					return false
+				}
+				switch value.normalizedName() {
+				case "bool", "float32", "float64", "int128", "int16", "int256", "int32", "int64", "int8", "uint128", "uint16", "uint256", "uint32", "uint64", "uint8":
+					return true
+				}
+				return false
+			},
+			expected: "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
+		},
+		gen:             scalarCall("erfc", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+	},
+	"exp10": {
+		exactSpelling: "exp10",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("Float64"),
+		class:         wrapperTransparent,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured numeric domain",
+			accepts: func(value CHType) bool {
+				if arithmeticDecimalType(value) {
+					return true
+				}
+				if len(value.Params) != 0 {
+					return false
+				}
+				switch value.normalizedName() {
+				case "bool", "float32", "float64", "int128", "int16", "int256", "int32", "int64", "int8", "uint128", "uint16", "uint256", "uint32", "uint64", "uint8":
+					return true
+				}
+				return false
+			},
+			expected: "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
+		},
+		gen:             scalarCall("exp10", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+	},
+	"exp2": {
+		exactSpelling: "exp2",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("Float64"),
+		class:         wrapperTransparent,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured numeric domain",
+			accepts: func(value CHType) bool {
+				if arithmeticDecimalType(value) {
+					return true
+				}
+				if len(value.Params) != 0 {
+					return false
+				}
+				switch value.normalizedName() {
+				case "bool", "float32", "float64", "int128", "int16", "int256", "int32", "int64", "int8", "uint128", "uint16", "uint256", "uint32", "uint64", "uint8":
+					return true
+				}
+				return false
+			},
+			expected: "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
+		},
+		gen:             scalarCall("exp2", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+	},
+	"lgamma": {
+		exactSpelling: "lgamma",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("Float64"),
+		class:         wrapperTransparent,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured numeric domain",
+			accepts: func(value CHType) bool {
+				if arithmeticDecimalType(value) {
+					return true
+				}
+				if len(value.Params) != 0 {
+					return false
+				}
+				switch value.normalizedName() {
+				case "bool", "float32", "float64", "int128", "int16", "int256", "int32", "int64", "int8", "uint128", "uint16", "uint256", "uint32", "uint64", "uint8":
+					return true
+				}
+				return false
+			},
+			expected: "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
+		},
+		gen:             scalarCall("lgamma", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+	},
+	"sinh": {
+		exactSpelling: "sinh",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("Float64"),
+		class:         wrapperTransparent,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured numeric domain",
+			accepts: func(value CHType) bool {
+				if arithmeticDecimalType(value) {
+					return true
+				}
+				if len(value.Params) != 0 {
+					return false
+				}
+				switch value.normalizedName() {
+				case "bool", "float32", "float64", "int128", "int16", "int256", "int32", "int64", "int8", "uint128", "uint16", "uint256", "uint32", "uint64", "uint8":
+					return true
+				}
+				return false
+			},
+			expected: "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
+		},
+		gen:             scalarCall("sinh", 1),
+		resultMode:      resultRuleGeneric,
+		domainMode:      argumentDomainRestricted,
+		domainArgs:      []int{0},
+		parameterPolicy: parameterResultCurated,
+		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+	},
+	"tgamma": {
+		exactSpelling: "tgamma",
+		family:        semanticFamilyFixedResult,
+		rule:          fixedFunctionType("Float64"),
+		class:         wrapperTransparent,
+		strategy:      argsIndependent,
+		domain: &argumentDomain{
+			name: "measured numeric domain",
+			accepts: func(value CHType) bool {
+				if arithmeticDecimalType(value) {
+					return true
+				}
+				if len(value.Params) != 0 {
+					return false
+				}
+				switch value.normalizedName() {
+				case "bool", "float32", "float64", "int128", "int16", "int256", "int32", "int64", "int8", "uint128", "uint16", "uint256", "uint32", "uint64", "uint8":
+					return true
+				}
+				return false
+			},
+			expected: "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
+		},
+		gen:             scalarCall("tgamma", 1),
 		resultMode:      resultRuleGeneric,
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},

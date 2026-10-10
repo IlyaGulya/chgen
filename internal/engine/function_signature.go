@@ -342,6 +342,9 @@ func functionSignatureFor(name string) (functionSignature, bool) {
 }
 
 func validateFunctionCallSignature(name, displayName string, function *clickhouse.FunctionExpr, scope queryScope, window bool) error {
+	if spec, found := functionRegistry[name]; found && spec.exactSpelling != "" && displayName != spec.exactSpelling {
+		return fmt.Errorf("function %s does not match the measured case-sensitive spelling %s; %s", displayName, spec.exactSpelling, pinTypeHint)
+	}
 	args := functionArgs(function)
 	if higherOrder, found := higherOrderArrayFunctions[name]; found && len(args) > 0 &&
 		(isLambdaExpr(args[0]) || higherOrder.allowNoLambda) {

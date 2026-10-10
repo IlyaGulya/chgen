@@ -1,10 +1,31 @@
 package functionrules_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/IlyaGulya/chgen"
 )
+
+func TestMeasuredScalarSpelling(t *testing.T) {
+	ddl := "CREATE TABLE t (i Int32) ENGINE=Memory"
+	for _, name := range []string{"cbrt", "cosh", "erf", "erfc", "exp10", "exp2", "lgamma", "sinh", "tgamma"} {
+		got, err := chgen.InferExpressionType(ddl, "t", name+"(i)")
+		if err != nil || got.String() != "Float64" {
+			t.Errorf("canonical %s: got %s, %v", name, got.String(), err)
+		}
+		for _, spelling := range []string{strings.ToUpper(name), strings.ToUpper(name[:1]) + name[1:]} {
+			if _, err := chgen.InferExpressionType(ddl, "t", spelling+"(i)"); err == nil || !strings.Contains(err.Error(), "case-sensitive spelling "+name) {
+				t.Errorf("case-sensitive function %s: expected canonical spelling diagnostic, got %v", spelling, err)
+			}
+		}
+	}
+	for _, name := range []string{"SIN", "Sin"} {
+		if _, err := chgen.InferExpressionType(ddl, "t", name+"(i)"); err != nil {
+			t.Errorf("case-insensitive %s: %v", name, err)
+		}
+	}
+}
 
 func TestGeneratedMeasuredRuleIsUsedByPublicInference(t *testing.T) {
 	ddl := "CREATE TABLE t (i Int32, n Nullable(Int32), lc LowCardinality(Int32), d Decimal(9, 2), s String) ENGINE = Memory"

@@ -21,7 +21,7 @@ func TestFunctionRulesGeneratedRuntime(t *testing.T) {
 	sql := filepath.Join(directory, "queries.sql")
 	for path, content := range map[string]string{
 		schema: "CREATE TABLE t (id UInt8, v Nullable(Float64), d Decimal(9, 2)) ENGINE=Memory",
-		sql:    "-- name: ReadMath :many\n-- result: Sin sin_value\n-- result: Cos cos_value\n-- result: Sign sign_value\n-- result: DecimalSin decimal_sin\nSELECT sin(v) AS sin_value, cos(v) AS cos_value, sign(v) AS sign_value, sin(d) AS decimal_sin FROM t ORDER BY id",
+		sql:    "-- name: ReadMath :many\n-- result: CubeRoot cube_root\n-- result: Cos cos_value\n-- result: Sign sign_value\n-- result: DecimalSin decimal_sin\nSELECT cbrt(v) AS cube_root, cos(v) AS cos_value, sign(v) AS sign_value, sin(d) AS decimal_sin FROM t ORDER BY id",
 	} {
 		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 			t.Fatal(err)
@@ -97,7 +97,7 @@ func TestMeasuredMath(t *testing.T) {
  if err := conn.Exec(ctx, "INSERT INTO t VALUES (1,0,0),(2,NULL,0)"); err != nil { t.Fatal(err) }
  rows, err := New(conn).ReadMath(ctx, ReadMathParams{})
  if err != nil { t.Fatal(err) }
- if len(rows)!=2 || rows[0].Sin==nil || *rows[0].Sin!=0 || rows[0].Cos==nil || *rows[0].Cos!=1 || rows[1].Sin!=nil || rows[1].Cos!=nil { t.Fatalf("wrong generated values: %+v", rows) }
+ if len(rows)!=2 || rows[0].CubeRoot==nil || *rows[0].CubeRoot!=0 || rows[0].Cos==nil || *rows[0].Cos!=1 || rows[1].CubeRoot!=nil || rows[1].Cos!=nil { t.Fatalf("wrong generated values: %+v", rows) }
  if rows[0].Sign==nil || *rows[0].Sign!=0 || rows[1].Sign!=nil || rows[0].DecimalSin!=0 || rows[1].DecimalSin!=0 { t.Fatalf("wrong generated Int8/Decimal values: %+v", rows) }
 }
 `

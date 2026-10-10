@@ -3,6 +3,8 @@ package functionrules_test
 import (
 	"bytes"
 	"encoding/json"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,6 +13,37 @@ import (
 
 	"github.com/IlyaGulya/chgen/internal/functionrules"
 )
+
+func TestMeasuredScalarSpellingAgainstClickHouse(t *testing.T) {
+	endpoint := os.Getenv("CHGEN_ORACLE_URL")
+	if endpoint == "" {
+		t.Skip("CHGEN_ORACLE_URL is not set")
+	}
+	for _, name := range []string{"cbrt", "cosh", "erf", "erfc", "exp10", "exp2", "lgamma", "sinh", "tgamma"} {
+		for _, spelling := range []string{name, strings.ToUpper(name), strings.ToUpper(name[:1]) + name[1:]} {
+			request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, endpoint, strings.NewReader("SELECT "+spelling+"(toInt32(1))"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			response, err := http.DefaultClient.Do(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			body, err := io.ReadAll(response.Body)
+			response.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if spelling == name {
+				if response.StatusCode != http.StatusOK {
+					t.Fatalf("%s: %s", spelling, body)
+				}
+			} else if response.Header.Get("X-ClickHouse-Exception-Code") != "46" {
+				t.Fatalf("%s: expected unknown-function Code 46, got %d: %s", spelling, response.StatusCode, body)
+			}
+		}
+	}
+}
 
 func TestMeasuredFunctionsGenerateRegistryCandidates(t *testing.T) {
 	endpoint := os.Getenv("CHGEN_FUNCTION_RULES_URL")
@@ -117,7 +150,8 @@ func TestGenerationRefusesToRetainAnUnprovedOwnedRule(t *testing.T) {
 		t.Fatal(err)
 	}
 	function := report["functions"].([]any)[0].(map[string]any)
-	function["case_insensitive"] = false
+	cell := function["cells"].([]any)[0].(map[string]any)
+	cell["execution"] = "UInt8"
 	data, err = json.Marshal(report)
 	if err != nil {
 		t.Fatal(err)
