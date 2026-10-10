@@ -114,7 +114,6 @@ const runtimeConsumer = `package contracts
 import (
  "crypto/rand"
  "encoding/hex"
- "math"
  "os"
  "testing"
  "github.com/ClickHouse/clickhouse-go/v2"
@@ -145,9 +144,31 @@ func TestMeasuredMath(t *testing.T) {
  portable, err := New(conn).ReadPortableMath(ctx, ReadPortableMathParams{})
  if err != nil { t.Fatal(err) }
  if len(portable)!=2 { t.Fatalf("wrong portable rows: %+v",portable) }
- for _, row := range portable {
-  if math.Abs(row.Exp-2.718281828459045)>1e-12 || row.Log!=0 || math.Abs(row.Tanh-0.7615941559557649)>1e-12 { t.Fatalf("wrong portable Float64 values: %+v",row) }
+ // FastOps and the fallback need not agree numerically. The generator's
+ // contract is correct types and lossless scanning of THIS server's values.
+ // A direct driver call is independent of the generated method and checks
+ // the actual result metadata as well as every value and field position.
+ witness, err := conn.Query(ctx, "SELECT exp(CAST(f32 AS Float64)), log(CAST(a AS Float64)), tanh(CAST(f32 AS Float64)), exp(v) FROM t WHERE id < 3 ORDER BY id")
+ if err != nil { t.Fatal(err) }
+ defer witness.Close()
+ types := witness.ColumnTypes()
+ if len(types)!=4 { t.Fatalf("wrong witness columns: %v",types) }
+ for i, want := range []string{"Float64","Float64","Float64","Nullable(Float64)"} {
+  if types[i].DatabaseTypeName()!=want { t.Fatalf("column %d: got %s, want %s",i,types[i].DatabaseTypeName(),want) }
  }
+ index := 0
+ for witness.Next() {
+  var expValue, logValue, tanhValue float64
+  var nullableExp *float64
+  if err := witness.Scan(&expValue,&logValue,&tanhValue,&nullableExp); err != nil { t.Fatal(err) }
+  if index>=len(portable) { t.Fatal("generated method lost a row") }
+  row := portable[index]
+  if row.Exp!=expValue || row.Log!=logValue || row.Tanh!=tanhValue || (row.NullableExp==nil)!=(nullableExp==nil) { t.Fatalf("generated values differ from driver witness: %+v",row) }
+  if nullableExp!=nil && *row.NullableExp!=*nullableExp { t.Fatal("generated nullable value differs from driver witness") }
+  index++
+ }
+ if err := witness.Err(); err != nil { t.Fatal(err) }
+ if index!=len(portable) { t.Fatal("generated method added a row") }
  if portable[0].NullableExp==nil || *portable[0].NullableExp!=1 || portable[1].NullableExp!=nil { t.Fatalf("nullable portable values: %+v",portable) }
  strings, err := New(conn).ReadStrings(ctx, ReadStringsParams{})
  if err != nil { t.Fatal(err) }
