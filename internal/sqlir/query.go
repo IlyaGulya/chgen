@@ -9,16 +9,47 @@ type Document struct {
 }
 
 type Select struct {
-	With    []CTE              `json:"with,omitempty"`
-	Items   []Item             `json:"items"`
-	From    []Relation         `json:"from,omitempty"`
-	Where   *Expr              `json:"where,omitempty"`
-	GroupBy []Expr             `json:"group_by,omitempty"`
-	Having  *Expr              `json:"having,omitempty"`
-	OrderBy []Order            `json:"order_by,omitempty"`
-	Limit   *Expr              `json:"limit,omitempty"`
-	Offset  *Expr              `json:"offset,omitempty"`
-	Windows []WindowDefinition `json:"windows,omitempty"`
+	Distinct      bool               `json:"distinct,omitzero"`
+	DistinctOn    []Expr             `json:"distinct_on,omitempty"`
+	Prewhere      *Expr              `json:"prewhere,omitempty"`
+	Top           *Top               `json:"top,omitempty"`
+	LimitBy       *LimitBy           `json:"limit_by,omitempty"`
+	Settings      []Setting          `json:"settings,omitempty"`
+	Format        string             `json:"format,omitempty"`
+	Inner         *Select            `json:"inner,omitempty"`
+	SetOperations []SetOperation     `json:"set_operations,omitempty"`
+	With          []CTE              `json:"with,omitempty"`
+	Items         []Item             `json:"items"`
+	From          []Relation         `json:"from,omitempty"`
+	Where         *Expr              `json:"where,omitempty"`
+	GroupBy       []Expr             `json:"group_by,omitempty"`
+	Having        *Expr              `json:"having,omitempty"`
+	OrderBy       []Order            `json:"order_by,omitempty"`
+	Limit         *Expr              `json:"limit,omitempty"`
+	LimitWithTies bool               `json:"limit_with_ties,omitzero"`
+	Offset        *Expr              `json:"offset,omitempty"`
+	Windows       []WindowDefinition `json:"windows,omitempty"`
+}
+
+type Top struct {
+	Count    Expr `json:"count"`
+	WithTies bool `json:"with_ties,omitzero"`
+}
+
+type LimitBy struct {
+	Count  Expr   `json:"count"`
+	Offset *Expr  `json:"offset,omitempty"`
+	Keys   []Expr `json:"keys"`
+}
+
+type Setting struct {
+	Name  string `json:"name"`
+	Value Expr   `json:"value"`
+}
+
+type SetOperation struct {
+	Kind  string `json:"kind"`
+	Query Select `json:"query"`
 }
 
 type WindowDefinition struct {
@@ -42,9 +73,14 @@ type Expr struct {
 	Kind          string   `json:"kind"`
 	Name          []string `json:"name,omitempty"`
 	Value         string   `json:"value,omitempty"`
+	Base          int      `json:"base,omitempty"`
+	Type          string   `json:"type,omitempty"`
 	Args          []Expr   `json:"args,omitempty"`
+	Parameters    []Expr   `json:"parameters,omitempty"`
+	Distinct      bool     `json:"distinct,omitzero"`
 	Query         *Select  `json:"query,omitempty"`
 	Parenthesized bool     `json:"parenthesized,omitzero"`
+	Quoted        bool     `json:"quoted,omitzero"`
 	Window        *Window  `json:"window,omitempty"`
 }
 
@@ -58,6 +94,7 @@ type Window struct {
 }
 
 type Relation struct {
+	Final         bool      `json:"final,omitzero"`
 	Span          *Span     `json:"span,omitempty"`
 	Kind          string    `json:"kind"`
 	Name          []string  `json:"name,omitempty"`
@@ -69,6 +106,7 @@ type Relation struct {
 	Modifiers     []string  `json:"modifiers,omitempty"`
 	On            []Expr    `json:"on,omitempty"`
 	Using         []Expr    `json:"using,omitempty"`
+	Items         []Item    `json:"items,omitempty"`
 	Parenthesized bool      `json:"parenthesized,omitzero"`
 }
 
@@ -82,4 +120,12 @@ type Span struct {
 type Order struct {
 	Expr      Expr   `json:"expr"`
 	Direction string `json:"direction"`
+	Fill      *Fill  `json:"fill,omitempty"`
+}
+
+type Fill struct {
+	From      *Expr `json:"from,omitempty"`
+	To        *Expr `json:"to,omitempty"`
+	Step      *Expr `json:"step,omitempty"`
+	Staleness *Expr `json:"staleness,omitempty"`
 }

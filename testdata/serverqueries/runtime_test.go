@@ -3,6 +3,7 @@ package queries
 import (
 	"errors"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -16,6 +17,27 @@ func TestNativeParametersAndUnsupportedGrammar(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = conn.Close() })
 	q := New(conn)
+	setRows, err := q.ParenthesizedSet(t.Context(), ParenthesizedSetParams{Start: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var setValues []uint32
+	for _, row := range setRows {
+		setValues = append(setValues, row.Value)
+	}
+	slices.Sort(setValues)
+	if !slices.Equal(setValues, []uint32{0, 2}) {
+		t.Fatalf("native parameter in parenthesized set: %v", setValues)
+	}
+	for _, example := range []struct {
+		left, right string
+		want        float64
+	}{{"abc", "abc", 1}, {"abc", "xyz", 0}} {
+		row, err := q.Comparison(t.Context(), ComparisonParams{Left: example.left, Right: example.right})
+		if err != nil || row.Similarity != example.want {
+			t.Fatalf("server-owned function inference: %+v, %v", row, err)
+		}
+	}
 	formatted, err := q.Formatting(t.Context(), FormattingParams{})
 	if err != nil || formatted.Label != "value:0" {
 		t.Fatalf("keyword-shaped function and schema: %+v, %v", formatted, err)

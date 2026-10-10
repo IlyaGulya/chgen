@@ -161,4 +161,37 @@ func TestSeriesRowsAndTypes(t *testing.T) {
 			t.Fatalf("lambda scopes and captures: %+v", lambdas)
 		}
 	}
+	setRows, err := q.SetRows(t.Context(), SetRowsParams{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	setValues := scalarValues(setRows, func(row SetRowsRow) uint32 { return row.Value })
+	slices.Sort(setValues)
+	if !slices.Equal(setValues, []uint32{0, 2, 3}) {
+		t.Fatalf("parenthesized set and common output type: %v", setValues)
+	}
+	ties, err := q.TiesRows(t.Context(), TiesRowsParams{})
+	if err != nil || !slices.Equal(scalarValues(ties, func(row TiesRowsRow) uint8 { return row.Value }), []uint8{0, 0, 0}) {
+		t.Fatalf("derived SELECT owns WITH TIES: %+v, %v", ties, err)
+	}
+	arrayCase, err := q.ArrayCaseRows(t.Context(), ArrayCaseRowsParams{})
+	if err != nil || len(arrayCase) != 4 {
+		t.Fatalf("ARRAY JOIN and CASE: %+v, %v", arrayCase, err)
+	}
+	for index, expected := range []struct {
+		number uint64
+		value  uint32
+	}{{0, 0}, {0, 1}, {1, 1}, {1, 2}} {
+		if arrayCase[index].Number != expected.number || arrayCase[index].Value != expected.value {
+			t.Fatalf("ARRAY JOIN row: %+v", arrayCase[index])
+		}
+	}
+	aggregate, err := q.ParametricAggregate(t.Context(), ParametricAggregateParams{})
+	if err != nil || aggregate.Median != 1.5 || aggregate.DistinctCount != uint64(2) {
+		t.Fatalf("parametric and DISTINCT aggregates: %+v, %v", aggregate, err)
+	}
+	filled, err := q.FillRows(t.Context(), FillRowsParams{})
+	if err != nil || !slices.Equal(scalarValues(filled, func(row FillRowsRow) uint32 { return row.Value }), []uint32{0, 1, 2, 3}) {
+		t.Fatalf("WITH FILL: %+v, %v", filled, err)
+	}
 }

@@ -1662,10 +1662,10 @@ func packageDocumentation(t *testing.T, root, packagePath string) string {
 
 func expectedPublicNames() []string {
 	return []string{
-		"CHType", "Check", "CheckReport", "Column", "Command", "CommandExec", "CommandMany", "CommandOne", "Config", "Diagnostic", "ExplainError",
+		"CHType", "Check", "CheckReport", "CheckServer", "Column", "Command", "CommandExec", "CommandMany", "CommandOne", "Config", "Diagnostic", "ExplainError",
 		"ExternalColumn", "ExternalParam", "Generate", "InferExpressionType", "InferQueryResultType",
 		"InputEntry", "LoadConfig", "MeasuredCHVersion", "PackageConfig", "Param", "ParseQueryFiles",
-		"ParseSchemaCatalogs", "Query", "Result", "Run", "Schema", "SchemaCatalogs", "Table", "TableEngine",
+		"ParseSchemaCatalogs", "Query", "Result", "Run", "RunServer", "Schema", "SchemaCatalogs", "ServerOptions", "Table", "TableEngine",
 	}
 }
 

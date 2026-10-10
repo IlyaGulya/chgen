@@ -11,7 +11,10 @@ import (
 // ErrBindingUnmodeled is an explicit domain boundary, not invalid SQL.
 var ErrBindingUnmodeled = errors.New("IR binding does not model this query")
 
-type Column struct{ Name, Type string }
+type Column struct {
+	Name, Type string
+	Fields     map[string]string
+}
 type Table struct {
 	Name, Alias string
 	Columns     []Column
@@ -32,24 +35,28 @@ type BindingReport struct {
 
 // BoundScope contains catalog identities and types, never parser AST nodes.
 type BoundScope struct {
-	tables  []Table
-	columns map[string]string
-	merged  map[string]string
-	scalars map[string]string
-	parent  *BoundScope
-	aliases map[string]Expr
-	windows map[string]Window
-	locals  map[string]bool
-	report  BindingReport
+	tables   []Table
+	columns  map[string]string
+	merged   map[string]string
+	scalars  map[string]string
+	parent   *BoundScope
+	aliases  map[string]Expr
+	windows  map[string]Window
+	locals   map[string]bool
+	reserved map[string]bool
+	inputs   map[int]*ScopeContext
+	report   BindingReport
 }
 
 // ScopeContext is a typed lexical input, independent of parser AST nodes.
 // Scalar signatures distinguish outer expressions from catalog columns.
 type ScopeContext struct {
-	Tables  []Table
-	Merged  map[string]string
-	Scalars map[string]string
-	Parent  *ScopeContext
+	Tables   []Table
+	Merged   map[string]string
+	Scalars  map[string]string
+	Parent   *ScopeContext
+	Reserved map[string]bool
+	Inputs   map[int]*ScopeContext
 }
 
 type BindingError struct {
@@ -66,6 +73,21 @@ func (e *BindingError) Error() string { return e.Message }
 // path. Eligible relation trees are validated recursively, not partly erased.
 func BindingDomain(document *Document) error {
 	query := document.Select
+	for _, expression := range selectExtraExpressions(query) {
+		if err := bindingExprDomain(expression); err != nil {
+			return err
+		}
+	}
+	if query.Inner != nil {
+		if err := BindingDomain(&Document{Select: *query.Inner}); err != nil {
+			return err
+		}
+	}
+	for _, operation := range query.SetOperations {
+		if err := BindingDomain(&Document{Select: operation.Query}); err != nil {
+			return err
+		}
+	}
 	if len(query.From) > 1 {
 		return ErrBindingUnmodeled
 	}
@@ -118,8 +140,49 @@ func BindingDomain(document *Document) error {
 	return nil
 }
 
+func selectExtraExpressions(query Select) []Expr {
+	result := slices.Clone(query.DistinctOn)
+	if query.Prewhere != nil {
+		result = append(result, *query.Prewhere)
+	}
+	if query.Top != nil {
+		result = append(result, query.Top.Count)
+	}
+	if query.LimitBy != nil {
+		result = append(result, query.LimitBy.Count)
+		if query.LimitBy.Offset != nil {
+			result = append(result, *query.LimitBy.Offset)
+		}
+		result = append(result, query.LimitBy.Keys...)
+	}
+	for _, setting := range query.Settings {
+		result = append(result, setting.Value)
+	}
+	for _, order := range query.OrderBy {
+		if order.Fill == nil {
+			continue
+		}
+		for _, expression := range []*Expr{order.Fill.From, order.Fill.To, order.Fill.Step, order.Fill.Staleness} {
+			if expression != nil {
+				result = append(result, *expression)
+			}
+		}
+	}
+	return result
+}
+
 func bindingRelationDomain(relation Relation) error {
 	switch relation.Kind {
+	case "array_join":
+		for _, item := range relation.Items {
+			if err := bindingExprDomain(item.Expr); err != nil {
+				return err
+			}
+		}
+		if relation.Right != nil {
+			return bindingRelationDomain(*relation.Right)
+		}
+		return nil
 	case "table", "function":
 		return nil
 	case "derived":
@@ -185,18 +248,15 @@ func bindingExprDomain(expression Expr) error {
 		}
 		return BindingDomain(&Document{Select: *expression.Query})
 	case "identifier":
-		if len(expression.Name) < 1 || len(expression.Name) > 2 {
+		if len(expression.Name) < 1 || len(expression.Name) > 3 {
 			return ErrBindingUnmodeled
 		}
-		// Literal versus quoted-name precedence still belongs to the legacy binder.
-		if len(expression.Name) == 1 && slices.Contains([]string{"null", "true", "false"}, strings.ToLower(expression.Name[0])) {
-			return ErrBindingUnmodeled
-		}
-	case "number", "wildcard", "operator", "call", "tuple", "window_frame", "frame_between", "frame_bound":
+	case "interval", "case", "when", "else", "cast", "null_check", "subscript", "index", "null", "bool", "placeholder",
+		"number", "string", "array", "unary", "between", "wildcard", "operator", "call", "tuple", "window_frame", "frame_between", "frame_bound":
 	default:
 		return ErrBindingUnmodeled
 	}
-	for _, argument := range expression.Args {
+	for _, argument := range append(slices.Clone(expression.Parameters), expression.Args...) {
 		if err := bindingExprDomain(argument); err != nil {
 			return err
 		}
@@ -210,7 +270,7 @@ func containsQuery(expression Expr) bool {
 	if expression.Query != nil {
 		return true
 	}
-	if slices.ContainsFunc(expression.Args, containsQuery) {
+	if slices.ContainsFunc(expression.Args, containsQuery) || slices.ContainsFunc(expression.Parameters, containsQuery) {
 		return true
 	}
 	if window := expression.Window; window != nil {
@@ -237,6 +297,8 @@ func contextScope(context *ScopeContext) *BoundScope {
 		return nil
 	}
 	scope := &BoundScope{tables: context.Tables, merged: context.Merged, scalars: context.Scalars, columns: make(map[string]string), aliases: make(map[string]Expr), parent: contextScope(context.Parent), report: BindingReport{Backend: "sqlir", References: []Reference{}}}
+	scope.reserved = context.Reserved
+	scope.inputs = context.Inputs
 	for _, table := range context.Tables {
 		for _, column := range table.Columns {
 			scope.columns[column.Name] = column.Type
@@ -287,6 +349,11 @@ func BindContext(document *Document, context *ScopeContext) (*BoundScope, error)
 			return nil, err
 		}
 	}
+	for _, expression := range selectExtraExpressions(query) {
+		if err := scope.bindClause(expression, "SELECT clause"); err != nil {
+			return nil, err
+		}
+	}
 	for _, expression := range query.GroupBy {
 		if err := scope.bindClause(expression, "GROUP BY expression"); err != nil {
 			return nil, err
@@ -313,6 +380,27 @@ func BindContext(document *Document, context *ScopeContext) (*BoundScope, error)
 }
 
 func (scope *BoundScope) bindJoin(relation Relation, seen int) (int, error) {
+	if relation.Kind == "array_join" {
+		local := *scope
+		local.tables = scope.tables[:seen]
+		for _, item := range relation.Items {
+			if item.Expr.Span != nil {
+				if context := scope.inputs[item.Expr.Span.Start]; context != nil {
+					input := contextScope(context)
+					input.aliases, input.windows, input.report = scope.aliases, scope.windows, local.report
+					local = *input
+				}
+			}
+			if err := local.bindClause(item.Expr, "ARRAY JOIN expression"); err != nil {
+				return seen, err
+			}
+		}
+		scope.report = local.report
+		if relation.Right != nil {
+			return scope.bindJoin(*relation.Right, seen)
+		}
+		return seen, nil
+	}
 	if relation.Kind != "join" {
 		return seen + 1, nil
 	}
@@ -386,8 +474,8 @@ func (scope *BoundScope) bindExpr(expression Expr, active map[string]bool, useSp
 	}
 	if expression.Kind == "identifier" {
 		qualifier, name := "", expression.Name[0]
-		if len(expression.Name) == 2 {
-			qualifier, name = expression.Name[0], expression.Name[1]
+		if len(expression.Name) >= 2 {
+			qualifier, name = strings.Join(expression.Name[:len(expression.Name)-1], "."), expression.Name[len(expression.Name)-1]
 			if scope.locals[qualifier] {
 				return ErrBindingUnmodeled
 			}
@@ -413,6 +501,9 @@ func (scope *BoundScope) bindExpr(expression Expr, active map[string]bool, useSp
 		}
 		table, typ, err := scope.resolveColumn(qualifier, name)
 		if err != nil {
+			if qualifier == "" && !expression.Quoted && (strings.EqualFold(name, "true") || strings.EqualFold(name, "false")) {
+				return nil
+			}
 			return &BindingError{Name: name, Qualifier: qualifier, Span: expression.Span, Message: err.Error()}
 		}
 		span := expression.Span
@@ -431,8 +522,11 @@ func (scope *BoundScope) bindExpr(expression Expr, active map[string]bool, useSp
 			return &BindingError{Name: expression.Name[0], Span: expression.Span, Message: fmt.Sprintf("wildcard qualifier %q is not a FROM source", expression.Name[0])}
 		}
 	}
-	for _, argument := range expression.Args {
+	for _, argument := range append(slices.Clone(expression.Parameters), expression.Args...) {
 		if err := scope.bindExpr(argument, active, useSpan); err != nil {
+			if expression.Kind == "call" {
+				return fmt.Errorf("function %s argument: %w", expression.Value, err)
+			}
 			return err
 		}
 	}
@@ -445,6 +539,17 @@ func (scope *BoundScope) Lookup(qualifier, name string) (string, error) {
 }
 
 func (scope *BoundScope) resolveColumn(qualifier, name string) (string, string, error) {
+	if qualifier != "" {
+		for _, table := range scope.tables {
+			for _, column := range table.Columns {
+				if column.Name == qualifier || table.Alias+"."+column.Name == qualifier || table.Name+"."+column.Name == qualifier {
+					if typ, ok := column.Fields[name]; ok {
+						return table.Name, typ, nil
+					}
+				}
+			}
+		}
+	}
 	if qualifier == "" {
 		if scalar, found := scope.scalars[name]; found {
 			return "", scalar, nil
@@ -476,6 +581,9 @@ func (scope *BoundScope) resolveColumn(qualifier, name string) (string, string, 
 		return source, merged, nil
 	}
 	if count == 0 {
+		if qualifier == "" && scope.reserved[name] {
+			return "", "", fmt.Errorf("scalar CTE %q is not resolved", name)
+		}
 		if scope.parent != nil && !localQualifier {
 			return scope.parent.resolveColumn(qualifier, name)
 		}

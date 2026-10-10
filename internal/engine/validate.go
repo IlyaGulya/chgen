@@ -218,6 +218,14 @@ func validateQueryFields(query Query) error {
 	if !ok {
 		return fmt.Errorf("%s query must be a SELECT, got %T", query.Command, statements[0])
 	}
+	leaves, err := setQueryLeaves(selectQuery)
+	if err != nil {
+		return err
+	}
+	if len(leaves) == 0 {
+		return fmt.Errorf("SELECT query has no result branch")
+	}
+	selectQuery = leaves[0]
 	if query.wildcardSQL != "" {
 		if query.SQL != query.wildcardSQL {
 			return fmt.Errorf("wildcard SQL changed after catalog resolution; parse the query again")

@@ -44,6 +44,7 @@ field ExternalParam.SchemaName string
 field ExternalParam.WireName string
 field InputEntry.Entry string
 field InputEntry.Path string
+field PackageConfig.Analysis string
 field PackageConfig.Name string
 field PackageConfig.Output string
 field PackageConfig.Queries []InputEntry
@@ -70,6 +71,13 @@ field Result.SQLName string
 field Schema.Tables map[string]Table
 field SchemaCatalogs.External *Schema
 field SchemaCatalogs.Physical *Schema
+field ServerOptions.Database string
+field ServerOptions.ParameterExamples map[string]map[string]string
+field ServerOptions.Password string
+field ServerOptions.Server string
+field ServerOptions.SnapshotInput string
+field ServerOptions.SnapshotOutput string
+field ServerOptions.User string
 field Table.ColumnOrder []string
 field Table.Columns map[string]Column
 field Table.Engine *TableEngine
@@ -85,6 +93,7 @@ field TableEngine.SampleBy string
 field TableEngine.Settings map[string]string
 field TableEngine.TTL string
 func Check(configPath string) (CheckReport, error)
+func CheckServer(ctx context.Context, configPath string, options ServerOptions) error
 func ExplainError(err error) Diagnostic
 func Generate(packageName string, queries []Query) ([]byte, error)
 func InferExpressionType(ddl, tableName, expression string) (CHType, error)
@@ -93,6 +102,7 @@ func LoadConfig(path string) (*Config, error)
 func ParseQueryFiles(paths []string, catalogs *SchemaCatalogs) ([]Query, error)
 func ParseSchemaCatalogs(paths []string) (*SchemaCatalogs, error)
 func Run(configPath string) error
+func RunServer(ctx context.Context, configPath string, options ServerOptions) error
 method CHType.String() string
 type CHType struct
 type CheckReport struct
@@ -109,5 +119,6 @@ type Query struct
 type Result struct
 type Schema struct
 type SchemaCatalogs struct
+type ServerOptions struct
 type Table struct
 type TableEngine struct

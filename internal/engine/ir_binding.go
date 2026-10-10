@@ -13,12 +13,17 @@ import (
 )
 
 type irSelectBinding struct {
-	root  *sqlir.BoundScope
-	nodes map[*clickhouse.SelectQuery]*sqlir.BoundScope
+	root      *sqlir.BoundScope
+	nodes     map[*clickhouse.SelectQuery]*sqlir.BoundScope
+	documents map[*clickhouse.SelectQuery]*sqlir.Document
+	failure   error
 }
 
 func (binding *irSelectBinding) Report() sqlir.BindingReport {
-	report := binding.root.Report()
+	report := sqlir.BindingReport{Backend: "sqlir", References: []sqlir.Reference{}}
+	if binding.root != nil {
+		report = binding.root.Report()
+	}
 	report.References = slices.Clone(report.References)
 	for _, node := range slices.SortedFunc(maps.Keys(binding.nodes), func(a, b *clickhouse.SelectQuery) int { return cmp.Compare(a.Pos(), b.Pos()) }) {
 		if bound := binding.nodes[node]; bound != binding.root {
@@ -29,6 +34,29 @@ func (binding *irSelectBinding) Report() sqlir.BindingReport {
 }
 
 func bindIRSelect(query *clickhouse.SelectQuery, schema *Schema, sql string) (*irSelectBinding, error) {
+	binding, err := prepareIRSelect(query, sql)
+	if err != nil {
+		return nil, err
+	}
+	_, scopes, err := resolveScopeWithIRBinding(query, schema, binding)
+	if err != nil {
+		return nil, err
+	}
+	if binding.failure != nil {
+		return nil, binding.failure
+	}
+	for node, scope := range scopes.selects {
+		if scope.irBinding != nil {
+			binding.nodes[node] = scope.irBinding
+		}
+	}
+	binding.root = binding.nodes[query]
+	return binding, nil
+}
+
+// Prepare structure without a preliminary typed resolver pass. Each SELECT is
+// bound when its lexical sources become available during type resolution.
+func prepareIRSelect(query *clickhouse.SelectQuery, sql string) (*irSelectBinding, error) {
 	document, err := lowerSQLIR(query, sql)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", sqlir.ErrBindingUnmodeled, err)
@@ -36,45 +64,24 @@ func bindIRSelect(query *clickhouse.SelectQuery, schema *Schema, sql string) (*i
 	if err := sqlir.BindingDomain(document); err != nil {
 		return nil, err
 	}
-	scoped := map[*clickhouse.SelectQuery]queryScope{}
-	sourceKind := ""
-	if len(document.Select.From) != 0 {
-		sourceKind = document.Select.From[0].Kind
+	binding := &irSelectBinding{
+		nodes:     make(map[*clickhouse.SelectQuery]*sqlir.BoundScope),
+		documents: make(map[*clickhouse.SelectQuery]*sqlir.Document),
 	}
-	// Scalar subqueries need their own typed scope and cardinality checks.
-	hasSubquery := false
+	var lowerErr error
+	modifiers := irLimitModifiers(query, sql)
 	clickhouse.Walk(query, func(node clickhouse.Expr) bool {
-		if _, ok := node.(*clickhouse.SubQuery); ok {
-			hasSubquery = true
+		if nested, ok := node.(*clickhouse.SelectQuery); ok {
+			binding.documents[nested], lowerErr = lowerSelectIR(nested)
+			if lowerErr == nil {
+				markIRLimitModifiers(binding.documents[nested], modifiers)
+			}
 		}
-		return !hasSubquery
+		return lowerErr == nil
 	})
-	if !hasSubquery && len(document.Select.With) == 0 && (sourceKind == "table" || sourceKind == "function") {
-		scope := queryScope{}
-		if err := collectTables(query.From.Expr, schema, &scope, nil); err != nil {
-			return nil, err
-		}
-		scoped[query] = scope
-	} else {
-		_, index, err := resolveScope(query, schema)
-		if err != nil {
-			return nil, err
-		}
-		scoped = index.selects
+	if lowerErr != nil {
+		return nil, fmt.Errorf("%w: %v", sqlir.ErrBindingUnmodeled, lowerErr)
 	}
-	binding := &irSelectBinding{nodes: make(map[*clickhouse.SelectQuery]*sqlir.BoundScope)}
-	for _, node := range slices.SortedFunc(maps.Keys(scoped), func(a, b *clickhouse.SelectQuery) int { return cmp.Compare(a.Pos(), b.Pos()) }) {
-		nested, err := lowerSelectIR(node)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %v", sqlir.ErrBindingUnmodeled, err)
-		}
-		bound, err := bindIRCatalogScope(nested, scoped[node])
-		if err != nil {
-			return nil, err
-		}
-		binding.nodes[node] = bound
-	}
-	binding.root = binding.nodes[query]
 	return binding, nil
 }
 
@@ -84,11 +91,21 @@ func catalogIRContext(scope queryScope, aliasScope *queryScope) (*sqlir.ScopeCon
 		table := sqlir.Table{Name: source.table.Name, Alias: source.alias}
 		for _, name := range slices.Sorted(maps.Keys(source.table.Columns)) {
 			column := source.table.Columns[name]
-			// A two-part path can be a Tuple field rather than a relation qualifier.
+			lowered := sqlir.Column{Name: name, Type: column.Type.String()}
 			if isCHTuple(column.Type) {
-				return nil, sqlir.ErrBindingUnmodeled
+				lowered.Fields = make(map[string]string)
+				for _, field := range column.Type.ParamNames {
+					if field == "" {
+						continue
+					}
+					typ, err := tupleElementByName(column.Type, field, true)
+					if err != nil {
+						return nil, err
+					}
+					lowered.Fields[field] = typ.String()
+				}
 			}
-			table.Columns = append(table.Columns, sqlir.Column{Name: name, Type: column.Type.String()})
+			table.Columns = append(table.Columns, lowered)
 		}
 		tables = append(tables, table)
 	}
@@ -99,7 +116,34 @@ func catalogIRContext(scope queryScope, aliasScope *queryScope) (*sqlir.ScopeCon
 	for name, typ := range scope.usingQualified {
 		merged[name] = typ.String()
 	}
+	for name, typ := range scope.arrayJoinTypes {
+		merged[name] = typ.String()
+		if isCHTuple(typ) {
+			for _, field := range typ.ParamNames {
+				if field == "" {
+					continue
+				}
+				element, err := tupleElementByName(typ, field, true)
+				if err != nil {
+					return nil, err
+				}
+				merged[name+"."+field] = element.String()
+			}
+		}
+	}
+	for name, typ := range scope.arrayJoinQualified {
+		merged[name] = typ.String()
+	}
 	context := &sqlir.ScopeContext{Tables: tables, Merged: merged, Scalars: make(map[string]string)}
+	context.Reserved = maps.Clone(scope.reservedScalars)
+	context.Inputs = make(map[int]*sqlir.ScopeContext, len(scope.arrayJoinInputs))
+	for position, input := range scope.arrayJoinInputs {
+		before, err := catalogIRContext(input, nil)
+		if err != nil {
+			return nil, err
+		}
+		context.Inputs[position] = before
+	}
 	for name, typ := range scope.scalars {
 		context.Scalars[name] = typ.String()
 	}

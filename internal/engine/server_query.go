@@ -151,7 +151,11 @@ func PrepareServerSelect(sql string) (string, []ServerParameter, error) {
 			tokens = append(tokens, token)
 		}
 	}
-	if len(tokens) == 0 || tokens[0].quoted || !strings.EqualFold(tokens[0].text, "SELECT") && !strings.EqualFold(tokens[0].text, "WITH") {
+	statementStart := 0
+	for statementStart < len(tokens) && !tokens[statementStart].quoted && tokens[statementStart].text == "(" {
+		statementStart++
+	}
+	if statementStart == len(tokens) || tokens[statementStart].quoted || !strings.EqualFold(tokens[statementStart].text, "SELECT") && !strings.EqualFold(tokens[statementStart].text, "WITH") {
 		return "", nil, fmt.Errorf("server generation requires one SELECT or WITH ... SELECT")
 	}
 	copySQL := []byte(sql)
@@ -170,7 +174,10 @@ func PrepareServerSelect(sql string) (string, []ServerParameter, error) {
 			// statements. The server still validates the complete SELECT grammar.
 			identifierUse := i > 0 && tokens[i-1].text == "." ||
 				i+1 < len(tokens) && (tokens[i+1].text == "." || tokens[i+1].text == "(")
-			if len(stack) == 0 && !identifierUse {
+			// Initial parentheses enclose the statement, not an expression
+			// scope. Keep output and mutation guards active inside them and
+			// in following set-operation branches after they close.
+			if len(stack) <= statementStart && !identifierUse {
 				return "", nil, fmt.Errorf("server generation refuses top-level %s", token.text)
 			}
 		case "CHGEN":

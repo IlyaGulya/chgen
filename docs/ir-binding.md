@@ -1,6 +1,6 @@
 # Parser independent column binding
 
-chgen now uses the IR column binder in production for a bounded SELECT family.
+chgen uses the IR column binder for its supported SELECT forms.
 The binder consumes a complete lowered tree and catalog column identities,
 without importing the ClickHouse parser. Type inference and SQL generation
 remain in the existing engine.
@@ -12,13 +12,13 @@ CTEs, scalar subqueries, derived sources and JOIN chains. Each SELECT has its ow
 binding, including eligible bodies of CTEs, scalar subqueries and derived
 relations. SELECT without FROM is also eligible. Ordinary and qualified column
 references are resolved in projections, WHERE, ordinary GROUP BY, HAVING,
-ORDER BY, LIMIT and OFFSET;
+ORDER BY, LIMIT and OFFSET, PREWHERE, DISTINCT ON, TOP and LIMIT BY;
 JOIN conditions see only the sources introduced at that point. The existing
 wildcard expansion preserves column order and inclusion settings.
 
-Complex relations first obtain typed source signatures and lexical contexts
-from the existing resolver. The IR binder consumes these inputs and supplies
-column lookups during the final resolution pass. CTE declaration visibility,
+The adapter prepares the IR without a preliminary resolver pass. During one
+resolution pass, each SELECT receives its binding when its typed source
+signatures and lexical context are available. CTE declaration visibility,
 derived output types, JOIN common types and outer-join nullability still come
 from the established engine. This is not a parser-independent type inferencer
 or a complete replacement for legacy scope construction.
@@ -29,6 +29,11 @@ the established resolver. Scalar subqueries retain their complete SELECT tree
 and parentheses; each nested scope is bound separately. Existing single-column,
 cardinality and correlation restrictions remain in force, as does scalar-result
 nullability. Binding does not treat a subquery's columns as outer row bindings.
+
+UNION ALL, UNION DISTINCT, INTERSECT and EXCEPT retain their operator kinds,
+branch trees and parentheses. The first SELECT leaf supplies output names;
+the engine still checks branch widths and common output types. EXISTS bodies
+also retain their SELECT tree, including bodies with several output columns.
 
 Window functions retain their OVER specification, partition and order
 expressions, named-window references and frame bounds. ROWS and RANGE, bound
@@ -56,10 +61,23 @@ that are rebound against a derived query's rows. References to outer scalar
 expressions carry kind scalar rather than pretending to be catalog columns.
 An existing local qualifier prevents lookup from leaking into a parent source.
 
-Special grouping modes such as ROLLUP, CUBE and TOTALS, subqueries inside
-lambdas, tuple-field paths and
-literal-name precedence for NULL, true and false stay
-outside this domain. Queries that cannot lower completely, or fall outside the
+Named Tuple fields, including relation-qualified fields, are bound against
+typed field signatures. ARRAY JOIN retains its modifiers and expressions;
+its inputs use the scope before expansion, while projections use element
+types after expansion. CASE, CAST, null checks, arrays, subscripts, unary
+operators, BETWEEN, intervals and string and numeric literals have explicit
+nodes. Numeric bases and quoted identifier spelling remain distinguishable.
+Bare NULL is a literal; unquoted true and false remain column references when
+a column shadows the literal. Parametric function calls retain their parameter
+and data-argument lists separately, including DISTINCT.
+
+FINAL, DISTINCT, SETTINGS, FORMAT, TOP WITH TIES and ORDER BY WITH FILL are
+retained as structural properties. Structural coverage does not enable a clause
+that the engine refuses or bypass its settings validation.
+
+Special grouping modes such as ROLLUP, CUBE and TOTALS, INTERPOLATE, SAMPLE,
+and subqueries inside lambdas are still unsupported by the offline engine.
+Queries that cannot lower completely, or fall outside the
 binder domain, keep the legacy resolver. This is an explicit migration boundary,
 not an opt-in to skip checks. An unknown column inside the new domain is an
 invalid binding diagnostic with code ir-column-missing; it never triggers
@@ -81,10 +99,11 @@ UTF-8 byte offsets in the parsed SQL. These are provenance, not semantic tree
 properties, and frontend structure comparison excludes them. A spanless
 candidate can compare structure but does not establish source-position parity.
 
-The parser adapter removes LIMIT WITH TIES from its resolution copy because the
-pinned upstream AST has no node for it. Lowering refuses these queries rather
-than presenting an erased modifier as a complete tree. Runtime SQL and legacy
-generation of WITH TIES remain unchanged.
+The parser adapter blanks LIMIT WITH TIES in its resolution copy because the
+pinned upstream AST has no node for it. Lowering recovers the modifier from
+the source and attaches it to the owning LIMIT, including in a CTE or derived
+table. Runtime SQL remains unchanged. Unsupported scalar-subquery uses still
+fail the existing cardinality validation.
 
 ## Regression boundaries
 
@@ -111,7 +130,15 @@ and nested lambdas. Public tests retain invalid-frame and window-placement
 checks, parameter case sensitivity and lambda arity checks; CLI reports distinguish
 captured columns from local parameters.
 
-Remaining migration boundaries include special grouping modes, subqueries inside
-lambdas, tuple-field paths and replacing legacy construction of typed source
-signatures. Each needs parity witnesses before replacing its existing path.
-None is implied by a passed bind observation today.
+The runtime fixture also checks parenthesized set operations with common UInt32
+outputs 0, 2, 3; a derived WITH TIES returning three zeros; ARRAY JOIN and CASE
+producing 0, 1, 1, 2; a parametric median of 1.5 and DISTINCT count of 2; and
+WITH FILL producing 0, 1, 2, 3. Both pinned driver versions execute these checks.
+
+CLI regression gates require complete lowering and binding for every accepted
+SELECT in the nested-scope, ARRAY JOIN, set-operation and FINAL matrices, and
+every successful SELECT golden fixture. New accepted fixtures join these gates
+automatically. Binding observations do not replace type inference, migration
+replay, result mapping or live execution tests. Typed source construction still
+belongs to the engine; this is not a parser-independent compiler for every
+ClickHouse statement.

@@ -88,6 +88,29 @@ Generated code records the server version and analyzed SQL-body SHA-256.
 
 ## Existing application APIs
 
+Library callers use `chgen.RunServer(ctx, configPath, options)` to generate and
+`chgen.CheckServer(ctx, configPath, options)` to verify without writing. Both
+share the CLI analysis, snapshot, safety, and staged-output implementation:
+
+```go
+options := chgen.ServerOptions{
+    Server: "http://localhost:8123",
+    Database: "test_schema",
+    User: "schema_reader",
+    Password: password,
+    ParameterExamples: map[string]map[string]string{
+        "queries.Read": {"Limit": "3", "Text": "example"},
+    },
+    SnapshotOutput: "contracts.json",
+}
+err := chgen.RunServer(ctx, "chgen.yaml", options)
+```
+
+Credentials are explicit API arguments, not read from environment variables.
+For replay, omit `Server` and use `SnapshotInput` instead of `SnapshotOutput`.
+Checking never captures a snapshot. Cancellation propagates through the returned
+error. `LoadConfig` preserves each package's `Analysis` setting.
+
 `-- param-chtype: Keys Array(String)` supplies a type for `chgen.arg('Keys')`
 or a positional `?`. Positional declarations follow placeholder order; repeated
 named arguments share one Go field. Existing `-- param:` annotations work when
@@ -150,6 +173,8 @@ existing generated files.
 - Only named `:one` and `:many` SELECT queries are accepted. A lexical guard
   rejects multiple statements, mutations, `INTO`, top-level `FORMAT`, malformed
   quoting, and unhandled dollar-quoted syntax. ClickHouse owns grammar validation.
+  Parenthesized SELECTs and set expressions are accepted; enclosing parentheses
+  do not disable the statement, mutation, or output-clause checks.
 - Parameters and results require an existing safe Go type mapping. Runtime
   regressions cover primitive, nullable, array, map, UUID, decimal and temporal
   binding on both supported drivers. This does not promise every ClickHouse

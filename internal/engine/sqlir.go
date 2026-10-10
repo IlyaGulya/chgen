@@ -28,17 +28,158 @@ func irFields(node any, handled ...string) error {
 }
 
 func lowerSQLIR(query *clickhouse.SelectQuery, sql string) (*sqlir.Document, error) {
-	if stripLimitWithTiesModifiers(sql) != sql {
-		return nil, fmt.Errorf("IR adapter does not model LIMIT WITH TIES")
+	document, err := lowerSelectIR(query)
+	if err != nil {
+		return nil, err
 	}
-	return lowerSelectIR(query)
+	markIRLimitModifiers(document, irLimitModifiers(query, sql))
+	return document, nil
+}
+
+// Parser normalization blanks WITH TIES without changing byte positions.
+// Associate each removed modifier with the nearest preceding AST LIMIT, not
+// the outer SELECT: CTEs and derived tables own independent limits.
+func irLimitModifiers(query *clickhouse.SelectQuery, sql string) map[int]bool {
+	limits := make(map[int]int)
+	clickhouse.Walk(query, func(node clickhouse.Expr) bool {
+		if selectQuery, ok := node.(*clickhouse.SelectQuery); ok && selectQuery.Limit != nil {
+			limits[int(selectQuery.Limit.Pos())] = int(selectQuery.Limit.Limit.Pos())
+		}
+		return true
+	})
+	markers := make(map[int]bool)
+	normalized := stripLimitWithTiesModifiers(sql)
+	for index := range len(sql) {
+		if sql[index] == normalized[index] || !sqlKeywordAt(sql, index, "WITH") {
+			continue
+		}
+		owner := -1
+		for position := range limits {
+			if position < index && position > owner {
+				owner = position
+			}
+		}
+		if owner >= 0 {
+			markers[limits[owner]] = true
+		}
+	}
+	return markers
+}
+
+func markIRLimitModifiers(document *sqlir.Document, markers map[int]bool) {
+	sqlir.WalkSelect(&document.Select, func(query *sqlir.Select) {
+		if query.Limit != nil && query.Limit.Span != nil {
+			query.LimitWithTies = markers[query.Limit.Span.Start]
+		}
+	})
 }
 
 func lowerSelectIR(query *clickhouse.SelectQuery) (*sqlir.Document, error) {
-	if err := irFields(query, "With", "SelectItems", "From", "Where", "GroupBy", "Having", "OrderBy", "Limit", "Window"); err != nil {
+	if err := irFields(query, "With", "SelectItems", "From", "Where", "GroupBy", "Having", "OrderBy", "Limit", "Window", "InnerQuery", "UnionAll", "UnionDistinct", "Except", "Intersect", "HasDistinct", "DistinctOn", "Prewhere", "Top", "LimitBy", "Settings", "Format"); err != nil {
 		return nil, err
 	}
 	result := sqlir.Select{}
+	result.Distinct = query.HasDistinct
+	if query.DistinctOn != nil {
+		if err := irFields(query.DistinctOn, "Idents"); err != nil {
+			return nil, err
+		}
+		for _, identifier := range query.DistinctOn.Idents {
+			item, err := lowerExprIR(identifier)
+			if err != nil {
+				return nil, err
+			}
+			result.DistinctOn = append(result.DistinctOn, item)
+		}
+	}
+	if query.Prewhere != nil {
+		if err := irFields(query.Prewhere, "Expr"); err != nil {
+			return nil, err
+		}
+		expression, err := lowerExprIR(query.Prewhere.Expr)
+		if err != nil {
+			return nil, err
+		}
+		result.Prewhere = &expression
+	}
+	if query.Top != nil {
+		if err := irFields(query.Top, "Number", "WithTies"); err != nil {
+			return nil, err
+		}
+		count, err := lowerExprIR(query.Top.Number)
+		if err != nil {
+			return nil, err
+		}
+		result.Top = &sqlir.Top{Count: count, WithTies: query.Top.WithTies}
+	}
+	if query.LimitBy != nil {
+		if err := irFields(query.LimitBy, "Limit", "ByExpr"); err != nil {
+			return nil, err
+		}
+		if err := irFields(query.LimitBy.Limit, "Limit", "Offset"); err != nil {
+			return nil, err
+		}
+		count, err := lowerExprIR(query.LimitBy.Limit.Limit)
+		if err != nil {
+			return nil, err
+		}
+		keys, err := lowerExprListIR(query.LimitBy.ByExpr)
+		if err != nil {
+			return nil, err
+		}
+		result.LimitBy = &sqlir.LimitBy{Count: count, Keys: keys}
+		if query.LimitBy.Limit.Offset != nil {
+			offset, err := lowerExprIR(query.LimitBy.Limit.Offset)
+			if err != nil {
+				return nil, err
+			}
+			result.LimitBy.Offset = &offset
+		}
+	}
+	if query.Settings != nil {
+		if err := irFields(query.Settings, "Items"); err != nil {
+			return nil, err
+		}
+		for _, setting := range query.Settings.Items {
+			if err := irFields(setting, "Name", "Expr"); err != nil {
+				return nil, err
+			}
+			value, err := lowerExprIR(setting.Expr)
+			if err != nil {
+				return nil, err
+			}
+			result.Settings = append(result.Settings, sqlir.Setting{Name: setting.Name.Name, Value: value})
+		}
+	}
+	if query.Format != nil {
+		if err := irFields(query.Format, "Format"); err != nil {
+			return nil, err
+		}
+		result.Format = query.Format.Format.Name
+	}
+	if query.InnerQuery != nil {
+		inner, err := lowerSelectIR(query.InnerQuery)
+		if err != nil {
+			return nil, err
+		}
+		result.Inner = &inner.Select
+	}
+	for _, operation := range []struct {
+		kind  string
+		query *clickhouse.SelectQuery
+	}{
+		{"UNION ALL", query.UnionAll}, {"UNION DISTINCT", query.UnionDistinct},
+		{"EXCEPT", query.Except}, {"INTERSECT", query.Intersect},
+	} {
+		if operation.query == nil {
+			continue
+		}
+		branch, err := lowerSelectIR(operation.query)
+		if err != nil {
+			return nil, err
+		}
+		result.SetOperations = append(result.SetOperations, sqlir.SetOperation{Kind: operation.kind, Query: branch.Select})
+	}
 	if query.Window != nil {
 		if err := irFields(query.Window, "Windows"); err != nil {
 			return nil, err
@@ -153,7 +294,7 @@ func lowerSelectIR(query *clickhouse.SelectQuery) (*sqlir.Document, error) {
 			if !ok {
 				return nil, fmt.Errorf("IR adapter requires ordinary ORDER BY expressions")
 			}
-			if err := irFields(order, "Expr", "Direction"); err != nil {
+			if err := irFields(order, "Expr", "Direction", "Fill"); err != nil {
 				return nil, err
 			}
 			expression, err := lowerExprIR(order.Expr)
@@ -164,7 +305,30 @@ func lowerSelectIR(query *clickhouse.SelectQuery) (*sqlir.Document, error) {
 			if direction == "" {
 				direction = "ASC"
 			}
-			result.OrderBy = append(result.OrderBy, sqlir.Order{Expr: expression, Direction: direction})
+			lowered := sqlir.Order{Expr: expression, Direction: direction}
+			if order.Fill != nil {
+				if err := irFields(order.Fill, "From", "To", "Step", "Staleness"); err != nil {
+					return nil, err
+				}
+				lowered.Fill = &sqlir.Fill{}
+				for _, field := range []struct {
+					source clickhouse.Expr
+					target **sqlir.Expr
+				}{
+					{order.Fill.From, &lowered.Fill.From}, {order.Fill.To, &lowered.Fill.To},
+					{order.Fill.Step, &lowered.Fill.Step}, {order.Fill.Staleness, &lowered.Fill.Staleness},
+				} {
+					if field.source == nil {
+						continue
+					}
+					value, err := lowerExprIR(field.source)
+					if err != nil {
+						return nil, err
+					}
+					*field.target = &value
+				}
+			}
+			result.OrderBy = append(result.OrderBy, lowered)
 		}
 	}
 	if query.Limit != nil {
@@ -212,6 +376,122 @@ func lowerExprIR(expression clickhouse.Expr) (result sqlir.Expr, err error) {
 		}
 	}()
 	switch expr := expression.(type) {
+	case *clickhouse.IntervalExpr:
+		if err := irFields(expr, "Expr", "Unit"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		if err := irFields(expr.Unit, "Name", "QuoteType"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		args, err := lowerExprArgsIR(expr.Expr)
+		return sqlir.Expr{Kind: "interval", Value: strings.ToUpper(expr.Unit.Name), Args: args}, err
+	case *clickhouse.CaseExpr:
+		if err := irFields(expr, "Expr", "Whens", "Else"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		result := sqlir.Expr{Kind: "case", Value: "searched"}
+		if expr.Expr != nil {
+			base, err := lowerExprIR(expr.Expr)
+			if err != nil {
+				return result, err
+			}
+			result.Value = "simple"
+			result.Args = append(result.Args, base)
+		}
+		for _, arm := range expr.Whens {
+			if err := irFields(arm, "When", "Then", "Else"); err != nil {
+				return result, err
+			}
+			operands := []clickhouse.Expr{arm.When, arm.Then}
+			if arm.Else != nil {
+				operands = append(operands, arm.Else)
+			}
+			args, err := lowerExprArgsIR(operands...)
+			if err != nil {
+				return result, err
+			}
+			result.Args = append(result.Args, sqlir.Expr{Kind: "when", Span: irSourceSpan(arm), Args: args})
+		}
+		if expr.Else != nil {
+			otherwise, err := lowerExprIR(expr.Else)
+			if err != nil {
+				return result, err
+			}
+			result.Args = append(result.Args, sqlir.Expr{Kind: "else", Args: []sqlir.Expr{otherwise}})
+		}
+		return result, nil
+	case *clickhouse.CastExpr:
+		if err := irFields(expr, "Expr", "Separator", "AsType"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		args, err := lowerExprArgsIR(expr.Expr)
+		return sqlir.Expr{Kind: "cast", Value: expr.Separator, Type: clickhouse.Format(expr.AsType), Args: args}, err
+	case *clickhouse.IsNullExpr:
+		if err := irFields(expr, "Expr"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		args, err := lowerExprArgsIR(expr.Expr)
+		return sqlir.Expr{Kind: "null_check", Value: "IS NULL", Args: args}, err
+	case *clickhouse.IsNotNullExpr:
+		if err := irFields(expr, "Expr"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		args, err := lowerExprArgsIR(expr.Expr)
+		return sqlir.Expr{Kind: "null_check", Value: "IS NOT NULL", Args: args}, err
+	case *clickhouse.ObjectParams:
+		if err := irFields(expr, "Object", "Params"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		args, err := lowerExprArgsIR(expr.Object, expr.Params)
+		return sqlir.Expr{Kind: "subscript", Args: args}, err
+	case *clickhouse.IndexOperation:
+		if err := irFields(expr, "Object", "Operation", "Index"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		args, err := lowerExprArgsIR(expr.Object, expr.Index)
+		return sqlir.Expr{Kind: "index", Value: string(expr.Operation), Args: args}, err
+	case *clickhouse.NullLiteral:
+		if err := irFields(expr); err != nil {
+			return sqlir.Expr{}, err
+		}
+		return sqlir.Expr{Kind: "null"}, nil
+	case *clickhouse.BoolLiteral:
+		if err := irFields(expr, "Literal"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		return sqlir.Expr{Kind: "bool", Value: expr.Literal}, nil
+	case *clickhouse.PlaceHolder:
+		if err := irFields(expr, "Type"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		return sqlir.Expr{Kind: "placeholder", Value: expr.Type}, nil
+	case *clickhouse.ArrayParamList:
+		if err := irFields(expr, "Items"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		items, err := lowerExprListIR(expr.Items)
+		return sqlir.Expr{Kind: "array", Args: items}, err
+	case *clickhouse.UnaryExpr:
+		if err := irFields(expr, "Kind", "Expr"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		operand, err := lowerExprIR(expr.Expr)
+		return sqlir.Expr{Kind: "unary", Value: strings.ToUpper(string(expr.Kind)), Args: []sqlir.Expr{operand}}, err
+	case *clickhouse.BetweenClause:
+		if err := irFields(expr, "Expr", "Not", "Between", "And"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		operands, err := lowerExprArgsIR(expr.Expr, expr.Between, expr.And)
+		operation := "BETWEEN"
+		if expr.Not {
+			operation = "NOT BETWEEN"
+		}
+		return sqlir.Expr{Kind: "between", Value: operation, Args: operands}, err
+	case *clickhouse.StringLiteral:
+		if err := irFields(expr, "Literal"); err != nil {
+			return sqlir.Expr{}, err
+		}
+		return sqlir.Expr{Kind: "string", Value: expr.Literal}, nil
 	case *clickhouse.ParamExprList:
 		if err := irFields(expr, "Items"); err != nil {
 			return sqlir.Expr{}, err
@@ -231,11 +511,29 @@ func lowerExprIR(expression clickhouse.Expr) (result sqlir.Expr, err error) {
 		if err := irFields(expr, "Name", "Params"); err != nil {
 			return sqlir.Expr{}, err
 		}
-		if err := irFields(expr.Params, "Items"); err != nil {
+		if err := irFields(expr.Params, "Items", "ColumnArgList"); err != nil {
 			return sqlir.Expr{}, err
 		}
-		args, err := lowerExprListIR(expr.Params.Items)
-		return sqlir.Expr{Kind: "call", Value: expr.Name.Name, Args: args}, err
+		call := sqlir.Expr{Kind: "call", Value: expr.Name.Name}
+		if list := expr.Params.Items; list != nil {
+			if err := irFields(list, "Items", "HasDistinct"); err != nil {
+				return sqlir.Expr{}, err
+			}
+			call.Args, err = lowerExprArgsIR(list.Items...)
+			if err != nil {
+				return sqlir.Expr{}, err
+			}
+			call.Distinct = list.HasDistinct
+		}
+		if list := expr.Params.ColumnArgList; list != nil {
+			if err := irFields(list, "Items", "Distinct"); err != nil {
+				return sqlir.Expr{}, err
+			}
+			call.Parameters = call.Args
+			call.Args, err = lowerExprArgsIR(list.Items...)
+			call.Distinct = list.Distinct
+		}
+		return call, err
 	case *clickhouse.WindowFunctionExpr:
 		if err := irFields(expr, "Function", "OverExpr"); err != nil {
 			return sqlir.Expr{}, err
@@ -255,6 +553,14 @@ func lowerExprIR(expression clickhouse.Expr) (result sqlir.Expr, err error) {
 			return sqlir.Expr{}, err
 		}
 		return sqlir.Expr{Kind: "subquery", Query: &document.Select, Parenthesized: expr.HasParen}, nil
+	case *clickhouse.SelectQuery:
+		// EXISTS stores its body directly as SelectQuery, unlike a scalar
+		// subquery's SubQuery wrapper. Preserve that grammar distinction.
+		document, err := lowerSelectIR(expr)
+		if err != nil {
+			return sqlir.Expr{}, err
+		}
+		return sqlir.Expr{Kind: "subquery", Query: &document.Select}, nil
 	case *clickhouse.ColumnExpr:
 		if err := irFields(expr, "Expr"); err != nil {
 			return sqlir.Expr{}, err
@@ -269,7 +575,10 @@ func lowerExprIR(expression clickhouse.Expr) (result sqlir.Expr, err error) {
 		if expr.Name == "*" && (expr.QuoteType == 0 || expr.QuoteType == clickhouse.Unquoted) {
 			return sqlir.Expr{Kind: "wildcard"}, nil
 		}
-		return sqlir.Expr{Kind: "identifier", Name: []string{expr.Name}}, nil
+		if expr.QuoteType == clickhouse.Unquoted && strings.EqualFold(expr.Name, "NULL") {
+			return sqlir.Expr{Kind: "null"}, nil
+		}
+		return sqlir.Expr{Kind: "identifier", Name: []string{expr.Name}, Quoted: expr.QuoteType != 0 && expr.QuoteType != clickhouse.Unquoted}, nil
 	case *clickhouse.NestedIdentifier:
 		if err := irFields(expr, "Ident", "DotIdent"); err != nil {
 			return sqlir.Expr{}, err
@@ -295,10 +604,7 @@ func lowerExprIR(expression clickhouse.Expr) (result sqlir.Expr, err error) {
 		if err := irFields(expr, "Literal", "Base"); err != nil {
 			return sqlir.Expr{}, err
 		}
-		if expr.Base != 10 {
-			return sqlir.Expr{}, fmt.Errorf("IR adapter requires decimal number literals")
-		}
-		return sqlir.Expr{Kind: "number", Value: expr.Literal}, nil
+		return sqlir.Expr{Kind: "number", Value: expr.Literal, Base: expr.Base}, nil
 	case *clickhouse.BinaryOperation:
 		if err := irFields(expr, "LeftExpr", "Operation", "RightExpr"); err != nil {
 			return sqlir.Expr{}, err
@@ -327,6 +633,18 @@ func lowerExprIR(expression clickhouse.Expr) (result sqlir.Expr, err error) {
 	default:
 		return sqlir.Expr{}, fmt.Errorf("IR adapter does not model expression %s", clickhouse.Format(expression))
 	}
+}
+
+func lowerExprArgsIR(expressions ...clickhouse.Expr) ([]sqlir.Expr, error) {
+	result := make([]sqlir.Expr, 0, len(expressions))
+	for _, expression := range expressions {
+		item, err := lowerExprIR(expression)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, item)
+	}
+	return result, nil
 }
 
 func lowerWindowIR(expression clickhouse.Expr) (*sqlir.Window, error) {
@@ -475,6 +793,45 @@ func lowerRelationIR(expression clickhouse.Expr) (result sqlir.Relation, err err
 		relation.Alias = alias.Name
 		return relation, nil
 	case *clickhouse.JoinExpr:
+		if isArrayJoin(expr) {
+			if err := irFields(expr, "Left", "Right", "Modifiers"); err != nil {
+				return sqlir.Relation{}, err
+			}
+			list, ok := expr.Left.(*clickhouse.ColumnExprList)
+			if !ok {
+				return sqlir.Relation{}, fmt.Errorf("IR adapter requires ARRAY JOIN expressions")
+			}
+			if err := irFields(list, "Items"); err != nil {
+				return sqlir.Relation{}, err
+			}
+			relation := sqlir.Relation{Kind: "array_join", Modifiers: slices.Clone(expr.Modifiers)}
+			for _, raw := range list.Items {
+				column, ok := raw.(*clickhouse.ColumnExpr)
+				if !ok {
+					return sqlir.Relation{}, fmt.Errorf("IR adapter requires ARRAY JOIN columns")
+				}
+				if err := irFields(column, "Expr", "Alias"); err != nil {
+					return sqlir.Relation{}, err
+				}
+				expression, err := lowerExprIR(column.Expr)
+				if err != nil {
+					return sqlir.Relation{}, err
+				}
+				item := sqlir.Item{Expr: expression}
+				if column.Alias != nil {
+					item.Alias = column.Alias.Name
+				}
+				relation.Items = append(relation.Items, item)
+			}
+			if expr.Right != nil {
+				right, err := lowerRelationIR(expr.Right)
+				if err != nil {
+					return sqlir.Relation{}, err
+				}
+				relation.Right = &right
+			}
+			return relation, nil
+		}
 		if expr.Right == nil && len(expr.Modifiers) == 0 && expr.Constraints == nil {
 			if err := irFields(expr, "Left"); err != nil {
 				return sqlir.Relation{}, err
@@ -513,18 +870,21 @@ func lowerRelationIR(expression clickhouse.Expr) (result sqlir.Relation, err err
 		}
 		return sqlir.Relation{Kind: "derived", Query: &document.Select, Parenthesized: expr.HasParen}, nil
 	case *clickhouse.JoinTableExpr:
-		if err := irFields(expr, "Table"); err != nil {
+		if err := irFields(expr, "Table", "HasFinal"); err != nil {
 			return sqlir.Relation{}, err
 		}
-		return lowerRelationIR(expr.Table)
+		relation, err := lowerRelationIR(expr.Table)
+		relation.Final = relation.Final || expr.HasFinal
+		return relation, err
 	case *clickhouse.TableExpr:
-		if err := irFields(expr, "Expr", "Alias"); err != nil {
+		if err := irFields(expr, "Expr", "Alias", "HasFinal"); err != nil {
 			return sqlir.Relation{}, err
 		}
 		relation, err := lowerRelationIR(expr.Expr)
 		if err != nil {
 			return sqlir.Relation{}, err
 		}
+		relation.Final = relation.Final || expr.HasFinal
 		if expr.Alias != nil {
 			if err := irFields(expr.Alias, "Alias"); err != nil {
 				return sqlir.Relation{}, err

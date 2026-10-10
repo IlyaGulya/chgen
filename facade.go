@@ -1,8 +1,11 @@
 package chgen
 
 import (
+	"context"
+	"fmt"
 	"maps"
 
+	"github.com/IlyaGulya/chgen/internal/describe"
 	"github.com/IlyaGulya/chgen/internal/diagnostic"
 	"github.com/IlyaGulya/chgen/internal/engine"
 	"github.com/IlyaGulya/chgen/internal/project"
@@ -183,10 +186,12 @@ type Config struct {
 
 // PackageConfig is one generation unit from the configuration file.
 type PackageConfig struct {
-	Name    string
-	Output  string
-	Queries []InputEntry
-	Schema  []InputEntry
+	// Analysis selects offline or server; empty preserves command defaults.
+	Analysis string
+	Name     string
+	Output   string
+	Queries  []InputEntry
+	Schema   []InputEntry
 }
 
 // InputEntry is one queries or schema input as written in the configuration
@@ -240,6 +245,43 @@ func Generate(packageName string, queries []Query) ([]byte, error) {
 // configPath. One run generates all packages; there is no partial mode.
 func Run(configPath string) error {
 	return project.Run(configPath)
+}
+
+// ServerOptions selects explicit server analysis or saved-contract replay.
+// Exactly one of Server and SnapshotInput is required. ParameterExamples uses
+// package.Query keys, or unambiguous query names, with logical string values.
+// Credentials are explicit; this API does not read authentication environment
+// variables. Snapshot files contain result metadata, not database schema DDL.
+type ServerOptions struct {
+	Server, Database, User, Password string
+	ParameterExamples                map[string]map[string]string
+	SnapshotInput, SnapshotOutput    string
+}
+
+// RunServer generates every configured package using server result contracts
+// or a saved snapshot. Explicit offline packages keep offline validation.
+// Migrations are never executed. All analysis and generation complete before
+// outputs are replaced; replacement of multiple files is not atomic.
+func RunServer(ctx context.Context, configPath string, options ServerOptions) error {
+	return runServer(ctx, configPath, options, false)
+}
+
+// CheckServer checks all generated outputs without writing files or creating
+// directories. SnapshotInput performs the check without network access;
+// SnapshotOutput is not allowed. Analysis is not proof of query execution.
+func CheckServer(ctx context.Context, configPath string, options ServerOptions) error {
+	return runServer(ctx, configPath, options, true)
+}
+
+func runServer(ctx context.Context, configPath string, options ServerOptions, check bool) error {
+	if (options.Server == "") == (options.SnapshotInput == "") {
+		return fmt.Errorf("choose exactly one explicit server endpoint or saved-contract snapshot input")
+	}
+	return project.RunServerWithSnapshot(ctx, configPath, describe.Options{
+		Server: options.Server, Database: options.Database, User: options.User, Password: options.Password,
+	}, options.ParameterExamples, "", check, project.ServerSnapshotOptions{
+		Input: options.SnapshotInput, Output: options.SnapshotOutput,
+	})
 }
 
 // CheckReport describes offline generation readiness. Confirmed means the
@@ -322,10 +364,11 @@ func fromProjectConfig(value *project.Config) *Config {
 		result.Packages = make([]PackageConfig, len(value.Packages))
 		for index, item := range value.Packages {
 			result.Packages[index] = PackageConfig{
-				Name:    item.Name,
-				Output:  item.Output,
-				Queries: fromProjectInputEntries(item.Queries),
-				Schema:  fromProjectInputEntries(item.Schema),
+				Analysis: item.Analysis,
+				Name:     item.Name,
+				Output:   item.Output,
+				Queries:  fromProjectInputEntries(item.Queries),
+				Schema:   fromProjectInputEntries(item.Schema),
 			}
 		}
 	}

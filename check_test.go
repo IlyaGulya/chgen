@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"github.com/IlyaGulya/chgen"
+	"github.com/IlyaGulya/chgen/internal/conformance"
 )
 
 func writeCheckProject(t *testing.T, ddl, sql string) (string, string) {
@@ -325,6 +326,181 @@ func TestCoverageReportsParserIndependentColumnBindings(t *testing.T) {
 	}
 }
 
+func TestCoverageIRBindsAcceptedSyntaxMatrices(t *testing.T) {
+	cli := buildPublicCLI(t)
+	var cases []map[string]string
+	for _, fixture := range []struct{ name, ddl string }{
+		{"nested-scope", conformance.NestedScopeFixtureDDL},
+		{"array-join", conformance.ArrayJoinFixtureDDL},
+		{"set-operation", conformance.SetOperationFixtureDDL},
+		{"final", conformance.FinalFixtureDDL},
+	} {
+		data, err := os.ReadFile("testdata/clickhouse-" + fixture.name + "-matrix.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var artifact struct {
+			Cells []struct{ ID, Query, Chgen string }
+		}
+		if err := json.Unmarshal(data, &artifact); err != nil {
+			t.Fatal(err)
+		}
+		for _, cell := range artifact.Cells {
+			if cell.Chgen != "accept" {
+				continue
+			}
+			cases = append(cases, map[string]string{"id": fixture.name + "/" + cell.ID, "family": "binding", "source": "client", "schema": fixture.ddl, "sql": cell.Query, "expected_server": "accept"})
+		}
+	}
+	data, err := json.Marshal(map[string]any{"version": 1, "clickhouse_version": "25.8.29.51", "cases": cases})
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "corpus.json")
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", path).CombinedOutput()
+	if err != nil {
+		t.Fatalf("coverage: %v\n%s", err, out)
+	}
+	var report struct {
+		Cases []struct {
+			ID     string
+			Stages map[string]struct{ Status, Message string }
+		}
+	}
+	if err := json.Unmarshal(out, &report); err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Cases) != len(cases) {
+		t.Fatalf("coverage lost cases: %d != %d", len(report.Cases), len(cases))
+	}
+	for _, example := range report.Cases {
+		for _, stage := range []string{"lower", "bind"} {
+			if result := example.Stages[stage]; result.Status != "passed" {
+				t.Errorf("%s: %s: %s: %s", example.ID, stage, result.Status, result.Message)
+			}
+		}
+	}
+	t.Logf("IR lowering and binding cover %d accepted matrix SELECT queries", len(cases))
+}
+
+func TestCoverageIRBindsEveryAcceptedGoldenSelect(t *testing.T) {
+	cli := buildPublicCLI(t)
+	paths, err := filepath.Glob("testdata/golden/*/want.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cases []map[string]string
+	for _, golden := range paths {
+		dir := filepath.Dir(golden)
+		schemaPath := filepath.Join(dir, "schema.sql")
+		ddl, err := os.ReadFile(schemaPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		schemaPaths := []string{schemaPath}
+		if external, err := os.ReadFile(filepath.Join(dir, "external.sql")); err == nil {
+			ddl = append(append(ddl, '\n'), external...)
+		} else if !errors.Is(err, os.ErrNotExist) {
+			t.Fatal(err)
+		}
+		catalogs, err := chgen.ParseSchemaCatalogs(schemaPaths)
+		if err != nil {
+			t.Fatalf("%s: %v", dir, err)
+		}
+		if _, err := os.Stat(filepath.Join(dir, "external.sql")); err == nil {
+			external, err := chgen.ParseSchemaCatalogs([]string{filepath.Join(dir, "external.sql")})
+			if err != nil {
+				t.Fatalf("%s: %v", dir, err)
+			}
+			// Golden external.sql is a separate row catalog, not a migration.
+			catalogs.External = external.Physical
+		}
+		queries, err := chgen.ParseQueryFiles([]string{filepath.Join(dir, "queries.sql")}, catalogs)
+		if err != nil {
+			t.Fatalf("%s: %v", dir, err)
+		}
+		for _, query := range queries {
+			if query.Command == chgen.CommandExec {
+				continue
+			}
+			schema := string(ddl)
+			for _, external := range query.ExternalParams {
+				var columns []string
+				for _, column := range external.Columns {
+					columns = append(columns, "`"+column.SQLName+"` "+column.ClickHouseType)
+				}
+				schema += "\nCREATE TABLE `" + external.WireName + "` (" + strings.Join(columns, ", ") + ") ENGINE=Memory;\n"
+			}
+			cases = append(cases, map[string]string{"id": filepath.Base(dir) + "/" + query.Name, "family": "binding", "source": "client", "schema": schema, "sql": query.SQL, "expected_server": "accept"})
+		}
+	}
+	if len(cases) == 0 {
+		t.Fatal("no accepted SELECT fixtures")
+	}
+	data, err := json.Marshal(map[string]any{"version": 1, "clickhouse_version": "25.8.29.51", "cases": cases})
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "corpus.json")
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", path).CombinedOutput()
+	if err != nil {
+		t.Fatalf("coverage: %v\n%s", err, out)
+	}
+	var report struct {
+		Cases []struct {
+			ID     string
+			Stages map[string]struct{ Status, Message string }
+		}
+	}
+	if err := json.Unmarshal(out, &report); err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Cases) != len(cases) {
+		t.Fatalf("coverage lost cases: %d != %d", len(report.Cases), len(cases))
+	}
+	for _, example := range report.Cases {
+		for _, stage := range []string{"lower", "bind"} {
+			if result := example.Stages[stage]; result.Status != "passed" {
+				t.Errorf("%s: %s: %s: %s", example.ID, stage, result.Status, result.Message)
+			}
+		}
+	}
+	t.Logf("IR lowering and binding cover %d accepted golden SELECT queries", len(cases))
+}
+
+func TestCoverageArrayJoinSeparatesInputAndOutputTypes(t *testing.T) {
+	cli := buildPublicCLI(t)
+	path := filepath.Join(t.TempDir(), "corpus.json")
+	data := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"array-input","family":"binding","source":"client","schema":"CREATE TABLE events (values Array(Int32)) ENGINE=Memory;","sql":"SELECT values FROM events ARRAY JOIN values","expected_server":"accept"}]}`
+	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "coverage", "-corpus", path).CombinedOutput()
+	if err != nil {
+		t.Fatalf("coverage: %v\n%s", err, out)
+	}
+	var report struct {
+		Cases []struct {
+			Binding struct{ References []struct{ Type string } }
+		}
+	}
+	if err := json.Unmarshal(out, &report); err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Cases) != 1 || len(report.Cases[0].Binding.References) != 2 {
+		t.Fatalf("missing bindings: %s", out)
+	}
+	if references := report.Cases[0].Binding.References; references[0].Type != "Int32" || references[1].Type != "Array(Int32)" {
+		t.Fatalf("ARRAY JOIN input was rebound as its output: %s", out)
+	}
+}
+
 func TestProductionIRBindingRefusesAnUnknownPredicateColumn(t *testing.T) {
 	_, err := parsePublicQuery(t, "CREATE TABLE events (id UInt64) ENGINE=Memory;", "-- name: Read :many\nSELECT id FROM events\nWHERE missing > 1;")
 	if err == nil {
@@ -562,6 +738,26 @@ func TestColumnAliasBindingDoesNotHideAnUnknownSource(t *testing.T) {
 func TestAliasBindingPreservesLegacyPrecedenceBoundaries(t *testing.T) {
 	cli := buildPublicCLI(t)
 	for _, example := range []struct{ sql, bind, generate string }{
+		{"SELECT e.pair.value FROM events e", "passed", "passed"},
+		{"SELECT system.parts.rows FROM system.parts", "passed", "passed"},
+		{"SELECT 0x1 AS value FROM events", "passed", "passed"},
+		{"SELECT count(DISTINCT id) AS value FROM events", "passed", "passed"},
+		{"SELECT quantile(0.5)(id) AS value FROM events", "passed", "passed"},
+		{"SELECT id FROM events ORDER BY id LIMIT 1 WITH TIES", "passed", "passed"},
+		{"SELECT id FROM events FINAL", "passed", "passed"},
+		{"SELECT item FROM events ARRAY JOIN values AS item", "passed", "passed"},
+		{"SELECT CAST(NULL AS Nullable(UInt32)) AS value, true AS enabled FROM events", "passed", "passed"},
+		{"SELECT toDateTime(0) + INTERVAL 1 DAY AS value FROM events", "passed", "passed"},
+		{"SELECT id FROM events ORDER BY id WITH FILL FROM 0 TO 10 STEP 1", "passed", "passed"},
+		{"SELECT DISTINCT id FROM events PREWHERE id > 0 ORDER BY id LIMIT 1 BY id SETTINGS max_threads = 1", "passed", "passed"},
+		{"SELECT CASE WHEN id IS NULL THEN CAST(0 AS UInt32) ELSE CAST(id AS UInt32) END AS value, values[1] AS first_value FROM events WHERE id NOT BETWEEN 1 AND 2", "passed", "passed"},
+		{"SELECT arrayMap(x -> -x, [id, id]) AS mapped FROM events WHERE id BETWEEN 1 AND 5", "passed", "passed"},
+		{"SELECT concat('prefix', toString(id)) AS value FROM events", "passed", "passed"},
+		{"SELECT id FROM events UNION DISTINCT SELECT id FROM events", "passed", "passed"},
+		{"SELECT id FROM events INTERSECT SELECT id FROM events EXCEPT SELECT id FROM events", "passed", "passed"},
+		{"(SELECT id FROM events UNION ALL SELECT id FROM events) EXCEPT SELECT id FROM events", "passed", "passed"},
+		{"WITH source AS (SELECT id FROM events UNION ALL SELECT id FROM events) SELECT id FROM source", "passed", "passed"},
+		{"SELECT id FROM events UNION ALL SELECT id FROM events", "passed", "passed"},
 		{"SELECT arrayMap(x -> (SELECT toUInt32(7)), values) AS value FROM events", "unknown", "not_run"},
 		{"SELECT arraySum(id -> toUInt32(id), values) AS value FROM events", "passed", "passed"},
 		{"SELECT arrayMap((x, y) -> x + y + id, values, values) AS value FROM events", "passed", "passed"},
@@ -591,7 +787,7 @@ func TestAliasBindingPreservesLegacyPrecedenceBoundaries(t *testing.T) {
 	} {
 		t.Run(example.sql, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "corpus.json")
-			corpus := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"legacy","family":"binding","source":"client","schema":"CREATE TABLE events (id UInt64, values Array(Int32)) ENGINE=Memory;","sql":` + strconv.Quote(example.sql) + `,"expected_server":"accept"}]}`
+			corpus := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[{"id":"legacy","family":"binding","source":"client","schema":"CREATE TABLE events (id UInt64, values Array(Int32), pair Tuple(value UInt32)) ENGINE=ReplacingMergeTree ORDER BY id;","sql":` + strconv.Quote(example.sql) + `,"expected_server":"accept"}]}`
 			if err := os.WriteFile(path, []byte(corpus), 0o600); err != nil {
 				t.Fatal(err)
 			}
@@ -699,7 +895,8 @@ func TestCoverageCLIExposesCompleteIRWithoutErasingUnknownProperties(t *testing.
 	data := `{"version":1,"clickhouse_version":"25.8.29.51","cases":[
 	{"id":"filter","family":"series","source":"client","sql":"SELECT number AS value FROM numbers(3) WHERE number > 1 ORDER BY number","expected_server":"accept"},
 	{"id":"distinct","family":"series","source":"client","sql":"SELECT DISTINCT number FROM numbers(3)","expected_server":"accept"},
- {"id":"ties","family":"series","source":"client","sql":"SELECT number FROM numbers(3) ORDER BY number LIMIT 1 WITH TIES","expected_server":"accept"}]}`
+ {"id":"ties","family":"series","source":"client","sql":"SELECT number FROM numbers(3) ORDER BY number LIMIT 1 WITH TIES","expected_server":"accept"},
+ {"id":"interpolate","family":"series","source":"client","sql":"SELECT number FROM numbers(3) ORDER BY number WITH FILL INTERPOLATE (number AS number)","expected_server":"accept"}]}`
 	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -714,7 +911,9 @@ func TestCoverageCLIExposesCompleteIRWithoutErasingUnknownProperties(t *testing.
 			} `json:"stages"`
 			IR *struct {
 				Select struct {
-					Where struct{ Kind, Value string } `json:"where"`
+					Where         struct{ Kind, Value string } `json:"where"`
+					Distinct      bool                         `json:"distinct"`
+					LimitWithTies bool                         `json:"limit_with_ties"`
 				} `json:"select"`
 			} `json:"ir"`
 		} `json:"cases"`
@@ -722,7 +921,7 @@ func TestCoverageCLIExposesCompleteIRWithoutErasingUnknownProperties(t *testing.
 	if err := json.Unmarshal(out, &report); err != nil {
 		t.Fatal(err)
 	}
-	if len(report.Cases) != 3 || report.Cases[0].IR == nil || report.Cases[0].IR.Select.Where.Kind != "operator" || report.Cases[0].IR.Select.Where.Value != ">" || report.Cases[0].Stages["lower"].Status != "passed" || report.Cases[1].IR != nil || report.Cases[1].Stages["lower"].Status != "unknown" || report.Cases[2].IR != nil || report.Cases[2].Stages["lower"].Status != "unknown" {
+	if len(report.Cases) != 4 || report.Cases[0].IR == nil || report.Cases[0].IR.Select.Where.Kind != "operator" || report.Cases[0].IR.Select.Where.Value != ">" || report.Cases[0].Stages["lower"].Status != "passed" || report.Cases[1].IR == nil || !report.Cases[1].IR.Select.Distinct || report.Cases[1].Stages["lower"].Status != "passed" || report.Cases[2].IR == nil || !report.Cases[2].IR.Select.LimitWithTies || report.Cases[2].Stages["lower"].Status != "passed" || report.Cases[3].IR != nil || report.Cases[3].Stages["lower"].Status != "unknown" {
 		t.Fatalf("incomplete IR was claimed as complete: %s", out)
 	}
 }

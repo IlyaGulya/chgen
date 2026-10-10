@@ -3,6 +3,8 @@ package chgen_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,6 +19,172 @@ import (
 
 	"github.com/IlyaGulya/chgen"
 )
+
+func TestLoadConfigPreservesExplicitAnalysisBackend(t *testing.T) {
+	config, _ := writeCheckProject(t, "", "-- name: Read :one\nSELECT 1 AS value;")
+	data, err := os.ReadFile(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data = bytes.Replace(data, []byte("  - name: queries\n"), []byte("  - name: queries\n    analysis: server\n"), 1)
+	if err := os.WriteFile(config, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := chgen.LoadConfig(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(loaded.Packages) != 1 || loaded.Packages[0].Analysis != "server" {
+		t.Fatalf("backend was lost: %+v", loaded.Packages)
+	}
+}
+
+func TestPublicServerGenerationAndOfflineReplay(t *testing.T) {
+	config, output := writeCheckProject(t, "EXCHANGE TABLES missing_a AND missing_b;", "-- name: Read :one\nSELECT jaroSimilarity({Left:String}, {Right:String}) AS similarity;")
+	snapshot := filepath.Join(filepath.Dir(config), "contracts.json")
+	var requests atomic.Int32
+	var resultType atomic.Value
+	resultType.Store("Float64")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		if r.URL.Query().Get("readonly") != "1" {
+			t.Error("analysis was not readonly")
+		}
+		user, password, ok := r.BasicAuth()
+		if !ok || user != "reader" || password != "private" {
+			t.Error("explicit API authentication was lost")
+		}
+		body, _ := io.ReadAll(r.Body)
+		if strings.Contains(string(body), "SELECT version()") {
+			io.WriteString(w, `{"data":[{"version":"25.8.29.51"}]}`)
+		} else {
+			if !strings.Contains(string(body), "jaroSimilarity") || strings.Contains(string(body), "EXCHANGE") {
+				t.Errorf("not native read analysis: %s", body)
+			}
+			fmt.Fprintf(w, `{"data":[{"name":"similarity","type":%q}]}`, resultType.Load().(string))
+		}
+	}))
+	options := chgen.ServerOptions{Server: server.URL, User: "reader", Password: "private", ParameterExamples: map[string]map[string]string{"Read": {"Left": "abc", "Right": "abc"}}, SnapshotOutput: snapshot}
+	t.Cleanup(server.Close)
+	if err := chgen.RunServer(t.Context(), config, options); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(before, []byte("Similarity float64")) || bytes.Contains(before, []byte("private")) {
+		t.Fatalf("wrong public generation: %s", before)
+	}
+	options.SnapshotOutput = ""
+	if err := chgen.CheckServer(t.Context(), config, options); err != nil {
+		t.Fatal(err)
+	}
+	resultType.Store("Float32")
+	if err := chgen.CheckServer(t.Context(), config, options); err == nil || !strings.Contains(err.Error(), "out of date") {
+		t.Fatalf("API contract drift: %v", err)
+	}
+	unchanged, err := os.ReadFile(output)
+	if err != nil || !bytes.Equal(before, unchanged) {
+		t.Fatalf("check overwrote output: %v", err)
+	}
+	server.Close()
+	count := requests.Load()
+	options.Server, options.SnapshotInput = "", snapshot
+	if err := os.Remove(output); err != nil {
+		t.Fatal(err)
+	}
+	if err := chgen.RunServer(t.Context(), config, options); err != nil {
+		t.Fatalf("offline replay: %v", err)
+	}
+	if err := chgen.CheckServer(t.Context(), config, options); err != nil {
+		t.Fatalf("offline check: %v", err)
+	}
+	after, err := os.ReadFile(output)
+	if err != nil || !bytes.Equal(before, after) || requests.Load() != count {
+		t.Fatalf("replay changed code or contacted server: %v", err)
+	}
+}
+
+func TestPublicServerGenerationKeepsSafetyAndCancellationBoundaries(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		http.Error(w, "unexpected request", http.StatusInternalServerError)
+	}))
+	t.Cleanup(server.Close)
+	for _, sql := range []string{
+		"DELETE FROM events WHERE 1", "SELECT 1; DELETE FROM events WHERE 1", "SELECT 1 INTO OUTFILE 'never'", "SELECT 1 FORMAT JSON",
+		"(DELETE FROM events WHERE 1)", "(SELECT 1; DELETE FROM events WHERE 1)",
+		"(SELECT 1) DELETE FROM events WHERE 1", "(SELECT 1) INTO OUTFILE 'never'",
+		"(SELECT 1 FORMAT JSON)", "((SELECT 1) UNION ALL SELECT 2) FORMAT JSON",
+	} {
+		t.Run(sql, func(t *testing.T) {
+			config, output := writeCheckProject(t, "", "-- name: Read :one\n"+sql)
+			if err := chgen.RunServer(t.Context(), config, chgen.ServerOptions{Server: server.URL}); err == nil {
+				t.Fatal("unsafe SQL accepted")
+			}
+			if _, err := os.Stat(filepath.Dir(output)); !errors.Is(err, os.ErrNotExist) {
+				t.Fatalf("refusal created output directory: %v", err)
+			}
+		})
+	}
+	config, output := writeCheckProject(t, "", "-- name: Read :one\nSELECT 1 AS value;")
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if err := chgen.RunServer(ctx, config, chgen.ServerOptions{Server: server.URL}); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancellation was lost: %v", err)
+	}
+	for _, options := range []chgen.ServerOptions{{}, {Server: server.URL, SnapshotInput: "unused.json"}, {Server: server.URL, SnapshotOutput: "unused.json"}} {
+		if err := chgen.CheckServer(t.Context(), config, options); err == nil {
+			t.Fatalf("invalid check options accepted: %+v", options)
+		}
+	}
+	if _, err := os.Stat(filepath.Dir(output)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("invalid request created output: %v", err)
+	}
+	if requests.Load() != 0 {
+		t.Fatalf("unsafe or cancelled request reached server: %d", requests.Load())
+	}
+}
+
+func TestServerGenerationAcceptsParenthesizedSetQueries(t *testing.T) {
+	cli := buildPublicCLI(t)
+	var analyzed atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		if strings.Contains(string(body), "SELECT version()") {
+			io.WriteString(w, `{"data":[{"version":"25.8.29.51"}]}`)
+		} else {
+			analyzed.Add(1)
+			if !strings.HasPrefix(string(body), "DESCRIBE TABLE (\n(") {
+				t.Errorf("query parentheses were changed: %s", body)
+			}
+			io.WriteString(w, `{"data":[{"name":"value","type":"UInt64"}]}`)
+		}
+	}))
+	t.Cleanup(server.Close)
+	for _, sql := range []string{
+		"(SELECT toUInt64(0) AS value UNION ALL SELECT toUInt64(2) AS value) EXCEPT SELECT toUInt64(1) AS value",
+		"((WITH toUInt64(1) AS source SELECT source AS value))",
+		"((SELECT toUInt64(0) AS value) UNION ALL SELECT toUInt64(2) AS value)",
+	} {
+		t.Run(sql, func(t *testing.T) {
+			config, output := writeCheckProject(t, "", "-- name: Read :many\n"+sql+";")
+			out, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-server", server.URL).CombinedOutput()
+			if err != nil {
+				t.Fatalf("parenthesized SELECT: %v\n%s", err, out)
+			}
+			generated, err := os.ReadFile(output)
+			if err != nil || !bytes.Contains(generated, []byte(sql)) {
+				t.Fatalf("original SQL was not retained: %v", err)
+			}
+		})
+	}
+	if analyzed.Load() != 3 {
+		t.Fatalf("not every query was analyzed: %d", analyzed.Load())
+	}
+}
 
 func TestCheckServerDetectsContractDriftWithoutWriting(t *testing.T) {
 	cli := buildPublicCLI(t)
@@ -270,7 +438,22 @@ ORDER BY number;
 SELECT number, arrayMap((x, y) -> x + y + number, array(0, 1, 2), array(0, 1, 2)) AS mapped,
 arrayMap(number -> toUInt32(number), array(0, 1, 2)) AS shadowed,
 arrayMap(x -> arraySum(y -> x + y + number, array(0, 1, 2)), array(0, 1)) AS nested
-FROM numbers(2) ORDER BY number;`)
+FROM numbers(2) ORDER BY number;
+-- name: SetRows :many
+(SELECT toUInt8(number) AS value FROM numbers(2)
+UNION ALL SELECT toUInt32(number + 2) AS value FROM numbers(2))
+EXCEPT SELECT toUInt32(1) AS value;
+-- name: TiesRows :many
+SELECT value FROM
+(SELECT number % 2 AS value FROM numbers(6) ORDER BY value LIMIT 1 WITH TIES)
+ORDER BY value;
+-- name: ArrayCaseRows :many
+SELECT number, CASE WHEN item BETWEEN 1 AND 2 THEN CAST(item AS UInt32) ELSE CAST(0 AS UInt32) END AS value
+FROM numbers(2) ARRAY JOIN [number, number + 1] AS item ORDER BY number, item;
+-- name: ParametricAggregate :one
+SELECT quantile(0.5)(toFloat64(number)) AS median, count(DISTINCT number % 2) AS distinct_count FROM numbers(4);
+-- name: FillRows :many
+SELECT toUInt32(number * 2) AS value FROM numbers(2) ORDER BY value WITH FILL FROM 0 TO 4 STEP 1;`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -644,13 +827,18 @@ SELECT toFixedString('a', {Width:UInt64}) AS value FROM numbers(1);
 SELECT toFixedString('a', {Width:UInt64}) AS value FROM numbers(0);
 -- name: Formatting :one
 SELECT format('value:{}', dummy) AS label FROM system.one;
+-- name: ParenthesizedSet :many
+(SELECT {Start:UInt32} AS value UNION ALL SELECT toUInt32(2) AS value)
+EXCEPT SELECT toUInt32(1) AS value;
+-- name: Comparison :one
+SELECT jaroSimilarity({Left:String}, {Right:String}) AS similarity;
 -- name: Scalars :one
 SELECT {B:Bool} AS b, {I8:Int8} AS i8, {I16:Int16} AS i16,
        {I32:Int32} AS i32, {I64:Int64} AS i64, {U8:UInt8} AS u8,
        {U16:UInt16} AS u16, {U32:UInt32} AS u32, {U64:UInt64} AS u64,
        {F32:Float32} AS f32, {F64:Float64} AS f64;`)
 	samples := filepath.Join(filepath.Dir(config), "samples.json")
-	if err := os.WriteFile(samples, []byte(`{"Read":{"Limit":"3","Text":"quote '\\ tab\t newline\n null\u0000"},"Drift":{"Width":"2"},"EmptyDrift":{"Width":"2"},"Scalars":{"B":"true","I8":"-1","I16":"-1","I32":"-1","I64":"-1","U8":"1","U16":"1","U32":"1","U64":"1","F32":"1.25","F64":"2.5"}}`), 0o600); err != nil {
+	if err := os.WriteFile(samples, []byte(`{"Read":{"Limit":"3","Text":"quote '\\ tab\t newline\n null\u0000"},"Drift":{"Width":"2"},"EmptyDrift":{"Width":"2"},"ParenthesizedSet":{"Start":"0"},"Comparison":{"Left":"abc","Right":"abc"},"Scalars":{"B":"true","I8":"-1","I16":"-1","I32":"-1","I64":"-1","U8":"1","U16":"1","U32":"1","U64":"1","F32":"1.25","F64":"2.5"}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	output, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-server", endpoint, "-params", samples).CombinedOutput()
@@ -664,6 +852,25 @@ SELECT {B:Bool} AS b, {I8:Int8} AS i8, {I16:Int16} AS i16,
 	fixture, err := os.ReadFile("testdata/serverqueries/runtime_test.go")
 	if err != nil {
 		t.Fatal(err)
+	}
+	data, err := os.ReadFile(samples)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var examples map[string]map[string]string
+	if err := json.Unmarshal(data, &examples); err != nil {
+		t.Fatal(err)
+	}
+	options := chgen.ServerOptions{Server: endpoint, ParameterExamples: examples, User: os.Getenv("CHGEN_DESCRIBE_USER"), Password: os.Getenv("CHGEN_DESCRIBE_PASSWORD")}
+	if err := chgen.RunServer(t.Context(), config, options); err != nil {
+		t.Fatalf("public server API: %v", err)
+	}
+	apiOutput, err := os.ReadFile(outputPath)
+	if err != nil || !bytes.Equal(generated, apiOutput) {
+		t.Fatalf("public API and CLI differ: %v", err)
+	}
+	if err := chgen.CheckServer(t.Context(), config, options); err != nil {
+		t.Fatalf("public server check: %v", err)
 	}
 	runGeneratedRuntime(t, "serverqueries", generated, fixture)
 }

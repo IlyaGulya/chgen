@@ -161,6 +161,7 @@ func TestSupportedPackageSurface(t *testing.T) {
 		"CHType",
 		"Check",
 		"CheckReport",
+		"CheckServer",
 		"Column",
 		"Command",
 		"CommandExec",
@@ -184,8 +185,10 @@ func TestSupportedPackageSurface(t *testing.T) {
 		"Query",
 		"Result",
 		"Run",
+		"RunServer",
 		"Schema",
 		"SchemaCatalogs",
+		"ServerOptions",
 		"Table",
 		"TableEngine",
 	}

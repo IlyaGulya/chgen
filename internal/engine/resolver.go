@@ -3,6 +3,7 @@ package engine
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 
@@ -28,6 +29,7 @@ type queryScope struct {
 	usingQualified       map[string]CHType
 	arrayJoinTypes       map[string]CHType
 	arrayJoinQualified   map[string]CHType
+	arrayJoinInputs      map[int]queryScope
 	exactScalarNames     bool
 	windows              map[string]*clickhouse.WindowExpr
 	scalarSubqueries     map[*clickhouse.SelectQuery]CHType
@@ -45,7 +47,8 @@ type scopedTable struct {
 // parent stack. Keeping the resolved scope by node lets parameter inference use
 // the columns visible at the placeholder's actual SELECT level.
 type scopeIndex struct {
-	irBindings          map[*clickhouse.SelectQuery]*sqlir.BoundScope
+	irDocuments         map[*clickhouse.SelectQuery]*sqlir.Document
+	irPreparation       *irSelectBinding
 	byNode              map[clickhouse.Expr]queryScope
 	selects             map[*clickhouse.SelectQuery]queryScope
 	scalarSubqueries    map[*clickhouse.SelectQuery]CHType
@@ -148,7 +151,7 @@ func resolveQueryWithUncheckedSettings(query *Query, schema *Schema, unchecked [
 	if err := validateResultContractTargets(query, selectQuery); err != nil {
 		return err
 	}
-	binding, bindErr := bindIRSelect(selectQuery, schema, query.SQL)
+	binding, bindErr := prepareIRSelect(selectQuery, query.SQL)
 	if bindErr != nil && !errors.Is(bindErr, sqlir.ErrBindingUnmodeled) {
 		return bindErr
 	}
@@ -1312,7 +1315,8 @@ func resolveScopeWithIRBinding(selectQuery *clickhouse.SelectQuery, schema *Sche
 		expressionContracts: make(map[*clickhouse.FunctionExpr]bool),
 	}
 	if binding != nil {
-		scopes.irBindings = binding.nodes
+		scopes.irDocuments = binding.documents
+		scopes.irPreparation = binding
 	}
 	if !selectQueryHasSetOperation(selectQuery) {
 		scope, err := resolveSelectScope(selectQuery, schema, nil, scopes)
@@ -1684,6 +1688,7 @@ func cloneQueryScope(scope queryScope) queryScope {
 	scope.usingQualified = cloneScalarTypes(scope.usingQualified)
 	scope.arrayJoinTypes = cloneScalarTypes(scope.arrayJoinTypes)
 	scope.arrayJoinQualified = cloneScalarTypes(scope.arrayJoinQualified)
+	scope.arrayJoinInputs = maps.Clone(scope.arrayJoinInputs)
 	scope.tables = append([]scopedTable(nil), scope.tables...)
 	return scope
 }
@@ -1706,7 +1711,8 @@ func cloneWindows(values map[string]*clickhouse.WindowExpr) map[string]*clickhou
 
 func cloneScopeIndex(scopes *scopeIndex) *scopeIndex {
 	copy := &scopeIndex{
-		irBindings:       scopes.irBindings,
+		irDocuments:      scopes.irDocuments,
+		irPreparation:    scopes.irPreparation,
 		byNode:           make(map[clickhouse.Expr]queryScope, len(scopes.byNode)),
 		selects:          make(map[*clickhouse.SelectQuery]queryScope, len(scopes.selects)),
 		scalarSubqueries: make(map[*clickhouse.SelectQuery]CHType, len(scopes.scalarSubqueries)),
@@ -1752,7 +1758,6 @@ func resolveSelectScope(
 		arrayJoinTypes:      make(map[string]CHType),
 		arrayJoinQualified:  make(map[string]CHType),
 	}
-	scope.irBinding = scopes.irBindings[selectQuery]
 	if parent != nil {
 		for name, table := range parent.relations {
 			scope.relations[name] = table
@@ -1804,13 +1809,27 @@ func resolveSelectScope(
 			return queryScope{}, err
 		}
 	}
-	if err := validateExecutableSelectClauses(selectQuery, schema, &scope, scopes); err != nil {
-		return queryScope{}, err
-	}
+	clauseErr := validateExecutableSelectClauses(selectQuery, schema, &scope, scopes)
 	for _, item := range selectQuery.SelectItems {
 		if err := resolveScalarSubqueriesInExpr(item.Expr, schema, &scope, scopes); err != nil {
 			return queryScope{}, err
 		}
+	}
+	if document := scopes.irDocuments[selectQuery]; document != nil {
+		bound, err := bindIRCatalogScope(document, scope)
+		if err != nil && !errors.Is(err, sqlir.ErrBindingUnmodeled) {
+			if clauseErr != nil {
+				return queryScope{}, diagnostic.With(clauseErr, diagnostic.Describe(err))
+			}
+			return queryScope{}, err
+		}
+		if err != nil {
+			scopes.irPreparation.failure = err
+		}
+		scope.irBinding = bound
+	}
+	if clauseErr != nil {
+		return queryScope{}, clauseErr
 	}
 	scopes.selects[selectQuery] = scope
 	markSelectScope(selectQuery, scope, scopes)
@@ -3233,6 +3252,11 @@ func collectArrayJoin(
 			return fmt.Errorf("ARRAY JOIN alias %q is defined more than once", name)
 		}
 		names[name] = true
+		if scope.arrayJoinInputs == nil {
+			scope.arrayJoinInputs = make(map[int]queryScope)
+		}
+		itemScope.arrayJoinInputs = nil
+		scope.arrayJoinInputs[int(column.Expr.Pos())] = itemScope
 		bindings = append(bindings, binding{name: name, qualified: qualified, element: element})
 	}
 	for _, value := range bindings {
