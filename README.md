@@ -357,8 +357,15 @@ formatting independently of local hooks.
 Run the project checks before you send a change:
 
 ```sh
-./scripts/verify.sh
+./scripts/check.sh
 ```
+
+This runs the offline verification and a short public-pipeline fuzz session.
+The same runner selects checks in CI and writes `summary.md` and `summary.json`
+into a fresh run directory under `verify-report/`.
+For live checks, deeper exploration and reproducing a failure, see
+[Unified verification](docs/unified-verification.md). The existing
+`scripts/verify.sh` remains the offline check implementation.
 
 ## License
 

@@ -152,6 +152,7 @@ func expectedToolingCommands() []string {
 		"supportmanifest",
 		"systemcatalog",
 		"typespecimens",
+		"verify",
 	}
 }
 
@@ -1101,10 +1102,22 @@ func repositoryHasSilentEngineCommand(root string) bool {
 		return true
 	}
 	for _, marker := range []string{
-		"go test -tags fuzzoracle -run TestTypeOracle -count=1 -timeout 40m -v ./internal/engine",
-		"go test -tags execoracle -count=1 -timeout 40m -v ./internal/engine",
+		"./scripts/check.sh -suite types",
+		"./scripts/check.sh -suite execution",
 	} {
 		if !strings.Contains(string(workflow), marker) {
+			return true
+		}
+	}
+	adapters, err := os.ReadFile(filepath.Join(root, "internal", "tooling", "cmd", "verify", "suites.go"))
+	if err != nil {
+		return true
+	}
+	for _, marker := range []string{
+		`env, "fuzzoracle", "^TestTypeOracle$", "./internal/engine"`,
+		`env, "execoracle", "", []string{"TestExecOracle"}, "./internal/engine"`,
+	} {
+		if !strings.Contains(string(adapters), marker) {
 			return true
 		}
 	}

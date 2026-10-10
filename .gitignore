@@ -1,6 +1,7 @@
 # Build output: the compiled binary, not the chgen/ package directory.
 /chgen.bin
 /dist/
+/verify-report/
 
 # Go workspace
 go.work

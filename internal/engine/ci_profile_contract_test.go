@@ -23,9 +23,11 @@ func readCIWorkflow(t *testing.T) string {
 }
 
 var approvedCIActionUses = map[string]bool{
-	"actions/checkout@v7":        true,
-	"actions/setup-go@v7":        true,
-	"actions/upload-artifact@v7": true,
+	"actions/checkout@v7":          true,
+	"actions/setup-go@v7":          true,
+	"actions/upload-artifact@v7":   true,
+	"actions/download-artifact@v8": true,
+	"actions/cache@v6":             true,
 }
 
 func ciActionUses(workflow string) ([]string, error) {
@@ -82,9 +84,11 @@ func TestCIUsesCurrentApprovedGitHubActions(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantCounts := map[string]int{
-		"actions/checkout@v7":        7,
-		"actions/setup-go@v7":        7,
-		"actions/upload-artifact@v7": 5,
+		"actions/checkout@v7":          9,
+		"actions/setup-go@v7":          9,
+		"actions/upload-artifact@v7":   10,
+		"actions/download-artifact@v8": 1,
+		"actions/cache@v6":             1,
 	}
 	gotCounts := make(map[string]int)
 	references, err := ciActionUses(workflow)
@@ -108,7 +112,7 @@ func TestCIActionVersionContractRejectsMutations(t *testing.T) {
 		"old setup go":            strings.Replace(workflow, "actions/setup-go@v7", "actions/setup-go@v5", 1),
 		"old upload":              strings.Replace(workflow, "actions/upload-artifact@v7", "actions/upload-artifact@v4", 1),
 		"floating ref":            strings.Replace(workflow, "actions/checkout@v7", "actions/checkout@main", 1),
-		"unknown action":          strings.Replace(workflow, "actions/checkout@v7", "actions/cache@v4", 1),
+		"unknown action":          strings.Replace(workflow, "actions/checkout@v7", "actions/unknown@v4", 1),
 		"vendor action":           strings.Replace(workflow, "actions/checkout@v7", "vendor/action@v7", 1),
 		"local action":            strings.Replace(workflow, "actions/checkout@v7", "./.github/actions/setup", 1),
 		"reusable workflow":       strings.Replace(workflow, "jobs:\n", "jobs:\n  delegated:\n    uses: vendor/automation/.github/workflows/build.yml@v7\n", 1),
@@ -148,13 +152,20 @@ func TestCIMinimumGoJobUsesTheLocalToolchain(t *testing.T) {
 		t.Error("the workflow does not pin minimum Go 1.24.0")
 	}
 	for _, required := range []string{
-		"GOTOOLCHAIN: local",
 		"go-version: ${{ env.MINIMUM_GO_VERSION }}",
-		`go build -o "${RUNNER_TEMP}/chgen" ./cmd/chgen`,
-		"run: go test ./...",
+		"./scripts/check.sh -suite minimum",
 	} {
 		if !strings.Contains(job, required) {
 			t.Errorf("the minimum Go contract does not contain %q", required)
+		}
+	}
+	if !strings.Contains(workflow, "GOTOOLCHAIN: local") {
+		t.Error("CI must use its installed toolchain")
+	}
+	adapter := readVerificationSource(t, "offline.go")
+	for _, required := range []string{`"GOTOOLCHAIN": "go1.24.0"`, `"./cmd/chgen"`, `"go", "test", "./..."`} {
+		if !strings.Contains(adapter, required) {
+			t.Errorf("minimum adapter lost %q", required)
 		}
 	}
 	if strings.Contains(job, "clickhouse-server") || strings.Contains(job, "fuzzoracle") || strings.Contains(job, "execoracle") {
@@ -165,12 +176,11 @@ func TestCIMinimumGoJobUsesTheLocalToolchain(t *testing.T) {
 func TestCIGeneratedCodeUsesEachSupportedPair(t *testing.T) {
 	job := ciJob(t, readCIWorkflow(t), "generated-code-compatibility", "build")
 	for _, required := range []string{
-		"GOTOOLCHAIN: local",
 		`go: "1.24.0"`,
 		`driver: "v2.42.0"`,
 		`go: "1.25.0"`,
 		`driver: "v2.47.0"`,
-		`go run ./internal/tooling/cmd/drivercompat -go "${{ matrix.go }}" -driver "${{ matrix.driver }}"`,
+		`./scripts/check.sh -suite compatibility -go "${{ matrix.go }}" -driver "${{ matrix.driver }}"`,
 	} {
 		if !strings.Contains(job, required) {
 			t.Errorf("the generated-code contract does not contain %q", required)
@@ -219,38 +229,37 @@ func ciEnvValue(job, name string) (string, error) {
 }
 
 func validateVersionBoundaryOracleURLs(job string) error {
-	want := map[string]struct {
-		host string
-		port string
-	}{
-		"PINNED_ORACLE_URL":    {host: "localhost", port: "8123"},
-		"CANDIDATE_ORACLE_URL": {host: "localhost", port: "18123"},
+	for _, endpoint := range []string{"-http http://localhost:8123", "-candidate-http http://localhost:18123"} {
+		if strings.Count(job, endpoint) != 1 {
+			return fmt.Errorf("version comparison must provide exactly one %s", endpoint)
+		}
 	}
 	wantQuery := map[string]string{
 		"allow_experimental_variant_type": "1",
 		"allow_experimental_dynamic_type": "1",
 		"allow_experimental_json_type":    "1",
 	}
-	for name, endpoint := range want {
-		raw, err := ciEnvValue(job, name)
+	_, tail, found := strings.Cut(job, `endpoint += "`)
+	if !found {
+		return fmt.Errorf("version adapter must share one settings suffix")
+	}
+	suffix, _, found := strings.Cut(tail, `"`)
+	if !found || strings.Count(job, `endpoint += "`) != 1 {
+		return fmt.Errorf("version adapter has duplicate settings suffixes")
+	}
+	for _, endpoint := range []string{"http://localhost:8123", "http://localhost:18123"} {
+		parsed, err := url.Parse(endpoint + suffix)
 		if err != nil {
-			return err
-		}
-		parsed, err := url.Parse(raw)
-		if err != nil {
-			return fmt.Errorf("%s is not a URL: %w", name, err)
-		}
-		if parsed.Scheme != "http" || parsed.Hostname() != endpoint.host || parsed.Port() != endpoint.port || parsed.Path != "" || parsed.Fragment != "" {
-			return fmt.Errorf("%s has endpoint %q, want http://%s:%s", name, raw, endpoint.host, endpoint.port)
+			return fmt.Errorf("invalid version endpoint: %w", err)
 		}
 		query := parsed.Query()
 		if len(query) != len(wantQuery) {
-			return fmt.Errorf("%s has %d query settings, want %d", name, len(query), len(wantQuery))
+			return fmt.Errorf("endpoint has %d query settings, want %d", len(query), len(wantQuery))
 		}
 		for key, value := range wantQuery {
 			values, ok := query[key]
 			if !ok || len(values) != 1 || values[0] != value {
-				return fmt.Errorf("%s setting %s is %q, want one value %q", name, key, values, value)
+				return fmt.Errorf("endpoint setting %s is %q, want one value %q", key, values, value)
 			}
 		}
 	}
@@ -274,7 +283,7 @@ func TestCIHasNoVersionedGrammarAxis(t *testing.T) {
 	if strings.Contains(typeOracle, "strategy:") || strings.Contains(typeOracle, "matrix:") {
 		t.Error("the current type oracle must use one job without a matrix")
 	}
-	if !strings.Contains(typeOracle, `args+=(-report "${{ github.workspace }}/oracle-report-${CHGEN_ORACLE_PLAN}-${CHGEN_ORACLE_FIXTURE_ID}-seed${seed}.json")`) {
+	if !strings.Contains(readVerificationSource(t, "suites.go"), `args = append(args, "-report", filepath.Join(r.out, name))`) {
 		t.Error("the union gate must pass bare report paths")
 	}
 }
@@ -297,34 +306,33 @@ func TestCILiveTypeOracleCellsNameCurrentIdentity(t *testing.T) {
 	for name, job := range jobs {
 		t.Run(name, func(t *testing.T) {
 			for _, required := range []string{
-				"CHGEN_ORACLE_PLAN: current-combined-v1",
-				"CHGEN_ORACLE_FIXTURE_ID: " + job.fixtureID,
-				"current-combined-v1-" + job.fixtureID,
+				`"CHGEN_ORACLE_PLAN": "current-combined-v1"`,
+				`"CHGEN_ORACLE_FIXTURE_ID": "` + job.fixtureID + `"`,
 			} {
-				if !strings.Contains(job.body, required) {
+				if !strings.Contains(readVerificationSource(t, "suites.go"), required) {
 					t.Errorf("live job does not name %q", required)
 				}
 			}
 		})
 	}
-	versionBoundary := jobs["version-matrix"].body
+	versionBoundary := jobs["version-matrix"].body + readVerificationSource(t, "suites.go")
 	if err := validateVersionBoundaryOracleURLs(versionBoundary); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestCIVersionBoundaryURLSettingsRejectAsymmetricMutations(t *testing.T) {
-	job := ciJob(t, readCIWorkflow(t), "version-matrix", "")
+	job := ciJob(t, readCIWorkflow(t), "version-matrix", "verification-summary") + readVerificationSource(t, "suites.go")
 	mutations := map[string]string{
 		"comment cannot replace pinned setting": strings.Replace(job,
-			"PINNED_ORACLE_URL: http://localhost:8123?allow_experimental_variant_type=1&allow_experimental_dynamic_type=1&allow_experimental_json_type=1",
-			"PINNED_ORACLE_URL: http://localhost:8123?allow_experimental_variant_type=1&allow_experimental_json_type=1\n      # allow_experimental_dynamic_type=1",
+			"&allow_experimental_dynamic_type=1",
+			"",
 			1),
 		"candidate duplicate is not one setting": strings.Replace(job,
-			"CANDIDATE_ORACLE_URL: http://localhost:18123?allow_experimental_variant_type=1&allow_experimental_dynamic_type=1&allow_experimental_json_type=1",
-			"CANDIDATE_ORACLE_URL: http://localhost:18123?allow_experimental_variant_type=1&allow_experimental_variant_type=1&allow_experimental_dynamic_type=1&allow_experimental_json_type=1",
+			"?allow_experimental_variant_type=1",
+			"?allow_experimental_variant_type=1&allow_experimental_variant_type=1",
 			1),
-		"duplicate assignment is not allowed": job + "\n    PINNED_ORACLE_URL: http://localhost:8123?allow_experimental_variant_type=1&allow_experimental_dynamic_type=1&allow_experimental_json_type=1\n",
+		"duplicate assignment is not allowed": job + `endpoint += "?allow_experimental_variant_type=1"`,
 	}
 	for name, mutated := range mutations {
 		t.Run(name, func(t *testing.T) {
@@ -339,12 +347,13 @@ func TestCIVersionBoundaryURLSettingsRejectAsymmetricMutations(t *testing.T) {
 }
 
 func TestCIVersionBoundaryRunsExecutedKnownProbes(t *testing.T) {
-	job := ciJob(t, readCIWorkflow(t), "version-matrix", "")
+	job := ciJob(t, readCIWorkflow(t), "version-matrix", "verification-summary") + readVerificationSource(t, "suites.go")
 	for _, required := range []string{
-		`"${{ runner.temp }}/probe" -url "${PINNED_ORACLE_URL}" -out "${PINNED_PROBE_OUT}"`,
-		`"${{ runner.temp }}/probe" -url "${CANDIDATE_ORACLE_URL}" -out "${CANDIDATE_PROBE_OUT}"`,
-		`"${{ runner.temp }}/probegate" -known-version-boundary "${PINNED_PROBE_OUT}" "${CANDIDATE_PROBE_OUT}"`,
-		`for path in "${PINNED_OUT}" "${CANDIDATE_OUT}" "${ORACLE_DIFF_OUT}"`,
+		`./scripts/check.sh -suite versions`,
+		`probe, "-url", endpoint, "-out", filepath.Join(r.out, probeNames[i])`,
+		`r.gate("known-version-boundary", gate, "-known-version-boundary"`,
+		`r.artifact(probeNames[i])`,
+		`r.artifact(oracleNames[i])`,
 	} {
 		if !strings.Contains(job, required) {
 			t.Errorf("version boundary does not contain %q", required)
@@ -356,11 +365,11 @@ func TestCIFixedSeedUnionUsesOneServerJob(t *testing.T) {
 	workflow := readCIWorkflow(t)
 	job := ciJob(t, workflow, "type-oracle", "exec-oracle")
 	for _, required := range []string{
-		`ORACLE_SEEDS: "1 7 42 99"`,
-		"for seed in ${ORACLE_SEEDS}; do",
-		`"${{ runner.temp }}/oraclegate" -union "${args[@]}"`,
+		`"1,7,42,99"`,
+		"for _, seed := range o.seeds",
+		`r.gate("type-union-gate", tool, args...)`,
 	} {
-		if !strings.Contains(job, required) {
+		if !strings.Contains(readVerificationSource(t, "config.go")+readVerificationSource(t, "suites.go"), required) {
 			t.Errorf("the fixed-seed union contract does not contain %q", required)
 		}
 	}
@@ -386,12 +395,21 @@ func TestCILiveGatesStayIndependentAndBlocking(t *testing.T) {
 			}
 		})
 	}
-	if !strings.Contains(jobs["exec-oracle"], "CHGEN_EXEC_NATIVE:") || !strings.Contains(jobs["exec-oracle"], "./internal/tooling/cmd/execoraclegate") {
+	if !strings.Contains(jobs["exec-oracle"], "-native localhost:9000") || !strings.Contains(jobs["exec-oracle"], "-suite execution") {
 		t.Error("the native execution oracle and its gate must stay in CI")
 	}
-	if !strings.Contains(jobs["type-boundary-probe"], "./internal/tooling/cmd/probe") || !strings.Contains(jobs["type-boundary-probe"], "./internal/tooling/cmd/probegate") {
+	if !strings.Contains(jobs["type-boundary-probe"], "-suite boundary") || !strings.Contains(readVerificationSource(t, "suites.go"), `r.gate("boundary-gate", gate, "testdata/probe-baseline-25.8.29.51.json"`) {
 		t.Error("the deterministic probe and its gate must stay in CI")
 	}
+}
+
+func readVerificationSource(t *testing.T, name string) string {
+	t.Helper()
+	data, err := os.ReadFile(moduleRootPath("internal", "tooling", "cmd", "verify", name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
 }
 
 func TestCIClickHouseServicesPermitTheWorkflowClient(t *testing.T) {

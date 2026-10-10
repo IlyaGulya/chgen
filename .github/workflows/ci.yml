@@ -1,47 +1,6 @@
-# Continuous integration for chgen.
-#
-# Seven jobs, as the design asks:
-#
-#   minimum-go           the command module on the oldest supported Go
-#                        version, with toolchain downloads disabled.
-#   generated-code-compatibility
-#                        generated packages with each supported Go and driver
-#                        pair. This job compiles code but runs no query.
-#   build                the default test suite, with no server. The refusal
-#                        census, the reachability gate and the wrapper guards
-#                        all live here.
-#   type-oracle          the current combined profile against one PINNED
-#                        ClickHouse service, run over a FIXED SET OF SEEDS
-#                        and gated on the UNION of the seeds' signatures
-#                        (the regression; see docs/ci-and-the-oracle-baseline.md).
-#                        A single-seed gate can be green while a defect is
-#                        live on another seed, so this job never trusts one
-#                        seed alone.
-#   exec-oracle          the execution oracle against the same pinned server.
-#   type-boundary-probe  `chgen probe` against the pinned server, self-tested
-#                        and GATED against a committed baseline artifact
-#                        (the regression; see internal/typeboundary and
-#                        docs/type-boundary-probe.md). Unlike version-matrix
-#                        below, this job DOES gate the build: every probe
-#                        cell is a fixed, committed query, not a random
-#                        sample, so it needs none of the uptime tolerance
-#                        that makes a total gate on the oracle's own sample
-#                        unsafe.
-#   version-matrix       the type oracle against the pinned server AND an
-#                        older server, then a cross-version DIFFERENCE
-#                        REPORT. This job never gates the build; see the
-#                        comment on the job for why.
-#
-# The server version is pinned to an exact patch. A version change moves the
-# measured answers, thus it must be a deliberate commit and never a silent
-# drift from a floating tag.
-#
-# On gating: nothing here compares a TOTAL. The oracle totals are not
-# deterministic; they move with the age of the server on one and the same
-# commit. The type-oracle job compares the SET of signatures against the
-# committed baseline, which is a question that survives the change of
-# instance. See docs/ci-and-the-oracle-baseline.md.
-
+# CI supplies compilers and disposable servers, then invokes the same runner
+# used locally. Test selection, seeds, gates and report semantics live in
+# internal/tooling/cmd/verify, not in this workflow.
 name: ci
 
 on:
@@ -49,56 +8,36 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: "23 2 * * *"
 
 permissions:
   contents: read
 
 env:
-  # Pin both compiler versions. The minimum job also checks the go directive.
   MINIMUM_GO_VERSION: "1.24.0"
   CURRENT_GO_VERSION: "1.26.5"
-  # The pinned server. Both oracle jobs use this one value.
-  CLICKHOUSE_IMAGE_VERSION: "25.8.29.51"
+  GOTOOLCHAIN: local
 
 jobs:
-  # ----------------------------------------------------- minimum Go version ---
   minimum-go:
     name: minimum Go 1.24
     runs-on: ubuntu-latest
-    env:
-      # Do not let Go download a newer compiler for this check.
-      GOTOOLCHAIN: local
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.MINIMUM_GO_VERSION }}
           check-latest: false
+      - name: Verify minimum Go
+        run: ./scripts/check.sh -suite minimum -report "${RUNNER_TEMP}/verification"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: verification-minimum
+          path: ${{ runner.temp }}/verification
+          if-no-files-found: error
 
-      - name: Verify the minimum Go version
-        run: |
-          set -euo pipefail
-          compiler="$(go env GOVERSION)"
-          if [ "$compiler" != "go${MINIMUM_GO_VERSION}" ]; then
-            echo "The job uses ${compiler}, but it must use go${MINIMUM_GO_VERSION}." >&2
-            exit 1
-          fi
-          directive="$(awk '/^go / {print $2; exit}' go.mod)"
-          if [ "$directive" != "${MINIMUM_GO_VERSION}" ]; then
-            echo "go.mod uses Go ${directive}, but the minimum is ${MINIMUM_GO_VERSION}." >&2
-            exit 1
-          fi
-          go version
-
-      - name: Build the command with the minimum Go version
-        run: go build -o "${RUNNER_TEMP}/chgen" ./cmd/chgen
-
-      - name: Test the command module with the minimum Go version
-        # Nested modules, such as examples, are not part of this package set.
-        run: go test ./...
-
-  # ------------------------------------------ generated code compatibility ---
   generated-code-compatibility:
     name: generated code (Go ${{ matrix.go }}, driver ${{ matrix.driver }})
     runs-on: ubuntu-latest
@@ -110,225 +49,108 @@ jobs:
             driver: "v2.42.0"
           - go: "1.25.0"
             driver: "v2.47.0"
-    env:
-      # Each cell must use the compiler that the cell names.
-      GOTOOLCHAIN: local
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go }}
           check-latest: false
+      - name: Compile generated code
+        run: ./scripts/check.sh -suite compatibility -go "${{ matrix.go }}" -driver "${{ matrix.driver }}" -report "${RUNNER_TEMP}/verification"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: verification-compatibility-${{ matrix.go }}-${{ matrix.driver }}
+          path: ${{ runner.temp }}/verification
+          if-no-files-found: error
 
-      - name: Compile generated code with the supported driver
-        run: go run ./internal/tooling/cmd/drivercompat -go "${{ matrix.go }}" -driver "${{ matrix.driver }}"
-
-  # ---------------------------------------------------------------- build ---
   build:
     name: build and default tests
     runs-on: ubuntu-latest
-    env:
-      GOTOOLCHAIN: local
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.CURRENT_GO_VERSION }}
           check-latest: false
-
-      - name: Verify the current Go version
-        run: |
-          set -euo pipefail
-          compiler="$(go env GOVERSION)"
-          if [ "$compiler" != "go${CURRENT_GO_VERSION}" ]; then
-            echo "The job uses ${compiler}, but it must use go${CURRENT_GO_VERSION}." >&2
-            exit 1
-          fi
-          go version
-
-      - name: Run the offline verification command
-        # This command checks format, module drift, generated files, the
-        # default source set, and every supported build tag. It also runs the
-        # pinned static analyzer, the race detector, shuffled tests, and an
-        # external consumer compile test. Oracle tests compile but do not need
-        # a server in this job.
-        run: ./scripts/verify.sh
-
-      - name: Measure the offline SQL compatibility corpus
-        run: go run ./cmd/chgen coverage -corpus testdata/syntax-corpus.json > "${RUNNER_TEMP}/chgen-syntax-coverage.json"
-
-      - name: Publish SQL compatibility observations
-        uses: actions/upload-artifact@v7
+      - name: Verify offline
+        run: ./scripts/check.sh -suite offline -report "${RUNNER_TEMP}/verification"
+      - uses: actions/upload-artifact@v7
+        if: always()
         with:
-          name: syntax-coverage-offline
-          path: ${{ runner.temp }}/chgen-syntax-coverage.json
+          name: verification-offline
+          path: ${{ runner.temp }}/verification
           if-no-files-found: error
 
-  # ---------------------------------------------------------- type oracle ---
-  type-oracle:
-    # This job replaces two versioned grammar cells with one current profile.
-    # The four seeds share one service and one server_run. The job now starts
-    # four oracle processes instead of eight, and it starts one service job
-    # instead of two.
-    name: type oracle (current-combined-v1, current-fixture)
+  public-pipeline-fuzz:
+    name: public SQL pipeline fuzz
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.CURRENT_GO_VERSION }}
+          check-latest: false
+      - name: Restore discovered fuzz inputs
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/go-build/fuzz
+          key: sql-fuzz-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: sql-fuzz-${{ runner.os }}-
+      - name: Verify public pipeline
+        env:
+          VERIFY_PROFILE: ${{ github.event_name == 'schedule' && 'deep' || 'quick' }}
+        run: ./scripts/check.sh -suite fuzz -profile "$VERIFY_PROFILE" -report "${RUNNER_TEMP}/verification"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: verification-fuzz
+          path: ${{ runner.temp }}/verification
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: public-sql-minimized-failures
+          path: testdata/fuzz/
+          if-no-files-found: warn
 
+  type-oracle:
+    name: pinned type and runtime checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
     services:
       clickhouse:
-        # Pinned to an exact patch on purpose. See the note at the top.
         image: clickhouse/clickhouse-server:25.8.29.51
         env:
-          # The image otherwise limits the default user to the container.
           CLICKHOUSE_SKIP_USER_SETUP: "1"
         ports:
           - 8123:8123
           - 9000:9000
-
-    env:
-      CHGEN_ORACLE_URL: http://localhost:8123
-      CHGEN_ORACLE_N: "2000"
-      CHGEN_ORACLE_PLAN: current-combined-v1
-      CHGEN_ORACLE_FIXTURE_ID: current-fixture
-      # The fixed seed set that the union gate covers for the current profile.
-      # the regression measured that a single-seed gate (seed 1 alone) can be
-      # green while a real defect is live on another seed: seed 42 held 11
-      # signatures from one cause (the regression) plus one more
-      # (the regression), and seed 7 held a signature neither of the other
-      # three seeds reach (the regression). Widening this list to cover a new
-      # seed needs NO new baseline cell: see the union-cell design in
-      # docs/ci-and-the-oracle-baseline.md.
-      ORACLE_SEEDS: "1 7 42 99"
-
+        options: >-
+          --health-cmd "clickhouse-client --query 'SELECT 1'"
+          --health-interval 5s --health-timeout 5s --health-retries 30
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.CURRENT_GO_VERSION }}
           check-latest: false
-
-      - name: Wait for ClickHouse and record the instance
-        # server_run names the instance. Every cell of one job meets one and
-        # the same server run, which is what makes a per-signature comparison
-        # inside this job valid.
-        run: |
-          set -euo pipefail
-          for _ in $(seq 1 60); do
-            if curl -sf "${CHGEN_ORACLE_URL}/?query=SELECT+1" >/dev/null; then
-              break
-            fi
-            sleep 2
-          done
-          curl -sf "${CHGEN_ORACLE_URL}/?query=SELECT+version()"
-          curl -sf "${CHGEN_ORACLE_URL}/?query=SELECT+toUnixTimestamp(now()-toIntervalSecond(toUInt32(uptime())))+AS+server_run,+uptime()"
-
-      - name: Verify the pinned server version
-        # The image tag and the version that the server answers must agree. A
-        # baseline measured on another version cannot gate this run, and the
-        # gate would refuse later with a less clear message.
-        run: |
-          set -euo pipefail
-          got="$(curl -sf "${CHGEN_ORACLE_URL}/?query=SELECT+version()")"
-          if [ "$got" != "${CLICKHOUSE_IMAGE_VERSION}" ]; then
-            echo "The service answers ClickHouse ${got}, the workflow pins ${CLICKHOUSE_IMAGE_VERSION}." >&2
-            exit 1
-          fi
-
-      - name: Verify SETTINGS read controls and explicit opt-in
-        run: go test -tags fuzzoracle -run '^TestSettingsReadControlsAgainstClickHouse$' -count=1 -v ./internal/engine
-
-      - name: Verify pinned system catalog and generated reads
+      - name: Verify types and generated execution
         env:
-          CHGEN_SYSTEM_HTTP: localhost:8123
-        run: |
-          curl -sf --data 'SYSTEM FLUSH LOGS' "${CHGEN_ORACLE_URL}"
-          go run ./internal/tooling/cmd/systemcatalog -check
-          go test -run '^TestGeneratedSystemPartsSignatureRuntime$' -count=1 -v ./internal/engine
-
-      - name: Verify EXCHANGE catalog against ClickHouse
-        run: go test -tags fuzzoracle -run '^TestCatalogExchangeAgainstClickHouse$' -count=1 -v ./internal/engine
-
-      - name: Verify numeric date-key family against ClickHouse
-        run: go test -tags fuzzoracle -run '^(TestNumericDateKeysAgainstClickHouse|TestNullableOracleRegressionsAgainstClickHouse)$' -count=1 -v ./internal/engine
-
-      - name: Verify generated contracts, cursor queries and oracle regressions
-        env:
-          CHGEN_CONTRACT_NATIVE: localhost:9000
-        run: go test -run '^(TestResultContractGeneratedRuntime|TestEmptyAggregateGeneratedRuntime|TestCursorQueriesGeneratedRuntime|TestOracleRegressionBoundaryAgainstClickHouse|TestDescribeLiveContractRoundTrip|TestScopedContractsGeneratedRuntime|TestComposedPaginationGeneratedRuntime)$' -count=1 -v . ./internal/engine
-
-      - name: Verify server generation and native parameter transport
-        env:
-          CHGEN_CONTRACT_NATIVE: localhost:9000
-        run: go test -run '^(TestServer.*|TestCheckServer.*)$' -count=1 -v .
-
-      - name: Run the type oracle over every seed of the fixed seed set
-        # One report per seed, all against the ONE server this job started,
-        # so that every report shares one server_run. The
-        # union gate below folds all of them into one signature set.
-        run: |
-          set -euo pipefail
-          for seed in ${ORACLE_SEEDS}; do
-            echo "=== profile=${CHGEN_ORACLE_PLAN} fixture=${CHGEN_ORACLE_FIXTURE_ID} seed=${seed} ==="
-            CHGEN_ORACLE_SEED="${seed}" \
-              CHGEN_ORACLE_OUT="${{ github.workspace }}/oracle-report-${CHGEN_ORACLE_PLAN}-${CHGEN_ORACLE_FIXTURE_ID}-seed${seed}.json" \
-              go test -tags fuzzoracle -run TestTypeOracle -count=1 -timeout 40m -v ./internal/engine
-          done
-
-      - name: Gate the UNION of the seed set against the committed baseline
-        # The gate folds every seed's report into ONE signature set per
-        # profile and compares that union against the profile's single
-        # union cell. A signature the baseline does not hold fails the
-        # cell; a baseline signature that no seed of this run reached does
-        # not, because a fixed seed set is still a sample. See the design
-        # note in docs/ci-and-the-oracle-baseline.md for why this is a
-        # union-of-seeds gate and not a hand-curated cell per seed.
-        #
-        # The gate is BUILT and then run, never started with `go run`. `go run`
-        # always exits 1 when the wrapped program exits non-zero, thus it makes
-        # one code out of two that must stay apart: the oracle gate answers 1 for
-        # "a signature is not in the baseline" and 2 for a REFUSAL, which means
-        # that it measured nothing (an unknown cell, another fixture signature
-        # or another ClickHouse version). A refusal that reads as a difference
-        # sends a reader to look for a type defect that no run measured.
-        #
-        # The case block below states which codes are which. A refusal must
-        # fail this blocking job and must not look like a signature difference.
-        run: |
-          set -euo pipefail
-          go build -o "${{ runner.temp }}/oraclegate" ./internal/tooling/cmd/oraclegate
-          args=()
-          for seed in ${ORACLE_SEEDS}; do
-            args+=(-report "${{ github.workspace }}/oracle-report-${CHGEN_ORACLE_PLAN}-${CHGEN_ORACLE_FIXTURE_ID}-seed${seed}.json")
-          done
-          set +e
-          "${{ runner.temp }}/oraclegate" -union "${args[@]}"
-          status=$?
-          set -e
-          case "$status" in
-            0) echo "The union of the seed set holds no signature that the baseline does not hold." ;;
-            1) echo "A signature is not in the baseline. Read the list above: it names the class." >&2
-               exit 1 ;;
-            *) echo "oraclegate exited $status: it REFUSED to gate and measured nothing." >&2
-               echo "This is not a difference. Do not read it as one." >&2
-               exit "$status" ;;
-          esac
-
-      - name: Upload the reports
-        # The reports are the evidence. Keep them even when the cell failed.
+          VERIFY_PROFILE: ${{ github.event_name == 'schedule' && 'deep' || 'full' }}
+        run: ./scripts/check.sh -suite types -profile "$VERIFY_PROFILE" -http http://localhost:8123 -native localhost:9000 -report "${RUNNER_TEMP}/verification"
+      - uses: actions/upload-artifact@v7
         if: always()
-        uses: actions/upload-artifact@v7
         with:
-          name: type-oracle-report-current-combined-v1-current-fixture
-          path: ${{ github.workspace }}/oracle-report-current-combined-v1-current-fixture-seed*.json
+          name: verification-types
+          path: ${{ runner.temp }}/verification
           if-no-files-found: error
 
-  # ----------------------------------------------------------- exec oracle ---
   exec-oracle:
     name: execution oracle
     runs-on: ubuntu-latest
-
+    timeout-minutes: 180
     services:
       clickhouse:
         image: clickhouse/clickhouse-server:25.8.29.51
@@ -337,133 +159,29 @@ jobs:
         ports:
           - 8123:8123
           - 9000:9000
-
-    env:
-      CHGEN_EXEC_HTTP: http://localhost:8123
-      CHGEN_EXEC_NATIVE: localhost:9000
-      CHGEN_EXEC_SEED: "1"
-      CHGEN_EXEC_RANDN: "300"
-      CHGEN_EXEC_OUT: ${{ github.workspace }}/exec-oracle-report.json
-
+        options: >-
+          --health-cmd "clickhouse-client --query 'SELECT 1'"
+          --health-interval 5s --health-timeout 5s --health-retries 30
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.CURRENT_GO_VERSION }}
           check-latest: false
-
-      - name: Wait for ClickHouse
-        run: |
-          set -euo pipefail
-          for _ in $(seq 1 60); do
-            if curl -sf "${CHGEN_EXEC_HTTP}/?query=SELECT+1" >/dev/null; then
-              break
-            fi
-            sleep 2
-          done
-          curl -sf "${CHGEN_EXEC_HTTP}/?query=SELECT+version()"
-
-      - name: Verify the pinned server version
-        run: |
-          set -euo pipefail
-          got="$(curl -sf "${CHGEN_EXEC_HTTP}/?query=SELECT+version()")"
-          if [ "$got" != "${CLICKHOUSE_IMAGE_VERSION}" ]; then
-            echo "The service answers ClickHouse ${got}, the workflow pins ${CLICKHOUSE_IMAGE_VERSION}." >&2
-            exit 1
-          fi
-
-      - name: Assert the exec-oracle env keys are set
-        # A skip is a pass. TestExecOracle calls t.Skip when CHGEN_EXEC_HTTP
-        # or CHGEN_EXEC_NATIVE is empty, so that a plain local
-        # `go test -tags execoracle ./internal/engine` (no server, no env keys) stays
-        # a harmless skip for a developer. Inside CI a skip must never look
-        # like a pass: a typo in an env key name, or a service container
-        # that never came up, must fail the job loudly instead of leaving a
-        # green tick and zero cases run.
-        #
-        # This step reads GitHub's own CI=true, which every Actions job
-        # sets, rather than adding a second flag that a workflow author
-        # could forget to pass. The test file itself is not changed: its
-        # skip stays a skip for every caller, and this assertion is the
-        # thing that turns "skip" into "fail" for the one caller, this
-        # workflow, that must never skip.
-        run: |
-          set -euo pipefail
-          if [ "${CI:-}" != "true" ]; then
-            echo "expected CI=true (set by GitHub Actions); refusing to guess" >&2
-            exit 1
-          fi
-          missing=""
-          [ -n "${CHGEN_EXEC_HTTP:-}" ] || missing="${missing} CHGEN_EXEC_HTTP"
-          [ -n "${CHGEN_EXEC_NATIVE:-}" ] || missing="${missing} CHGEN_EXEC_NATIVE"
-          if [ -n "$missing" ]; then
-            echo "missing exec-oracle env key(s):${missing}" >&2
-            echo "TestExecOracle would silently SKIP on this job, and a skip is a pass; refusing instead" >&2
-            exit 1
-          fi
-
-      - name: Run the execution oracle
-        # This oracle needs a committed baseline of accepted finding
-        # signatures, gated by the execution oracle gate; see the gate step below.
-        # A finding OUTSIDE that set fails the build. See
-        # docs/ci-and-the-oracle-baseline.md.
-        run: go test -tags execoracle -count=1 -timeout 40m -v ./internal/engine
-
-      - name: Gate the exec-oracle findings against the committed baseline
-        # execoraclegate refuses (exit 2) a missing report file and a report
-        # that ran zero cases, the same way the oracle gate refuses an empty
-        # type-oracle report. That refusal is what makes a missing report or
-        # a zero-case run fail this job, on top of the exec-oracle env-key
-        # assertion above that already covers the most common cause.
-        #
-        # The gate is BUILT and then run, never started with `go run`. `go run`
-        # always exits 1 when the wrapped program exits non-zero, thus it makes
-        # one code out of the two that must stay apart. Measured on this
-        # commit: a missing report gives 2 from the binary and 1 through
-        # `go run`, so a REFUSAL would read as a finding and send a reader to
-        # look for a defect that no run measured.
-        run: |
-          set -euo pipefail
-          go build -o "${{ runner.temp }}/execoraclegate" ./internal/tooling/cmd/execoraclegate
-          set +e
-          "${{ runner.temp }}/execoraclegate" -report "${CHGEN_EXEC_OUT}"
-          status=$?
-          set -e
-          case "$status" in
-            0) echo "Every finding of the run is in the committed baseline." ;;
-            1) echo "A finding is not in the baseline, or a mandatory signature is absent. Read the list above." >&2
-               exit 1 ;;
-            *) echo "execoraclegate exited $status: it REFUSED to gate and measured nothing." >&2
-               echo "This is not a finding. Do not read it as one." >&2
-               exit "$status" ;;
-          esac
-
-      - name: Upload the report
-        # The report is the evidence. Keep it even when the run failed.
+      - name: Verify execution oracle
+        env:
+          VERIFY_PROFILE: ${{ github.event_name == 'schedule' && 'deep' || 'full' }}
+        run: ./scripts/check.sh -suite execution -profile "$VERIFY_PROFILE" -http http://localhost:8123 -native localhost:9000 -report "${RUNNER_TEMP}/verification"
+      - uses: actions/upload-artifact@v7
         if: always()
-        uses: actions/upload-artifact@v7
         with:
-          name: exec-oracle-report
-          path: ${{ env.CHGEN_EXEC_OUT }}
+          name: verification-execution
+          path: ${{ runner.temp }}/verification
           if-no-files-found: error
 
-  # -------------------------------------------------- type boundary probe ---
   type-boundary-probe:
-    # `chgen probe` runs a small, FIXED, committed set of type-boundary
-    # queries (internal/typeboundary.Catalog) against the pinned server and
-    # compares the result against a committed baseline artifact
-    # (testdata/probe-baseline-25.8.29.51.json). Unlike the type
-    # oracle's own random sweep, every probe cell is one exact piece of SQL,
-    # so it needs no uptime tolerance: this job GATES the build.
-    #
-    # See docs/type-boundary-probe.md for the full design, and
-    # internal/typeboundary/compare.go explains why a fixed cell does not need the
-    # cross-instance escape hatch that the oracle difference tool needs for the oracle's
-    # random sample.
-    name: type boundary probe
+    name: deterministic type boundary
     runs-on: ubuntu-latest
-
     services:
       clickhouse:
         image: clickhouse/clickhouse-server:25.8.29.51
@@ -472,331 +190,98 @@ jobs:
         ports:
           - 8123:8123
           - 9000:9000
-
+        options: >-
+          --health-cmd "clickhouse-client --query 'SELECT 1'"
+          --health-interval 5s --health-timeout 5s --health-retries 30
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.CURRENT_GO_VERSION }}
           check-latest: false
-
-      - name: Wait for the server
-        run: |
-          set -euo pipefail
-          for _ in $(seq 1 60); do
-            if curl -sf "http://localhost:8123/?query=SELECT+1" >/dev/null; then
-              break
-            fi
-            sleep 2
-          done
-
-      - name: Build probe and probegate
-        run: |
-          set -euo pipefail
-          go build -o "${{ runner.temp }}/probe" ./internal/tooling/cmd/probe
-          go build -o "${{ runner.temp }}/probegate" ./internal/tooling/cmd/probegate
-
-      - name: Self-test the gate
-        # The gate must be proven able to name a known difference before it
-        # is trusted to gate anything. -selftest injects a difference into
-        # an artifact shaped by internal/typeboundary itself (never a
-        # remembered format) and fails if Compare cannot name it. This step
-        # runs BEFORE the real comparison so a broken gate is caught before
-        # it can silently pass the real one.
-        #
-        # go run must not be used here: it collapses every non-zero exit
-        # code from the wrapped program into 1, which would hide a
-        # self-test failure behind the same status a real difference gives.
-        # The binary built above is run directly instead.
-        run: |
-          "${{ runner.temp }}/probegate" -selftest
-
-      - name: Run the deterministic shared conformance matrix
-        # The probe uses the shared runner. The artifact contains every
-        # deterministic cell, all independent lanes, and stable fixture,
-        # seed, and matrix hashes. The gate below refuses an incomplete
-        # current artifact before it compares server verdicts.
-        run: |
-          set -euo pipefail
-          "${{ runner.temp }}/probe" -url http://localhost:8123 -out "${{ github.workspace }}/probe-current.json"
-
-      - name: Gate against the committed baseline
-        # Exit codes, same discipline as the oraclegate and oraclediff
-        # steps above:
-        #   0  every cell agrees with the baseline -> pass
-        #   1  a cell moved -> a real, named boundary change; FAIL the build
-        #   2+ the comparison could not answer the question (a missing
-        #      file, an empty artifact, a catalog mismatch between this
-        #      binary and the committed baseline) -> FAIL the build, and
-        #      say plainly that nothing was measured
-        run: |
-          set -euo pipefail
-          set +e
-          "${{ runner.temp }}/probegate" testdata/probe-baseline-25.8.29.51.json "${{ github.workspace }}/probe-current.json"
-          status=$?
-          set -e
-          case "$status" in
-            0) echo "The type boundary matches the committed baseline." ;;
-            1) echo "The type boundary MOVED against the committed baseline. Read the named cells above." >&2
-               exit 1 ;;
-            *) echo "probegate exited $status: it REFUSED to gate and measured nothing." >&2
-               exit "$status" ;;
-          esac
-
-      - name: Upload the probe artifact
+      - name: Verify deterministic boundary
+        run: ./scripts/check.sh -suite boundary -http http://localhost:8123 -report "${RUNNER_TEMP}/verification"
+      - uses: actions/upload-artifact@v7
         if: always()
-        uses: actions/upload-artifact@v7
         with:
-          name: type-boundary-probe-current
-          path: ${{ github.workspace }}/probe-current.json
+          name: verification-boundary
+          path: ${{ runner.temp }}/verification
           if-no-files-found: error
 
-  # ------------------------------------------------------- version matrix ---
   version-matrix:
-    # This job gates the fixed, executed boundary witnesses. It reports the
-    # sampled oracle difference without gating on that difference.
-    #
-    # The oracle gate cannot gate a non-pinned cell at all: the baseline
-    # refuses when a report's ClickHouse version differs from the version the
-    # baseline was measured on (internal/oraclereport/baseline.go, Gate). Only
-    # the pinned server can be gated, and the type-oracle job above already
-    # does that. Gating the sampled run on a rule difference would turn a TRUE
-    # change of server behaviour into a red build about chgen: the measured
-    # evidence shows trim(FixedString) is Code 43 (ILLEGAL_TYPE_OF_ARGUMENT)
-    # on 24.8.14.39 and answers String on 25.8.29.51. That is a fact about
-    # ClickHouse, not a chgen defect.
-    #
-    # The comparison tool is oraclediff -cross-instance -cross-version,
-    # which already
-    # exists for exactly this: two ClickHouse versions are necessarily two
-    # server runs, so a plain oraclediff would refuse, and a comparison by
-    # TOTAL would be misread, because CH_ERROR totals move with the age of
-    # the server even on one unchanged commit (see
-    # docs/ci-and-the-oracle-baseline.md). oraclediff reports named
-    # signatures, never totals, which is the same reason the oracle gate
-    # gates on sets and not on counts.
-    #
-    # Version list, chosen from the measured evidence in the regression and not
-    # by guessing:
-    #
-    #   25.8.29.51  the pinned version. Every chgen rule is measured against
-    #               it, so it is the fixed side of every comparison.
-    #   24.8.14.39  the oldest version measured. 24.8 vs 25.8 showed 31
-    #               differing cells of 7072. The fixed probe executes all
-    #               three named families:
-    #               trim/trimLeft/trimRight, greatest/least over a
-    #               SimpleAggregateFunction marker, and cityHash64 over
-    #               array shapes. This is the only boundary the evidence
-    #               shows, so it is the only one worth a CI minute.
-    #
-    # 25.3.14.14 is DELIBERATELY left out. The ticket's own measurement
-    # found 0 of 7072 cells differing between 25.3 and 25.8. Adding it back
-    # would spend CI minutes on a comparison already measured to answer
-    # "no difference", and a matrix cell that never differs teaches a
-    # reader to stop reading matrix cells.
-    # One current profile now replaces the two versioned grammar cells. This
-    # job starts two oracle processes instead of four. Both versions stay in
-    # this job, so each comparison keeps both source reports.
-    name: version boundary (current-combined-v1, cross-version-common-v1, 24.8.14.39)
+    name: version boundary
     runs-on: ubuntu-latest
-
     services:
       clickhouse-pinned:
-        # The fixed side of the comparison: the version every chgen rule is
-        # measured against. Exposed on the default ports, matching the
-        # other two jobs.
         image: clickhouse/clickhouse-server:25.8.29.51
         env:
           CLICKHOUSE_SKIP_USER_SETUP: "1"
         ports:
           - 8123:8123
           - 9000:9000
+        options: >-
+          --health-cmd "clickhouse-client --query 'SELECT 1'"
+          --health-interval 5s --health-timeout 5s --health-retries 30
       clickhouse-candidate:
-        # The version under study. Distinct host ports because both
-        # containers run in the same job at once.
         image: clickhouse/clickhouse-server:24.8.14.39
         env:
           CLICKHOUSE_SKIP_USER_SETUP: "1"
         ports:
           - 18123:8123
           - 19000:9000
-
-    env:
-      CHGEN_ORACLE_SEED: "1"
-      CHGEN_ORACLE_N: "2000"
-      CHGEN_ORACLE_PLAN: current-combined-v1
-      CHGEN_ORACLE_FIXTURE_ID: cross-version-common-v1
-      CANDIDATE_VERSION: "24.8.14.39"
-      PINNED_URL: http://localhost:8123
-      CANDIDATE_URL: http://localhost:18123
-      # Both sides use the same settings. ClickHouse 24.8 has these common
-      # fixture types behind explicit settings.
-      PINNED_ORACLE_URL: http://localhost:8123?allow_experimental_variant_type=1&allow_experimental_dynamic_type=1&allow_experimental_json_type=1
-      CANDIDATE_ORACLE_URL: http://localhost:18123?allow_experimental_variant_type=1&allow_experimental_dynamic_type=1&allow_experimental_json_type=1
-      PINNED_OUT: ${{ github.workspace }}/version-boundary-pinned-current-combined-v1-cross-version-common-v1.json
-      CANDIDATE_OUT: ${{ github.workspace }}/version-boundary-candidate-current-combined-v1-cross-version-common-v1-24.8.14.39.json
-      ORACLE_DIFF_OUT: ${{ github.workspace }}/version-boundary-diff-current-combined-v1-cross-version-common-v1-24.8.14.39.txt
-      PINNED_PROBE_OUT: ${{ github.workspace }}/version-boundary-probe-pinned-25.8.29.51.json
-      CANDIDATE_PROBE_OUT: ${{ github.workspace }}/version-boundary-probe-candidate-24.8.14.39.json
-      PROBE_DIFF_OUT: ${{ github.workspace }}/version-boundary-probe-diff-25.8.29.51-to-24.8.14.39.txt
-
+        options: >-
+          --health-cmd "clickhouse-client --query 'SELECT 1'"
+          --health-interval 5s --health-timeout 5s --health-retries 30
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-go@v7
         with:
           go-version: ${{ env.CURRENT_GO_VERSION }}
           check-latest: false
-
-      - name: Wait for both servers
-        run: |
-          set -euo pipefail
-          for url in "${PINNED_URL}" "${CANDIDATE_URL}"; do
-            for _ in $(seq 1 60); do
-              if curl -sf "${url}/?query=SELECT+1" >/dev/null; then
-                break
-              fi
-              sleep 2
-            done
-          done
-
-      - name: Verify that each server answers its configured version
-        # The version check here must NOT assert the pinned version on both
-        # containers. It asserts the pinned version on clickhouse-pinned and
-        # the configured candidate version on clickhouse-candidate.
-        # Getting this backwards would let the candidate container silently
-        # run some other tag and the job would compare the pinned version
-        # against itself, reporting "no difference" while measuring nothing.
-        run: |
-          set -euo pipefail
-          check() {
-            local url="$1" want="$2" label="$3"
-            local got
-            got="$(curl -sf "${url}/?query=SELECT+version()")"
-            if [ "$got" != "$want" ]; then
-              echo "${label} answers ClickHouse ${got}, expected ${want}." >&2
-              exit 1
-            fi
-          }
-          check "${PINNED_URL}" "${CLICKHOUSE_IMAGE_VERSION}" "clickhouse-pinned"
-          check "${CANDIDATE_URL}" "${CANDIDATE_VERSION}" "clickhouse-candidate"
-
-      - name: Run the executed version-boundary probes
-        run: |
-          set -euo pipefail
-          go build -o "${{ runner.temp }}/probe" ./internal/tooling/cmd/probe
-          go build -o "${{ runner.temp }}/probegate" ./internal/tooling/cmd/probegate
-          "${{ runner.temp }}/probe" -url "${PINNED_ORACLE_URL}" -out "${PINNED_PROBE_OUT}"
-          "${{ runner.temp }}/probe" -url "${CANDIDATE_ORACLE_URL}" -out "${CANDIDATE_PROBE_OUT}"
-          "${{ runner.temp }}/probegate" -known-version-boundary "${PINNED_PROBE_OUT}" "${CANDIDATE_PROBE_OUT}"
-          set +e
-          "${{ runner.temp }}/probegate" "${PINNED_PROBE_OUT}" "${CANDIDATE_PROBE_OUT}" >"${PROBE_DIFF_OUT}" 2>&1
-          probe_status=$?
-          set -e
-          cat "${PROBE_DIFF_OUT}"
-          if [ "$probe_status" -ne 1 ]; then
-            echo "probegate exited ${probe_status}, want 1 after the known boundary passed." >&2
-            exit 1
-          fi
-
-      - name: Run the type oracle against the pinned server
-        env:
-          CHGEN_ORACLE_URL: ${{ env.PINNED_ORACLE_URL }}
-          CHGEN_ORACLE_OUT: ${{ env.PINNED_OUT }}
-        run: go test -tags fuzzoracle -run TestTypeOracle -count=1 -timeout 40m -v ./internal/engine
-
-      - name: Run the type oracle against the candidate server
-        env:
-          CHGEN_ORACLE_URL: ${{ env.CANDIDATE_ORACLE_URL }}
-          CHGEN_ORACLE_OUT: ${{ env.CANDIDATE_OUT }}
-        run: go test -tags fuzzoracle -run TestTypeOracle -count=1 -timeout 40m -v ./internal/engine
-
-      - name: Report the cross-version difference
-        # -cross-instance and -cross-version are required. The reports come
-        # from separate server runs and separate ClickHouse versions by
-        # construction. A comparison without both options must refuse.
-        #
-        # oraclediff has TWO distinct non-zero meanings and this step must
-        # not blur them:
-        #   exit 0  identical                        -> success, print it
-        #   exit 1  differences found                 -> EXPECTED outcome of
-        #           this job. Treating exit 1 as success is a statement
-        #           about oraclediff's contract ("a difference across
-        #           versions is not automatically a chgen defect"), not a
-        #           blanket "ignore whatever happens here". This is the one
-        #           and only place that "never gate on a difference" lives.
-        #   exit 2+ a real error: bad usage, an unreadable report, or a
-        #           REFUSED comparison (for example a fixture-signature
-        #           mismatch, which is a genuine possibility across
-        #           versions). This must FAIL the step loudly, because the
-        #           job produced no valid finding, and a reader must never
-        #           read a silent "no difference" out of a run that never
-        #           measured anything.
-        #
-        # Do NOT pipe this into `tee` and do NOT restore
-        # continue-on-error: true. A pipe into tee reports tee's exit
-        # status, not oraclediff's, and continue-on-error would hide a
-        # REFUSED comparison the same way. The exit status is captured
-        # explicitly here instead, and `set -euo pipefail` guards every
-        # other command in this step.
-        #
-        # Build the binary and run it directly; do NOT invoke it through
-        # `go run`. `go run` always exits 1 when the wrapped program exits
-        # non-zero and prints "exit status N" to stderr instead of
-        # propagating N. That collapses oraclediff's exit 2 (a real error)
-        # into the same status as exit 1 (a genuine difference), which is
-        # exactly the ambiguity this step exists to remove. Proved out of
-        # CI: `go run` reports 1 for both a real diff and a missing report
-        # file; the built binary correctly reports 1 and 2.
-        run: |
-          set -euo pipefail
-          go build -o "${{ runner.temp }}/oraclediff" ./internal/tooling/cmd/oraclediff
-          set +e
-          "${{ runner.temp }}/oraclediff" -cross-instance -cross-version "${PINNED_OUT}" "${CANDIDATE_OUT}" >"${ORACLE_DIFF_OUT}" 2>&1
-          status=$?
-          set -e
-          cat "${ORACLE_DIFF_OUT}"
-          case "$status" in
-            0)
-              echo "No difference between ${CLICKHOUSE_IMAGE_VERSION} and ${CANDIDATE_VERSION} for ${CHGEN_ORACLE_PLAN}."
-              ;;
-            1)
-              echo "Differences found between ${CLICKHOUSE_IMAGE_VERSION} and ${CANDIDATE_VERSION} for ${CHGEN_ORACLE_PLAN}. This is the expected kind of result for this job; read the named signatures above."
-              ;;
-            *)
-              echo "oraclediff exited $status: a real error, not a difference (bad usage, an unreadable report, or a REFUSED comparison such as a fixture-signature mismatch). The job produced no valid finding." >&2
-              exit "$status"
-              ;;
-          esac
-
-      - name: Verify that all version-boundary artifacts exist
+      - name: Verify measured cross-version boundary
+        run: ./scripts/check.sh -suite versions -http http://localhost:8123 -candidate-http http://localhost:18123 -report "${RUNNER_TEMP}/verification"
+      - uses: actions/upload-artifact@v7
         if: always()
-        run: |
-          set -euo pipefail
-          missing=0
-          for path in "${PINNED_OUT}" "${CANDIDATE_OUT}" "${ORACLE_DIFF_OUT}" \
-            "${PINNED_PROBE_OUT}" "${CANDIDATE_PROBE_OUT}" "${PROBE_DIFF_OUT}"; do
-            if [ ! -s "$path" ]; then
-              echo "The required artifact is absent or empty: ${path}" >&2
-              missing=1
-            fi
-          done
-          test "$missing" -eq 0
-
-      - name: Upload the reports and the differences
-        # The difference report is the deliverable of this job. Keep it,
-        # and keep both source reports so a reader can re-run oraclediff by
-        # hand without repeating the oracle.
-        if: always()
-        uses: actions/upload-artifact@v7
         with:
-          name: version-boundary-current-combined-v1-cross-version-common-v1-24.8.14.39
-          path: |
-            ${{ env.PINNED_OUT }}
-            ${{ env.CANDIDATE_OUT }}
-            ${{ env.ORACLE_DIFF_OUT }}
-            ${{ env.PINNED_PROBE_OUT }}
-            ${{ env.CANDIDATE_PROBE_OUT }}
-            ${{ env.PROBE_DIFF_OUT }}
+          name: verification-versions
+          path: ${{ runner.temp }}/verification
           if-no-files-found: error
+
+  verification-summary:
+    name: complete verification summary
+    if: always()
+    needs: [minimum-go, generated-code-compatibility, build, public-pipeline-fuzz, type-oracle, exec-oracle, type-boundary-probe, version-matrix]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.CURRENT_GO_VERSION }}
+          check-latest: false
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: verification-*
+          path: ${{ runner.temp }}/verification-inputs
+      - name: Combine reports and require every CI cell
+        run: ./scripts/check.sh -merge "${RUNNER_TEMP}/verification-inputs" -expect ci -report "${RUNNER_TEMP}/verification-summary"
+      - uses: actions/upload-artifact@v7
+        id: combined-report
+        if: always()
+        with:
+          name: complete-verification-summary
+          path: ${{ runner.temp }}/verification-summary
+          if-no-files-found: error
+      - name: Publish readable summary
+        if: always()
+        env:
+          REPORT_URL: ${{ steps.combined-report.outputs.artifact-url }}
+        run: |
+          if [ -f "${RUNNER_TEMP}/verification-summary/summary.md" ]; then
+            # Relative file links work inside the downloaded bundle, not on
+            # the Actions summary page. Keep their labels here instead.
+            sed -E 's/\[([^]]+)\]\([^)]*\)/\1/g' "${RUNNER_TEMP}/verification-summary/summary.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -n "$REPORT_URL" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "[Download the complete report]($REPORT_URL)" >> "$GITHUB_STEP_SUMMARY"
+          fi

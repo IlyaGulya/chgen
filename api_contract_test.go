@@ -24,6 +24,45 @@ var (
 	_ func(string, string, string) (chgen.CHType, error)           = chgen.InferExpressionType
 )
 
+// FuzzPublicSQLPipeline checks the same boundary used by library consumers:
+// arbitrary SQL may be refused, but must not panic or produce invalid Go.
+func FuzzPublicSQLPipeline(f *testing.F) {
+	f.Add("CREATE TABLE events (id UInt64) ENGINE = Memory", "SELECT id FROM events")
+	f.Add("CREATE TABLE events (id Nullable(DateTime64(3))) ENGINE = Memory", "SELECT minOrNull(id) AS first FROM events")
+	f.Add("CREATE TABLE a (id UInt64) ENGINE = Memory; CREATE TABLE b AS a; EXCHANGE TABLES a AND b;", "SELECT id FROM a")
+	f.Fuzz(func(t *testing.T, schema, sql string) {
+		// Bound input size, not grammar: malformed and unsupported forms remain
+		// useful inputs. Each worker owns its files and catalogs.
+		if len(schema)+len(sql) > 32*1024 {
+			t.Skip()
+		}
+		directory := t.TempDir()
+		schemaPath := filepath.Join(directory, "schema.sql")
+		queryPath := filepath.Join(directory, "queries.sql")
+		if err := os.WriteFile(schemaPath, []byte(schema), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		catalogs, err := chgen.ParseSchemaCatalogs([]string{schemaPath})
+		if err != nil {
+			return
+		}
+		if err := os.WriteFile(queryPath, []byte("-- name: FuzzQuery :many\n"+sql), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		queries, err := chgen.ParseQueryFiles([]string{queryPath}, catalogs)
+		if err != nil {
+			return
+		}
+		source, err := chgen.Generate("fuzzquery", queries)
+		if err != nil {
+			return
+		}
+		if _, err := parser.ParseFile(token.NewFileSet(), "generated.go", source, parser.AllErrors); err != nil {
+			t.Fatalf("accepted SQL generated invalid Go: %v", err)
+		}
+	})
+}
+
 // TestSupportedPipeline uses only the supported external API. This test must
 // compile and run as a package that cannot read unexported chgen names.
 func TestSupportedPipeline(t *testing.T) {

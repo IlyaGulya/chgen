@@ -100,10 +100,13 @@ func TestReleaseCIRunsPinnedLiveGates(t *testing.T) {
 	workflow := readReleaseFile(t, filepath.Join(".github", "workflows", "ci.yml"))
 	checks := []string{
 		"image: clickhouse/clickhouse-server:25.8.29.51",
-		"go test -tags fuzzoracle -run TestTypeOracle",
-		"go test -tags execoracle",
-		"testdata/probe-baseline-25.8.29.51.json",
-		"run: ./scripts/verify.sh",
+		"./scripts/check.sh -suite types",
+		"./scripts/check.sh -suite execution",
+		"./scripts/check.sh -suite boundary",
+		"./scripts/check.sh -suite offline",
+		"./scripts/check.sh -merge",
+		"-expect ci",
+		"if: always()",
 	}
 	for _, check := range checks {
 		if !strings.Contains(workflow, check) {
