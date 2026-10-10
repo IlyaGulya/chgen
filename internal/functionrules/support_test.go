@@ -92,6 +92,26 @@ func TestGeneratedMeasuredRuleIsUsedByPublicInference(t *testing.T) {
 	}
 }
 
+func TestMeasuredFamiliesKeepTheirPublicDomainDiagnostics(t *testing.T) {
+	ddl := "CREATE TABLE t (s String, i Int32) ENGINE=Memory"
+	for _, test := range []struct{ expression, diagnostic string }{
+		{"sin(s)", "function sin does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here;"},
+		{"sign(s)", "function sign does not accept an argument of type String; ClickHouse needs bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal here;"},
+		{"lowerUTF8(i)", "function lowerUTF8 does not accept an argument of type Int32; ClickHouse needs String here;"},
+		{"regexpQuoteMeta(i)", "function regexpQuoteMeta does not accept an argument of type Int32; ClickHouse needs String here;"},
+		{"base64Encode(i)", "function base64Encode does not accept an argument of type Int32; ClickHouse needs String, FixedString here;"},
+	} {
+		_, err := chgen.InferExpressionType(ddl, "t", test.expression)
+		if err == nil || !strings.Contains(err.Error(), test.diagnostic) {
+			t.Errorf("%s: expected unchanged diagnostic %q, got %v", test.expression, test.diagnostic, err)
+		}
+	}
+	got, err := chgen.InferExpressionType(ddl, "t", "sign(i)")
+	if err != nil || got.String() != "Int8" {
+		t.Fatalf("sign keeps its distinct result: got %s, %v", got.String(), err)
+	}
+}
+
 func TestMeasuredExpansionKeepsExistingArrayResultsHonest(t *testing.T) {
 	ddl := "CREATE TABLE t (a Array(Polygon), p Point) ENGINE=Memory"
 	for _, test := range []struct{ expression, want string }{

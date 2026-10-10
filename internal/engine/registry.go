@@ -1092,378 +1092,134 @@ var functionSemanticSpecs = map[string]functionSpec{
 	"lessorequals":    {family: semanticFamilyPredicate, rule: fixedFunctionType("UInt8"), class: wrapperTransparent, strategy: argsIndependent, gen: scalarCall("lessOrEquals", 2), measuredFacts: measuredFacts(functionFactComparesArgPair | functionFactDynamicForcesNullable), resultMode: resultRuleGeneric, domainMode: argumentDomainUnrestricted, parameterPolicy: parameterResultCurated, evidence: registryMeasurementEvidence},
 	"greater":         {family: semanticFamilyPredicate, rule: fixedFunctionType("UInt8"), class: wrapperTransparent, strategy: argsIndependent, gen: scalarCall("greater", 2), measuredFacts: measuredFacts(functionFactComparesArgPair | functionFactDynamicForcesNullable), resultMode: resultRuleGeneric, domainMode: argumentDomainUnrestricted, parameterPolicy: parameterResultCurated, evidence: registryMeasurementEvidence},
 	"greaterorequals": {family: semanticFamilyPredicate, rule: fixedFunctionType("UInt8"), class: wrapperTransparent, strategy: argsIndependent, gen: scalarCall("greaterOrEquals", 2), measuredFacts: measuredFacts(functionFactComparesArgPair | functionFactDynamicForcesNullable), resultMode: resultRuleGeneric, domainMode: argumentDomainUnrestricted, parameterPolicy: parameterResultCurated, evidence: registryMeasurementEvidence},
-	"sin": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling: "sin",
-
+	"sin": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "sin",
 		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"acos": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling: "acos",
-
+	"acos": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "acos",
 		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"asin": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling: "asin",
-
+	"asin": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "asin",
 		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"atan": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling: "atan",
-
+	"atan": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "atan",
 		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"cos": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling: "cos",
-
+	"cos": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "cos",
 		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"exp": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		nonPortableInputs: []string{"Float32", "SimpleAggregateFunction(anyLast, Float64)"},
-		spelling:          "exp",
-
+	"exp": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{nonPortableInputs: []string{"Float32", "SimpleAggregateFunction(anyLast, Float64)"},
+		spelling: "exp",
 		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"log": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		nonPortableInputs: []string{"Float32", "SimpleAggregateFunction(anyLast, Float64)"},
-		spelling:          "log",
-
+	"log": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{nonPortableInputs: []string{"Float32", "SimpleAggregateFunction(anyLast, Float64)"},
+		spelling: "log",
 		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"log10": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling: "log10",
-
+	"log10": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "log10",
 		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"log2": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling: "log2",
-
+	"log2": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "log2",
 		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"sign": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Int8",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling: "sign",
-
+	"sign": measuredUnarySpec(measuredNumericUnaryFamilies[1], measuredUnaryMember{spelling: "sign",
 		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"sqrt": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling: "sqrt",
-
+	"sqrt": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "sqrt",
 		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"tan": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling: "tan",
-
+	"tan": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "tan",
 		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"tanh": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		nonPortableInputs: []string{"Float32", "SimpleAggregateFunction(anyLast, Float64)"},
-		spelling:          "tanh",
-
+	"tanh": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{nonPortableInputs: []string{"Float32", "SimpleAggregateFunction(anyLast, Float64)"},
+		spelling: "tanh",
 		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"cbrt": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling:      "cbrt",
+	"cbrt": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "cbrt",
 		exactSpelling: "cbrt",
-
-		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
+		evidence:      "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"cosh": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling:      "cosh",
+	"cosh": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "cosh",
 		exactSpelling: "cosh",
-
-		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
+		evidence:      "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"erf": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling:      "erf",
+	"erf": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "erf",
 		exactSpelling: "erf",
-
-		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
+		evidence:      "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"erfc": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling:      "erfc",
+	"erfc": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "erfc",
 		exactSpelling: "erfc",
-
-		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
+		evidence:      "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"exp10": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling:      "exp10",
+	"exp10": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "exp10",
 		exactSpelling: "exp10",
-
-		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
+		evidence:      "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"exp2": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling:      "exp2",
+	"exp2": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "exp2",
 		exactSpelling: "exp2",
-
-		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
+		evidence:      "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"lgamma": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling:      "lgamma",
+	"lgamma": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "lgamma",
 		exactSpelling: "lgamma",
-
-		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
+		evidence:      "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"sinh": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling:      "sinh",
+	"sinh": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "sinh",
 		exactSpelling: "sinh",
-
-		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
+		evidence:      "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"tgamma": measuredUnarySpec(measuredUnaryFamily{
-		result:     "Float64",
-		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
-		decimal:    true,
-		expected:   "bool, float32, float64, int128, int16, int256, int32, int64, int8, uint128, uint16, uint256, uint32, uint64, uint8, Decimal",
-	}, measuredUnaryMember{
-		spelling:      "tgamma",
+	"tgamma": measuredUnarySpec(measuredNumericUnaryFamilies[0], measuredUnaryMember{spelling: "tgamma",
 		exactSpelling: "tgamma",
-
-		evidence: "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
+		evidence:      "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	}),
-	"base64encode": measuredUnarySpec(measuredUnaryFamily{
-		result:      "String",
-		primitives:  "string",
-		fixedString: true,
-		expected:    "String, FixedString",
-	}, measuredUnaryMember{
-		spelling:      "base64Encode",
+	"base64encode": measuredUnarySpec(measuredStringUnaryFamilies[0], measuredUnaryMember{spelling: "base64Encode",
 		exactSpelling: "base64Encode",
-
-		evidence: "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
+		evidence:      "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	}),
-	"decodeurlcomponent": measuredUnarySpec(measuredUnaryFamily{
-		result:     "String",
-		primitives: "string",
-		expected:   "String",
-		transport:  &caseFoldingTransport,
-	}, measuredUnaryMember{
-		spelling:      "decodeURLComponent",
+	"decodeurlcomponent": measuredUnarySpec(measuredStringUnaryFamilies[1], measuredUnaryMember{spelling: "decodeURLComponent",
 		exactSpelling: "decodeURLComponent",
-
-		evidence: "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
+		evidence:      "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	}),
-	"encodeurlcomponent": measuredUnarySpec(measuredUnaryFamily{
-		result:     "String",
-		primitives: "string",
-		expected:   "String",
-		transport:  &caseFoldingTransport,
-	}, measuredUnaryMember{
-		spelling:      "encodeURLComponent",
+	"encodeurlcomponent": measuredUnarySpec(measuredStringUnaryFamilies[1], measuredUnaryMember{spelling: "encodeURLComponent",
 		exactSpelling: "encodeURLComponent",
-
-		evidence: "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
+		evidence:      "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	}),
-	"lowerutf8": measuredUnarySpec(measuredUnaryFamily{
-		result:     "String",
-		primitives: "string",
-		expected:   "String",
-		transport:  &caseFoldingTransport,
-	}, measuredUnaryMember{
-		spelling:      "lowerUTF8",
+	"lowerutf8": measuredUnarySpec(measuredStringUnaryFamilies[1], measuredUnaryMember{spelling: "lowerUTF8",
 		exactSpelling: "lowerUTF8",
-
-		evidence: "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
+		evidence:      "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	}),
-	"normalizeutf8nfc": measuredUnarySpec(measuredUnaryFamily{
-		result:     "String",
-		primitives: "string",
-		expected:   "String",
-		transport:  &caseFoldingTransport,
-	}, measuredUnaryMember{
-		spelling:      "normalizeUTF8NFC",
+	"normalizeutf8nfc": measuredUnarySpec(measuredStringUnaryFamilies[1], measuredUnaryMember{spelling: "normalizeUTF8NFC",
 		exactSpelling: "normalizeUTF8NFC",
-
-		evidence: "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
+		evidence:      "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	}),
-	"normalizeutf8nfd": measuredUnarySpec(measuredUnaryFamily{
-		result:     "String",
-		primitives: "string",
-		expected:   "String",
-		transport:  &caseFoldingTransport,
-	}, measuredUnaryMember{
-		spelling:      "normalizeUTF8NFD",
+	"normalizeutf8nfd": measuredUnarySpec(measuredStringUnaryFamilies[1], measuredUnaryMember{spelling: "normalizeUTF8NFD",
 		exactSpelling: "normalizeUTF8NFD",
-
-		evidence: "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
+		evidence:      "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	}),
-	"normalizeutf8nfkc": measuredUnarySpec(measuredUnaryFamily{
-		result:     "String",
-		primitives: "string",
-		expected:   "String",
-		transport:  &caseFoldingTransport,
-	}, measuredUnaryMember{
-		spelling:      "normalizeUTF8NFKC",
+	"normalizeutf8nfkc": measuredUnarySpec(measuredStringUnaryFamilies[1], measuredUnaryMember{spelling: "normalizeUTF8NFKC",
 		exactSpelling: "normalizeUTF8NFKC",
-
-		evidence: "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
+		evidence:      "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	}),
-	"normalizeutf8nfkd": measuredUnarySpec(measuredUnaryFamily{
-		result:     "String",
-		primitives: "string",
-		expected:   "String",
-		transport:  &caseFoldingTransport,
-	}, measuredUnaryMember{
-		spelling:      "normalizeUTF8NFKD",
+	"normalizeutf8nfkd": measuredUnarySpec(measuredStringUnaryFamilies[1], measuredUnaryMember{spelling: "normalizeUTF8NFKD",
 		exactSpelling: "normalizeUTF8NFKD",
-
-		evidence: "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
+		evidence:      "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	}),
-	"regexpquotemeta": measuredUnarySpec(measuredUnaryFamily{
-		result:     "String",
-		primitives: "string",
-		expected:   "String",
-	}, measuredUnaryMember{
-		spelling:      "regexpQuoteMeta",
+	"regexpquotemeta": measuredUnarySpec(measuredStringUnaryFamilies[2], measuredUnaryMember{spelling: "regexpQuoteMeta",
 		exactSpelling: "regexpQuoteMeta",
-
-		evidence: "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
+		evidence:      "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	}),
-	"reverseutf8": measuredUnarySpec(measuredUnaryFamily{
-		result:     "String",
-		primitives: "string",
-		expected:   "String",
-		transport:  &caseFoldingTransport,
-	}, measuredUnaryMember{
-		spelling:      "reverseUTF8",
+	"reverseutf8": measuredUnarySpec(measuredStringUnaryFamilies[1], measuredUnaryMember{spelling: "reverseUTF8",
 		exactSpelling: "reverseUTF8",
-
+		evidence:      "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
+	}),
+	"soundex": measuredUnarySpec(measuredStringUnaryFamilies[1], measuredUnaryMember{spelling: "soundex",
 		evidence: "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	}),
-	"soundex": measuredUnarySpec(measuredUnaryFamily{
-		result:     "String",
-		primitives: "string",
-		expected:   "String",
-		transport:  &caseFoldingTransport,
-	}, measuredUnaryMember{
-		spelling: "soundex",
-
-		evidence: "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
-	}),
-	"trybase64decode": measuredUnarySpec(measuredUnaryFamily{
-		result:      "String",
-		primitives:  "string",
-		fixedString: true,
-		expected:    "String, FixedString",
-	}, measuredUnaryMember{
-		spelling:      "tryBase64Decode",
+	"trybase64decode": measuredUnarySpec(measuredStringUnaryFamilies[0], measuredUnaryMember{spelling: "tryBase64Decode",
 		exactSpelling: "tryBase64Decode",
-
-		evidence: "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
+		evidence:      "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	}),
-	"upperutf8": measuredUnarySpec(measuredUnaryFamily{
-		result:     "String",
-		primitives: "string",
-		expected:   "String",
-		transport:  &caseFoldingTransport,
-	}, measuredUnaryMember{
-		spelling:      "upperUTF8",
+	"upperutf8": measuredUnarySpec(measuredStringUnaryFamilies[1], measuredUnaryMember{spelling: "upperUTF8",
 		exactSpelling: "upperUTF8",
-
-		evidence: "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
+		evidence:      "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	}),
 }
 
@@ -1560,4 +1316,34 @@ func validateAndBuildFunctionSpec(name string, spec functionSpec) (functionSpec,
 		spec.facts |= measured.fact
 	}
 	return spec, nil
+}
+
+var measuredNumericUnaryFamilies = [...]measuredUnaryFamily{
+	{
+		result:     "Float64",
+		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
+		decimal:    true,
+	},
+	{
+		result:     "Int8",
+		primitives: "bool float32 float64 int128 int16 int256 int32 int64 int8 uint128 uint16 uint256 uint32 uint64 uint8",
+		decimal:    true,
+	},
+}
+
+var measuredStringUnaryFamilies = [...]measuredUnaryFamily{
+	{
+		result:      "String",
+		primitives:  "string",
+		fixedString: true,
+	},
+	{
+		result:     "String",
+		primitives: "string",
+		transport:  &caseFoldingTransport,
+	},
+	{
+		result:     "String",
+		primitives: "string",
+	},
 }

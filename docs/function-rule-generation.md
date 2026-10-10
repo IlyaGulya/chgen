@@ -217,6 +217,14 @@ supported driver versions. Existing function, type and execution oracles stay
 independent; generated candidates must pass those checks too. A measured
 matrix is finite evidence, not a proof of every value or every ClickHouse API.
 
+Generated unary rules share five measured families: two numeric result types
+and three string domain/transport combinations. Each member references its
+family and records only spelling, evidence and build-dependent exclusions.
+Family membership is deduplicated from complete validated measurements, not
+guessed from a function name. Domain diagnostics are derived from the same
+accepted types used for validation; they are not a second generated roster.
+Regenerating one profile preserves the other profile and all manual rules.
+
 The expanded sampling population also exposed pre-existing array result and
 size-validation defects. Dedicated live regressions cover nested geometry
 aliases and refusal of Nullable or Enum arrayResize sizes. They run in the

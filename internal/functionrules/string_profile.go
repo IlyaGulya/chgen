@@ -94,7 +94,7 @@ func stringPlan(name string) []probe {
 	return probes
 }
 
-func stringSpecification(function Function, digest string) (string, error) {
+func stringSpecification(function Function, digest string) (measuredSpecification, error) {
 	positive := make(map[string]bool)
 	for _, base := range stringBases {
 		for _, input := range wrappers(base) {
@@ -108,7 +108,7 @@ func stringSpecification(function Function, digest string) (string, error) {
 	for _, id := range []string{"arity-zero", "arity-two", "over", "parameters"} {
 		cell := byID[id]
 		if !slices.Contains([]int{42, 63, 309}, cell.AnalysisCode) || !slices.Contains([]int{42, 63, 309}, cell.ExecutionCode) {
-			return "", fmt.Errorf("%s does not prove unary scalar placement", id)
+			return measuredSpecification{}, fmt.Errorf("%s does not prove unary scalar placement", id)
 		}
 	}
 	fixed := true
@@ -125,7 +125,7 @@ func stringSpecification(function Function, digest string) (string, error) {
 				analysisRefused := slices.Contains([]int{36, 43, 44}, wrapper.AnalysisCode)
 				analysisDeferred := wrapper.AnalysisCode == 0 && strings.Contains(input, "Nullable(") && wrapper.Analysis == expectedWrapper(input, base)
 				if (!analysisRefused && !analysisDeferred) || !slices.Contains([]int{36, 43, 44}, wrapper.ExecutionCode) {
-					return "", fmt.Errorf("inconsistent FixedString refusal")
+					return measuredSpecification{}, fmt.Errorf("inconsistent FixedString refusal")
 				}
 			}
 			continue
@@ -137,7 +137,7 @@ func stringSpecification(function Function, digest string) (string, error) {
 				want = input
 			}
 			if wrapper.Analysis != want || wrapper.Execution != want || wrapper.AnalysisCode != 0 || wrapper.ExecutionCode != 0 {
-				return "", fmt.Errorf("string wrapper transport is not proved for %s", input)
+				return measuredSpecification{}, fmt.Errorf("string wrapper transport is not proved for %s", input)
 			}
 		}
 	}
@@ -146,18 +146,16 @@ func stringSpecification(function Function, digest string) (string, error) {
 			continue
 		}
 		if cell.AnalysisCode != 43 || cell.ExecutionCode != 43 {
-			return "", fmt.Errorf("negative domain %s is not proved", cell.Input)
+			return measuredSpecification{}, fmt.Errorf("negative domain %s is not proved", cell.Input)
 		}
 	}
 	domain := `primitives: "string",`
-	expected := "String"
 	if fixed {
 		domain += "\nfixedString: true,"
-		expected += ", FixedString"
 	}
 	transport := ""
 	if preservesMarker {
 		transport = "transport: &caseFoldingTransport,"
 	}
-	return renderSpecification(function, digest, StringProfile, "String", domain, expected, transport), nil
+	return renderSpecification(function, digest, StringProfile, "String", domain, transport), nil
 }

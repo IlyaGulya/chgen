@@ -84,10 +84,10 @@ func expectedWrapper(input, result string) string {
 	return result
 }
 
-func specification(function Function, digest string) (string, error) {
+func specification(function Function, digest string) (measuredSpecification, error) {
 	excluded, err := nonPortableInputs(function)
 	if err != nil {
-		return "", err
+		return measuredSpecification{}, err
 	}
 	byID := make(map[string]Cell)
 	for _, cell := range function.Cells {
@@ -96,7 +96,7 @@ func specification(function Function, digest string) (string, error) {
 	for _, id := range []string{"arity-zero", "arity-two", "over", "parameters"} {
 		cell := byID[id]
 		if !slices.Contains([]int{42, 63, 309}, cell.AnalysisCode) || !slices.Contains([]int{42, 63, 309}, cell.ExecutionCode) {
-			return "", fmt.Errorf("%s is accepted; unary scalar signature is not proved", id)
+			return measuredSpecification{}, fmt.Errorf("%s is accepted; unary scalar signature is not proved", id)
 		}
 	}
 	numericInputs := make(map[string]bool)
@@ -114,7 +114,7 @@ func specification(function Function, digest string) (string, error) {
 		}
 		cell := byID[probe.id]
 		if cell.AnalysisCode != 43 || cell.ExecutionCode != 43 {
-			return "", fmt.Errorf("negative domain %s is not proved", probe.input)
+			return measuredSpecification{}, fmt.Errorf("negative domain %s is not proved", probe.input)
 		}
 	}
 	result := ""
@@ -129,27 +129,27 @@ func specification(function Function, digest string) (string, error) {
 		}
 		if cell.AnalysisCode != 0 {
 			if strings.HasPrefix(base, "Decimal") {
-				return "", fmt.Errorf("incomplete Decimal domain at %s", base)
+				return measuredSpecification{}, fmt.Errorf("incomplete Decimal domain at %s", base)
 			}
 			for _, input := range wrappers(base) {
 				refusal := byID[input]
 				if refusal.AnalysisCode != 43 || refusal.ExecutionCode != 43 {
-					return "", fmt.Errorf("type-domain refusal is not proved for %s", input)
+					return measuredSpecification{}, fmt.Errorf("type-domain refusal is not proved for %s", input)
 				}
 			}
 			continue
 		}
 		if cell.Analysis != cell.Execution {
-			return "", fmt.Errorf("analysis/execution disagree for %s", base)
+			return measuredSpecification{}, fmt.Errorf("analysis/execution disagree for %s", base)
 		}
 		if cell.Analysis != "Float64" && cell.Analysis != "Int8" {
-			return "", fmt.Errorf("result %s needs another family", cell.Analysis)
+			return measuredSpecification{}, fmt.Errorf("result %s needs another family", cell.Analysis)
 		}
 		if result == "" {
 			result = cell.Analysis
 		}
 		if result != cell.Analysis {
-			return "", fmt.Errorf("type-dependent result needs another family")
+			return measuredSpecification{}, fmt.Errorf("type-dependent result needs another family")
 		}
 		for _, input := range wrappers(base) {
 			wrapper := byID[input]
@@ -158,7 +158,7 @@ func specification(function Function, digest string) (string, error) {
 			}
 			want := expectedWrapper(input, result)
 			if wrapper.Analysis != want || wrapper.Execution != want || wrapper.AnalysisCode != 0 || wrapper.ExecutionCode != 0 {
-				return "", fmt.Errorf("wrapper transport is not proved for %s", input)
+				return measuredSpecification{}, fmt.Errorf("wrapper transport is not proved for %s", input)
 			}
 		}
 		if !strings.HasPrefix(base, "Decimal") {
@@ -166,22 +166,22 @@ func specification(function Function, digest string) (string, error) {
 		}
 	}
 	if result == "" || !slices.Contains(accepted, "int32") || !slices.Contains(accepted, "float64") {
-		return "", fmt.Errorf("missing representative legal numeric types")
+		return measuredSpecification{}, fmt.Errorf("missing representative legal numeric types")
 	}
 	slices.Sort(accepted)
 	domain := fmt.Sprintf("primitives: %q,\ndecimal: true,", strings.Join(accepted, " "))
-	text := renderSpecification(function, digest, Profile, result, domain, strings.Join(accepted, ", ")+", Decimal", "")
+	text := renderSpecification(function, digest, Profile, result, domain, "")
 	if len(excluded) != 0 {
 		var quoted []string
 		for _, input := range excluded {
 			quoted = append(quoted, strconv.Quote(input))
 		}
-		text = strings.Replace(text, "spelling:", "nonPortableInputs: []string{"+strings.Join(quoted, ",")+"},\nspelling:", 1)
+		text.member = strings.Replace(text.member, "spelling:", "nonPortableInputs: []string{"+strings.Join(quoted, ",")+"},\nspelling:", 1)
 	}
 	return text, nil
 }
 
-func profileSpecification(profile string, function Function, digest string) (string, error) {
+func profileSpecification(profile string, function Function, digest string) (measuredSpecification, error) {
 	if profile == StringProfile {
 		return stringSpecification(function, digest)
 	}
@@ -197,21 +197,23 @@ func DeclineReason(profile string, function Function) string {
 	return err.Error()
 }
 
-func renderSpecification(function Function, digest, profile, result, domain, expected, transport string) string {
+// measuredSpecification separates shared measured facts from member differences.
+// The generated Go source is still a review artifact, not a runtime rule language.
+type measuredSpecification struct {
+	family string
+	member string
+}
+
+func renderSpecification(function Function, digest, profile, result, domain, transport string) measuredSpecification {
 	spelling := ""
 	if !function.CaseInsensitive {
 		spelling = "exactSpelling: " + strconv.Quote(function.Name) + ",\n"
 	}
-	return fmt.Sprintf(`%q: measuredUnarySpec(measuredUnaryFamily{
-result: %q,
-%s
-expected: %q,
-%s
-}, measuredUnaryMember{
-spelling: %q,
-%s
-evidence: %q,
-}),`, strings.ToLower(function.Name), result, domain, expected, transport, function.Name, spelling, "functionrules/"+profile+"/"+digest)
+	return measuredSpecification{
+		family: fmt.Sprintf("{\nresult: %q,\n%s\n%s\n}", result, domain, transport),
+		member: fmt.Sprintf("measuredUnaryMember{spelling: %q,\n%sevidence: %q,\n}",
+			function.Name, spelling, "functionrules/"+profile+"/"+digest),
+	}
 }
 
 func owns(entry ast.Expr, profile string) bool {
@@ -323,10 +325,17 @@ func Generate(source []byte, report Report) ([]byte, []string, error) {
 		text       string
 	}
 	var edits []edit
+	// Each profile owns one list. Identical proved families are emitted once;
+	// another profile's list and manual rules remain untouched.
+	familyName := "measuredNumericUnaryFamilies"
+	if report.Profile == StringProfile {
+		familyName = "measuredStringUnaryFamilies"
+	}
+	var families []string
 	var additions strings.Builder
 	var added []string
 	for _, function := range report.Functions {
-		text, err := profileSpecification(report.Profile, function, digest)
+		spec, err := profileSpecification(report.Profile, function, digest)
 		key := strings.ToLower(function.Name)
 		if err != nil {
 			if i, exists := existing[key]; exists && owns(literal.Elts[i], report.Profile) {
@@ -334,6 +343,12 @@ func Generate(source []byte, report Report) ([]byte, []string, error) {
 			}
 			continue
 		}
+		familyIndex := slices.Index(families, spec.family)
+		if familyIndex < 0 {
+			familyIndex = len(families)
+			families = append(families, spec.family)
+		}
+		text := fmt.Sprintf("%q: measuredUnarySpec(%s[%d], %s),", key, familyName, familyIndex, spec.member)
 		if i, found := existing[key]; found {
 			if !owns(literal.Elts[i], report.Profile) {
 				return nil, nil, fmt.Errorf("refuse to overwrite existing manual rule %s", function.Name)
@@ -352,6 +367,25 @@ func Generate(source []byte, report Report) ([]byte, []string, error) {
 	}
 	if len(added) == 0 {
 		return nil, nil, fmt.Errorf("no functions satisfy the measured fixed-result contract")
+	}
+	familySource := "var " + familyName + " = [...]measuredUnaryFamily{\n" + strings.Join(families, ",\n") + ",\n}"
+	var familyDecl *ast.GenDecl
+	for _, declaration := range file.Decls {
+		decl, ok := declaration.(*ast.GenDecl)
+		if !ok || decl.Tok != token.VAR || len(decl.Specs) != 1 {
+			continue
+		}
+		value, ok := decl.Specs[0].(*ast.ValueSpec)
+		if ok && len(value.Names) == 1 && value.Names[0].Name == familyName {
+			familyDecl = decl
+			break
+		}
+	}
+	if familyDecl != nil {
+		edits = append(edits, edit{files.Position(familyDecl.Pos()).Offset, files.Position(familyDecl.End()).Offset, familySource})
+	} else {
+		position := files.Position(file.Decls[len(file.Decls)-1].End()).Offset
+		edits = append(edits, edit{position, position, "\n\n" + familySource + "\n"})
 	}
 	if additions.Len() != 0 {
 		position := files.Position(literal.Rbrace).Offset

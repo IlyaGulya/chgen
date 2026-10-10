@@ -12,7 +12,6 @@ type measuredUnaryFamily struct {
 	primitives  string
 	decimal     bool
 	fixedString bool
-	expected    string
 	transport   *wrapperTransport
 }
 
@@ -25,6 +24,18 @@ type measuredUnaryMember struct {
 
 func measuredUnarySpec(family measuredUnaryFamily, member measuredUnaryMember) functionSpec {
 	primitives := strings.Fields(family.primitives)
+	expected := slices.Clone(primitives)
+	for i, primitive := range expected {
+		if primitive == "string" {
+			expected[i] = "String"
+		}
+	}
+	if family.decimal {
+		expected = append(expected, "Decimal")
+	}
+	if family.fixedString {
+		expected = append(expected, "FixedString")
+	}
 	return functionSpec{
 		family:    semanticFamilyFixedResult,
 		rule:      fixedFunctionType(family.result),
@@ -38,7 +49,7 @@ func measuredUnarySpec(family measuredUnaryFamily, member measuredUnaryMember) f
 					family.fixedString && value.normalizedName() == "fixedstring" && len(value.Params) == 1 ||
 					len(value.Params) == 0 && slices.Contains(primitives, value.normalizedName())
 			},
-			expected: family.expected,
+			expected: strings.Join(expected, ", "),
 		},
 		gen:               scalarCall(member.spelling, 1),
 		resultMode:        resultRuleGeneric,
