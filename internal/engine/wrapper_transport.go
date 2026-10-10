@@ -671,13 +671,17 @@ var wrapperTransportOverrides = map[string]wrapperTransport{
 	"fromunixtimestamp64milli": {
 		lowCardinality: wrapperDrop, nullable: wrapperKeep, simpleAggregate: wrapperDrop,
 	},
-	"greatest":                  greatestLeastTransport,
-	"least":                     greatestLeastTransport,
-	"and":                       logicOperatorTransport,
-	"or":                        logicOperatorTransport,
-	"xor":                       logicOperatorTransport,
-	"lower":                     caseFoldingTransport,
-	"upper":                     caseFoldingTransport,
+	"greatest": greatestLeastTransport,
+	"least":    greatestLeastTransport,
+	"and":      logicOperatorTransport,
+	"or":       logicOperatorTransport,
+	"xor":      logicOperatorTransport,
+	"lower":    caseFoldingTransport,
+	"upper":    caseFoldingTransport,
+	// Scalar reverse preserves the same marker as lower/upper. Its rule
+	// still owns Array LC stripping and Tuple reversal; transport must not
+	// rewrite their nested members.
+	"reverse":                   caseFoldingTransport,
 	"laginframe":                windowValuePreservingTransport,
 	"leadinframe":               windowValuePreservingTransport,
 	"lag":                       windowValuePreservingTransport,

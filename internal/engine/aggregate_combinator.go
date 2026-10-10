@@ -679,6 +679,13 @@ func inferAggregateCombinatorType(name string, function *clickhouse.FunctionExpr
 		params := make([]CHType, 0, len(argTypes)+1)
 		params = append(params, CHType{Name: baseAggregateDisplayName(base), LiteralParams: aggregateParametricLiterals(function)})
 		for _, argType := range argTypes {
+			// StateIf reads Nullable inside a marker as well. Plain State
+			// preserves that marker, but not a marker hiding LC encoding.
+			encodedMarker := argType.normalizedName() == "simpleaggregatefunction" &&
+				len(argType.Params) == 2 && argType.Params[1].normalizedName() == "lowcardinality"
+			if combinator.plan.dropsTopLevelNullable || encodedMarker {
+				argType = readSimpleAggregateValue(argType)
+			}
 			bare, nullable, _ := splitCHWrappers(argType)
 			if combinator.plan.dropsTopLevelNullable {
 				nullable = false

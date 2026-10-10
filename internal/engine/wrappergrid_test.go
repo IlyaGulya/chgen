@@ -187,11 +187,11 @@ func TestWrapperGrid(t *testing.T) {
 		if err := gridCheckWriteVersion(*gridExpectVersion, version); err != nil {
 			t.Fatalf("%v", err)
 		}
-		gridWriteGolden(t, probes, records, version)
+		gridWriteGolden(t, gridGoldenPath, probes, records, version)
 		t.Logf("golden rewritten from the server: %d cells, version %s", len(records), version)
 		return
 	}
-	gridCompareGolden(t, records, version)
+	gridCompareGolden(t, gridGoldenPath, records, version)
 }
 
 // gridURLWithSettings appends the settings of the run to the base URL.
@@ -564,7 +564,7 @@ func gridExclusionReason(record gridRecord) string {
 // golden held 4622: the number was restated instead of quoted from the
 // file. The rule this ticket sets: a commit message QUOTES the header,
 // it never restates it.
-func gridWriteGolden(t *testing.T, probes []gridProbe, records []gridRecord, version string) {
+func gridWriteGolden(t *testing.T, destination string, probes []gridProbe, records []gridRecord, version string) {
 	t.Helper()
 	var builder strings.Builder
 	builder.WriteString("# chgen wrapper grid, measured golden.\n")
@@ -603,7 +603,7 @@ func gridWriteGolden(t *testing.T, probes []gridProbe, records []gridRecord, ver
 		}, "\t"))
 		builder.WriteString("\n")
 	}
-	path := filepath.FromSlash(gridGoldenPath)
+	path := filepath.FromSlash(destination)
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatalf("create testdata directory: %v", err)
 	}
@@ -837,13 +837,13 @@ func gridLegalButUnenumeratedCount(probes []gridProbe) int {
 // diff runs, so a golden re-measured on the wrong server is refused even
 // when every cell happens to still agree (see the regression and
 // grid_version_gate_test.go).
-func gridCompareGolden(t *testing.T, records []gridRecord, liveVersion string) {
+func gridCompareGolden(t *testing.T, path string, records []gridRecord, liveVersion string) {
 	t.Helper()
-	raw, err := os.ReadFile(filepath.FromSlash(gridGoldenPath))
+	raw, err := os.ReadFile(filepath.FromSlash(path))
 	if err != nil {
 		t.Fatalf("read the golden: %v\nRegenerate it with -chgen-grid-regenerate.", err)
 	}
-	gridCheckVersionGate(t.Errorf, gridGoldenPath, raw, liveVersion)
+	gridCheckVersionGate(t.Errorf, path, raw, liveVersion)
 	golden := map[string]string{}
 	var goldenOrder []string
 	for _, line := range strings.Split(string(raw), "\n") {
@@ -915,21 +915,9 @@ func gridCompareGolden(t *testing.T, records []gridRecord, liveVersion string) {
 // memory, which is the exact failure this ticket records (a commit
 // message once stated 4862 cells while the golden held 4622).
 //
-// The test writes to the real gridGoldenPath, because gridGoldenPath is
-// a const declared in a file this ticket must not touch. The original
-// bytes are read first and restored via t.Cleanup, so the committed
-// golden is never left changed by this test.
+// The test writes only a temporary golden; committed evidence is read-only.
 func TestGridWriteGoldenHeaderCarriesTheCensus(t *testing.T) {
-	path := filepath.FromSlash(gridGoldenPath)
-	original, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read the committed golden before swapping it: %v", err)
-	}
-	t.Cleanup(func() {
-		if err := os.WriteFile(path, original, 0o644); err != nil {
-			t.Fatalf("restore the committed golden: %v", err)
-		}
-	})
+	path := filepath.Join(t.TempDir(), "wrapper_grid.golden")
 
 	probes := []gridProbe{
 		{id: "fn/probe1/bare/i32", family: "fn", entry: "probe1", sql: "toInt32(c_bare_i32)"},
@@ -939,7 +927,7 @@ func TestGridWriteGoldenHeaderCarriesTheCensus(t *testing.T) {
 		{id: "fn/probe1/bare/i32", sql: "toInt32(c_bare_i32)", server: "Int32", chgen: "Int32", verdict: gridAgree},
 		{id: "fn/probe2/lc/i32", sql: "toInt32(c_lc_i32)", chgenRefused: true, serverCode: "43", verdict: gridBothRefuse},
 	}
-	gridWriteGolden(t, probes, records, "test")
+	gridWriteGolden(t, path, probes, records, "test")
 
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -1119,21 +1107,9 @@ func TestGridWrapperOtherHoldsOnlyGenuinelyWrapperlessCells(t *testing.T) {
 // which is the gate a reviewer trusts first: the regeneration diff would
 // catch the drift, but compare mode would not.
 //
-// The test writes a synthetic one-cell golden to the real committed path,
-// because gridGoldenPath is a const in a file this ticket must not touch.
-// The original bytes are read first and restored via t.Cleanup, so the
-// committed golden is never left changed by this test.
+// A synthetic golden lives in TempDir, never at the committed path.
 func TestGridCompareGoldenCatchesSQLDrift(t *testing.T) {
-	path := filepath.FromSlash(gridGoldenPath)
-	original, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read the committed golden before swapping it: %v", err)
-	}
-	t.Cleanup(func() {
-		if err := os.WriteFile(path, original, 0o644); err != nil {
-			t.Fatalf("restore the committed golden: %v", err)
-		}
-	})
+	path := filepath.Join(t.TempDir(), "wrapper_grid.golden")
 
 	synthetic := "# chgen wrapper grid, measured golden.\n" +
 		"# DO NOT EDIT BY HAND. Regenerate with:\n" +
@@ -1156,7 +1132,7 @@ func TestGridCompareGoldenCatchesSQLDrift(t *testing.T) {
 	drifted[0].verdict = gridClassify(drifted[0])
 
 	spy := &testing.T{}
-	gridCompareGolden(spy, drifted, "test")
+	gridCompareGolden(spy, path, drifted, "test")
 	if !spy.Failed() {
 		t.Error("gridCompareGolden did not fail when the SQL field drifted under a stable id.\n" +
 			"A cell whose spelling changes must fail compare mode, the gate that runs without a server.")

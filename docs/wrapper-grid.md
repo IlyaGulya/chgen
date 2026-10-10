@@ -76,11 +76,23 @@ only one of them.
 
 ## Regeneration
 
+Committed evidence is mandatory. The default test suite checks exact parity
+between current cell addresses/SQL and the golden, and requires an evidence
+owner for every function registry entry. Missing, duplicate, stale or removed
+cells fail; a recorded `MISMATCH` (a silently wrong inferred type) also fails.
+The no-shrink check remains in addition to this stricter gate.
+
+The shared `types` suite runs the full live wrapper grid on every CI run,
+including scheduled runs, and requires `TestWrapperGrid` to pass without
+skipping. Synthetic comparator/writer tests use temporary paths and never
+overwrite committed evidence.
+
 The golden is REGENERATED from the server, never edited by hand:
 
 ```
 go test -tags fuzzoracle ./internal/engine -run TestWrapperGrid \
-    -chgen-grid-url http://localhost:18123 -chgen-grid-regenerate
+    -chgen-grid-url http://localhost:18123 -chgen-grid-regenerate \
+    -chgen-grid-i-measured-this 25.8.29.51
 ```
 
 Without `-chgen-grid-regenerate` the same command COMPARES and fails on

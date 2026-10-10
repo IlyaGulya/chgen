@@ -21,6 +21,7 @@ func (r *runner) types(o options) {
 		}
 	}
 	r.test("settings", env, "fuzzoracle", "^TestSettingsReadControlsAgainstClickHouse$", "./internal/engine")
+	r.testRequired("wrapper-grid", env, "fuzzoracle", "^TestWrapperGrid$", []string{"TestWrapperGrid"}, "./internal/engine", "-chgen-grid-url", o.http)
 	if tool := r.tool("functionrules"); tool != "" {
 		name := "function-measurements.json"
 		r.gate("function-measurements", tool, "-url", o.http, "-check", "-evidence", "testdata/clickhouse-function-rules.json", "-report", filepath.Join(r.out, name))

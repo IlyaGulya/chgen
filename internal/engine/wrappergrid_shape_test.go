@@ -142,7 +142,7 @@ func TestGridProbesReadAFixtureColumn(t *testing.T) {
 func TestGridDoesNotShrink(t *testing.T) {
 	recorded, total, ok := gridGoldenFamilyCounts(t)
 	if !ok {
-		t.Skip("the golden file is absent; generate it with -chgen-grid-regenerate")
+		t.Fatal("the mandatory golden file is absent; generate it with -chgen-grid-regenerate")
 	}
 	schema := gridTestSchema(t)
 	live := map[string]int{}
@@ -171,6 +171,47 @@ func TestGridDoesNotShrink(t *testing.T) {
 	if liveTotal < total {
 		t.Errorf("the grid shrank in total: the golden holds %d cells, the enumeration now makes %d",
 			total, liveTotal)
+	}
+}
+
+func TestGridEvidenceCoversCurrentEnumeration(t *testing.T) {
+	raw, err := os.ReadFile(gridGoldenPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved := make(map[string]string)
+	for _, line := range strings.Split(string(raw), "\n") {
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		fields := strings.SplitN(line, "\t", 6)
+		if len(fields) != 6 {
+			t.Fatalf("malformed evidence line: %q", line)
+		}
+		if _, duplicate := saved[fields[0]]; duplicate {
+			t.Fatalf("duplicate evidence cell %s", fields[0])
+		}
+		if fields[1] == "MISMATCH" {
+			t.Errorf("cell %s records a silently wrong inferred type; fix it before accepting this evidence", fields[0])
+		}
+		saved[fields[0]] = fields[5]
+	}
+	owners := make(map[string]bool)
+	for _, probe := range gridBuildProbes(gridTestSchema(t)) {
+		owners[probe.entry] = true
+		sql, found := saved[probe.id]
+		if !found || sql != probe.sql {
+			t.Errorf("cell %s has missing or stale SQL evidence; measure the current wrapper grid", probe.id)
+		}
+		delete(saved, probe.id)
+	}
+	for id := range saved {
+		t.Errorf("evidence cell %s no longer has an owner in the current grid", id)
+	}
+	for name := range functionRegistry {
+		if !owners[name] {
+			t.Errorf("registry function %s has no wrapper-grid evidence owner", name)
+		}
 	}
 }
 
@@ -219,7 +260,7 @@ func gridGoldenFamilyCounts(t *testing.T) (map[string]int, int, bool) {
 func TestGridGoldenCarriesTheRegenerationBanner(t *testing.T) {
 	raw, err := os.ReadFile(filepath.FromSlash(gridGoldenPath))
 	if err != nil {
-		t.Skip("the golden file is absent; generate it with -chgen-grid-regenerate")
+		t.Fatal("the mandatory golden file is absent; generate it with -chgen-grid-regenerate")
 	}
 	for _, want := range []string{
 		"DO NOT EDIT BY HAND",
