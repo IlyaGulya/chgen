@@ -29,7 +29,7 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 		return CHType{}, fmt.Errorf("function %s does not match the measured case-sensitive spelling %s; %s", function.Name.Name, higherOrder.spelling, pinTypeHint)
 	}
 	if name != "if" && name != "multiif" && name != "coalesce" && name != "ifnull" {
-		if err := checkIfCombinatorConditionArg(name, function.Name.Name, args, scope); err != nil {
+		if err := checkIfCombinatorConditionArg(name, function.Name.Name, call); err != nil {
 			return CHType{}, err
 		}
 	}
@@ -78,29 +78,9 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 		}
 	}
 
-	// An aggregate function with a combinator suffix (-If, -Array,
-	// -State, -Merge, -OrNull, -OrDefault, -Resample, -SimpleState) is
-	// typed from the rule of its base aggregate. A combinator over a base
-	// with no rule stays a refusal.
-	// The -If combinator takes its condition as the LAST argument, and
-	// NEITHER path that types such a call ever reads that position: the
-	// 13 hand-written registry entries use strategy argsFirstOnly and
-	// read argument zero only, and inferAggregateCombinatorType discards
-	// the trailing arguments. The check therefore sits before both of
-	// them, where every function passes, and it keys off the name and
-	// never off one registry entry.
-	if err := checkIfCombinatorConditionArg(name, function.Name.Name, args, scope); err != nil {
-		return CHType{}, err
-	}
-	// An aggregate in the argument subtree of another aggregate is always
-	// Code: 184 on the server. The check sits here, before every path
-	// that could give the call a type, because chgen must refuse at
-	// generation time and not let the query fail at run time. See
-	// nested_aggregate.go for the measured boundary.
-	if err := checkNestedAggregateArgs(name, function.Name.Name, args); err != nil {
-		return CHType{}, err
-	}
-	if result, handled, err := inferAggregateCombinatorType(name, function, args, scope); handled {
+	// Condition and nested-aggregate validation already ran above the
+	// signature gate. Combinators share its per-call argument cache.
+	if result, handled, err := inferAggregateCombinatorType(name, function, call); handled {
 		return result, err
 	}
 	if rule, ok := functionRuleFor(name); ok {

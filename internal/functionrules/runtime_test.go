@@ -108,6 +108,19 @@ SELECT base64Encode(s) AS encoded, tryBase64Decode(s) AS decoded,
  normalizeUTF8NFD(s) AS nfd, normalizeUTF8NFKC(s) AS nfkc,
  normalizeUTF8NFKD(s) AS nfkd
 FROM t ORDER BY id;
+
+-- name: ReadAggregates :one
+-- result: Sum sum_value
+-- result: ArraySum array_sum
+-- result: NullableSum nullable_sum
+-- result: Average average_value
+-- result: Unique unique_value
+SELECT sumIf(v, id > 0) AS sum_value,
+ sumArrayIf([v], id > 0) AS array_sum,
+ sumIfOrNull(v, id > 0) AS nullable_sum,
+ avgIf(v, id > 0) AS average_value,
+ uniqExactIf(v, id > 0) AS unique_value
+FROM t;
 `
 
 const runtimeConsumer = `package contracts
@@ -185,5 +198,8 @@ func TestMeasuredMath(t *testing.T) {
   if check.actual==nil || *check.actual!=check.want || check.null!=nil { t.Fatalf("string value: got %v, null %v; want %q",check.actual,check.null,check.want) }
  }
  if strings[2].Lower==nil || *strings[2].Lower!="привет café" || strings[2].Reverse==nil || *strings[2].Reverse!="éfac тевирП" { t.Fatalf("wrong Unicode: %+v",strings[2]) }
+ aggregates, err := New(conn).ReadAggregates(ctx, ReadAggregatesParams{})
+ if err != nil { t.Fatal(err) }
+ if aggregates.Sum==nil || *aggregates.Sum!=1 || aggregates.ArraySum==nil || *aggregates.ArraySum!=1 || aggregates.NullableSum==nil || *aggregates.NullableSum!=1 || aggregates.Average==nil || *aggregates.Average!=0.5 || aggregates.Unique!=2 { t.Fatalf("wrong generated aggregate values: %+v",aggregates) }
 }
 `

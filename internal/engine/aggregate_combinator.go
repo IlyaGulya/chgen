@@ -429,6 +429,19 @@ func baseAggregateResultType(base string, function *clickhouse.FunctionExpr, arg
 	if !ok {
 		return CHType{}, fmt.Errorf("aggregate %s has no registered type rule", base)
 	}
+	evaluateRule := func(types []CHType) (CHType, error) {
+		result, err := rule(types)
+		if err != nil || function == nil {
+			return result, err
+		}
+		name := strings.ToLower(function.Name.Name)
+		if _, registered := functionRegistry[name]; registered {
+			// Keep the registered call's measured parameter gate before
+			// applying wrappers, as on the ordinary inference path.
+			return applyParameterVerdict(name, result)
+		}
+		return result, nil
+	}
 	// This path gives the ORDINARY result type of the base aggregate,
 	// thus it READS each argument as a value. A
 	// SimpleAggregateFunction(f, T) argument is therefore replaced by T
@@ -465,7 +478,16 @@ func baseAggregateResultType(base string, function *clickhouse.FunctionExpr, arg
 	// anySimpleState(safn) drops.
 	valueTypes := make([]CHType, 0, len(argTypes))
 	for _, argType := range argTypes {
-		valueTypes = append(valueTypes, readSimpleAggregateValue(argType))
+		value := readSimpleAggregateValue(argType)
+		// Computing aggregates read a surviving scalar marker through,
+		// while min/max/argMin/argMax keep that marker in their value.
+		if _, constrained := argumentDomainFor(base); constrained && !valuePreservingDomainFunctions[base] {
+			bare, nullable, lowCardinality := splitCHWrappers(value)
+			if inner, wrapped := simpleAggregateWrapperInner(bare); wrapped {
+				value = applyCHWrappers(inner, nullable, lowCardinality)
+			}
+		}
+		valueTypes = append(valueTypes, value)
 	}
 	stripped := make([]CHType, 0, len(valueTypes))
 	for _, valueType := range valueTypes {
@@ -482,7 +504,7 @@ func baseAggregateResultType(base string, function *clickhouse.FunctionExpr, arg
 		nullable = nullable || argNullable
 	}
 	if functionStrategyFor(base) == argsIndependent {
-		result, err := rule(nil)
+		result, err := evaluateRule(nil)
 		if err != nil {
 			return CHType{}, err
 		}
@@ -492,9 +514,9 @@ func baseAggregateResultType(base string, function *clickhouse.FunctionExpr, arg
 		return applyCHWrappers(result, nullable, false), nil
 	}
 	if functionClassFor(base) == wrapperOpaque {
-		return rule(stripped)
+		return evaluateRule(stripped)
 	}
-	result, err := rule(stripped)
+	result, err := evaluateRule(stripped)
 	if err != nil {
 		return CHType{}, err
 	}
@@ -509,7 +531,8 @@ func baseAggregateResultType(base string, function *clickhouse.FunctionExpr, arg
 // inferAggregateCombinatorType types a call of a base aggregate with a
 // combinator suffix. It returns ok false when the name is not such a call,
 // so the caller can continue with the ordinary paths.
-func inferAggregateCombinatorType(name string, function *clickhouse.FunctionExpr, args []clickhouse.Expr, scope queryScope) (CHType, bool, error) {
+func inferAggregateCombinatorType(name string, function *clickhouse.FunctionExpr, call *CallContext) (CHType, bool, error) {
+	args, scope := call.args, call.scope
 	base, combinator, status := parseAggregateCombinatorChain(name)
 	if status == aggregateChainUnsupported {
 		if _, registered := functionRuleFor(name); registered {
@@ -520,30 +543,10 @@ func inferAggregateCombinatorType(name string, function *clickhouse.FunctionExpr
 	if status != aggregateChainSupported {
 		return CHType{}, false, nil
 	}
-	// The repository already has hand-written rules for a few -If names.
-	// Keep them in charge, so this file cannot change a measured answer
-	// that the existing tests pin.
-	//
-	// The -State family is the ONE exception. `quantilestate` and
-	// `quantilestateif` carry a hand-written rule that gives back the
-	// argument type verbatim. It therefore keeps a LowCardinality
-	// wrapper inside the AggregateFunction where the server has none,
-	// and it keeps the top-level Nullable that the -If form removes.
-	// Measured on ClickHouse 25.8.29.51 over real columns:
-	//
-	//	quantileState(lc_i32)        AggregateFunction(quantile, Int32)
-	//	quantileState(lcn_i32)       AggregateFunction(quantile, Nullable(Int32))
-	//	quantileStateIf(ni32, b)     AggregateFunction(quantile, Int32)
-	//	quantileStateIf(lcn_i32, b)  AggregateFunction(quantile, Int32)
-	//
-	// The -State rule below applies the measured wrapper behaviour, thus
-	// the combinator path must own these names. Every other name keeps
-	// its hand-written rule.
-	stateRuleOwnsName := combinator.plan.buildsAggregateState && !combinator.plan.stateStoresCondition && !combinator.plan.orNullResult
-	if _, existing := functionRuleFor(name); existing && !stateRuleOwnsName {
-		return CHType{}, false, nil
-	}
-	if err := validateAggregateCombinatorCall(base, combinator, function, args, scope); err != nil {
+	// Registry entries still describe spelling, signatures and probe recipes.
+	// Every measured chain evaluates its result through the same plan, even
+	// when that full name also has a registry entry.
+	if err := validateAggregateCombinatorCall(base, combinator, function, call); err != nil {
 		return CHType{}, true, err
 	}
 	trailingRoleCount := boolInt(combinator.plan.conditionArgument) + boolInt(combinator.plan.resampleKeyArgument)
@@ -555,9 +558,18 @@ func inferAggregateCombinatorType(name string, function *clickhouse.FunctionExpr
 		dataArgs = args
 	}
 	argTypes := make([]CHType, 0, len(dataArgs))
-	for _, arg := range dataArgs {
-		inferred, err := inferExprType(arg, scope)
+	for index := range dataArgs {
+		inferred, err := call.argumentType(index)
 		if err != nil {
+			// Registered fixed-result aggregates historically allow unresolved
+			// placeholders. A missing column or any other error still refuses.
+			if errors.Is(err, errPlaceholderResultType) && functionStrategyFor(name) == argsIndependent {
+				argTypes = append(argTypes, CHType{})
+				continue
+			}
+			if index == 0 && functionStrategyFor(name) == argsFirstOnly && !combinator.plan.buildsAggregateState {
+				return CHType{}, true, fmt.Errorf("function %s first argument: %w", function.Name.Name, err)
+			}
 			return CHType{}, true, fmt.Errorf("function %s argument: %w", function.Name.Name, err)
 		}
 		if combinator.plan.arrayDataArguments {
@@ -596,6 +608,18 @@ func inferAggregateCombinatorType(name string, function *clickhouse.FunctionExpr
 			return CHType{}, true, err
 		}
 	}
+	// Preserve the registered fixed-result API when any argument is still
+	// an unresolved placeholder, including the condition. Domain validation
+	// above must run first: a known invalid data type is never excused.
+	if functionStrategyFor(name) == argsIndependent {
+		for index := range args {
+			if _, err := call.argumentType(index); errors.Is(err, errPlaceholderResultType) {
+				rule, _ := functionRuleFor(base)
+				result, err := rule(nil)
+				return result, true, err
+			}
+		}
+	}
 
 	switch {
 	case combinator.plan.stateStoresCondition:
@@ -620,7 +644,7 @@ func inferAggregateCombinatorType(name string, function *clickhouse.FunctionExpr
 		// verbatim, with the same wrapper rule as a data argument: the
 		// sumIfState(i32, u8) row shows UInt8 surviving unchanged, not
 		// canonicalized to Bool.
-		condition, err := inferExprType(args[len(args)-1], scope)
+		condition, err := call.argumentType(len(args) - 1)
 		if err != nil {
 			return CHType{}, true, fmt.Errorf("function %s argument: %w", function.Name.Name, err)
 		}
@@ -925,7 +949,8 @@ func inferAggregateCombinatorType(name string, function *clickhouse.FunctionExpr
 // suffix adds to its base aggregate. The ordinary function signature gate
 // cannot validate a dynamic name such as sumArray or sumMerge because those
 // names do not have separate registry entries.
-func validateAggregateCombinatorCall(base string, combinator aggregateCombinator, function *clickhouse.FunctionExpr, args []clickhouse.Expr, scope queryScope) error {
+func validateAggregateCombinatorCall(base string, combinator aggregateCombinator, function *clickhouse.FunctionExpr, call *CallContext) error {
+	args := call.args
 	displayName := function.Name.Name
 	if err := validateAggregateArgumentPlan(combinator); err != nil {
 		return fmt.Errorf("function %s: %w", displayName, err)
@@ -953,13 +978,13 @@ func validateAggregateCombinatorCall(base string, combinator aggregateCombinator
 		if len(args) == 0 {
 			return fmt.Errorf("function %s has no -If condition argument", displayName)
 		}
-		if err := checkIfCombinatorCondition(displayName, args[len(args)-1], scope); err != nil {
+		if err := checkIfCombinatorCondition(displayName, call, len(args)-1); err != nil {
 			return err
 		}
 	}
 	if combinator.plan.arrayDataArguments {
-		for index, argument := range args[:baseArgCount] {
-			argumentType, err := inferExprType(argument, scope)
+		for index := range baseArgCount {
+			argumentType, err := call.argumentType(index)
 			if err != nil {
 				return fmt.Errorf("function %s argument %d: %w", displayName, index+1, err)
 			}
@@ -971,7 +996,7 @@ func validateAggregateCombinatorCall(base string, combinator aggregateCombinator
 	}
 	if resampleKeyCount == 1 {
 		keyIndex := baseArgCount
-		keyType, err := inferExprType(args[keyIndex], scope)
+		keyType, err := call.argumentType(keyIndex)
 		if err != nil {
 			return fmt.Errorf("function %s resample key: %w", displayName, err)
 		}
@@ -1119,9 +1144,9 @@ func simpleStateCaseKeepsInheritedNullable(expression *clickhouse.CaseExpr, scop
 //
 // The check runs on the base type, that is after the Nullable and the
 // LowCardinality wrappers come off, for the same reason as in the bare
-// path: the server decides on the inner type. It covers only the leading
-// data arguments that aggregateDataArgCount reports, because a condition
-// argument or an ordering key is not a data value.
+// path: the server decides on the inner type. The base spec also selects
+// the constrained positions: argMin/argMax constrain only the ordering key,
+// not the value they return. Conditions and resample keys are separate roles.
 //
 // A base aggregate whose spec has no domain has no constraint here
 // either. That keeps this function from inventing a rule that no
@@ -1135,13 +1160,13 @@ func checkCombinatorArgumentDomain(base string, function *clickhouse.FunctionExp
 	if function != nil {
 		displayName = function.Name.Name
 	}
-	for _, argType := range argTypes[:aggregateDataArgCount(base, len(argTypes))] {
-		bare, _, _ := splitCHWrappers(argType)
-		if err := checkArgumentDomain(displayName, domain, bare); err != nil {
-			return err
+	return checkArgumentDomainAt(displayName, domain, domainArgumentIndexes(base), len(argTypes), func(index int) (CHType, bool) {
+		bare, _, _ := splitCHWrappers(argTypes[index])
+		if inner, wrapped := simpleAggregateWrapperInner(bare); wrapped {
+			bare, _, _ = splitCHWrappers(inner)
 		}
-	}
-	return nil
+		return bare, true
+	})
 }
 
 // baseAggregateDisplayName gives the name that ClickHouse prints inside an
@@ -1246,8 +1271,8 @@ var stateOrNullSupportedBases = map[string]bool{
 // impossible. Every other inference error is a real refusal and must move to
 // the parent. If it is discarded here, an invalid expression inside the
 // condition can get a type from the aggregate data argument.
-func checkIfCombinatorCondition(functionName string, condition clickhouse.Expr, scope queryScope) error {
-	inferred, err := inferExprType(condition, scope)
+func checkIfCombinatorCondition(functionName string, call *CallContext, index int) error {
+	inferred, err := call.argumentType(index)
 	if err != nil {
 		if errors.Is(err, errPlaceholderResultType) {
 			return nil
@@ -1278,18 +1303,16 @@ var ifConditionExemptNames = map[string]bool{
 // checkIfCombinatorConditionArg refuses a call whose name carries the -If
 // combinator and whose LAST argument cannot be a condition.
 //
-// It keys off the NAME and not off a registry entry, because the hole this
-// closes is spread over both paths that type an -If call: the 13
-// hand-written registry entries use strategy argsFirstOnly and read
-// argument zero only, and the combinator path in this file discards the
-// trailing arguments. Neither ever looked at the condition. A fix in one
-// place would leave the other blind, and a fix for one aggregate name
-// would leave the other twelve blind.
+// It runs before signature validation to preserve the condition-first
+// diagnostic for registered and dynamic names alike. Its argument comes
+// from the same CallContext that the measured plan uses later, so this
+// early gate does not repeat inference or depend on a registry entry.
 //
 // A name that ends in "ifmerge" or "ifmergestate" is exempt: the state
 // argument already holds the condition and there is no trailing condition
 // argument to check.
-func checkIfCombinatorConditionArg(name, spelledName string, args []clickhouse.Expr, scope queryScope) error {
+func checkIfCombinatorConditionArg(name, spelledName string, call *CallContext) error {
+	args := call.args
 	if ifConditionExemptNames[name] {
 		return nil
 	}
@@ -1302,7 +1325,7 @@ func checkIfCombinatorConditionArg(name, spelledName string, args []clickhouse.E
 		if len(args) != 1 {
 			return nil
 		}
-		return checkIfCombinatorCondition(spelledName, args[0], scope)
+		return checkIfCombinatorCondition(spelledName, call, 0)
 	}
 	if len(args) < 2 {
 		return nil
@@ -1316,5 +1339,5 @@ func checkIfCombinatorConditionArg(name, spelledName string, args []clickhouse.E
 	if strings.HasSuffix(name, "ifmerge") || strings.HasSuffix(name, "ifmergestate") {
 		return nil
 	}
-	return checkIfCombinatorCondition(spelledName, args[len(args)-1], scope)
+	return checkIfCombinatorCondition(spelledName, call, len(args)-1)
 }
