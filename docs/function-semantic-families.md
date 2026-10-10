@@ -22,6 +22,25 @@ switch into test allowlists. Function-evidence coverage is checked against the
 exact catalog names and families, not a manually incremented function count.
 Neither change relaxes the live legal/illegal witness gates.
 
+## Function evaluation
+
+Ordinary registered calls use one evaluator and one `CallContext`. The context
+caches both argument types and failures in the call's lexical scope. Signature
+validation, domain checks, result evaluation and wrapper transport read that
+same cache; lambda bodies still have their own scopes.
+
+The specification's argument strategy becomes a call plan: which arguments
+determine the result, which data arguments contribute wrappers, where domains
+apply and whether a placeholder can be deferred. These roles preserve the
+existing validation order and diagnostics. Fixed-result, first-value and
+generic calls no longer have separate result-rule, comparison or parameter-gate
+implementations. The rule runs once, followed by the existing wrapper applier.
+
+Expression-sensitive routes, higher-order functions and aggregate combinator
+chains retain their dedicated measured semantics. They share the context and
+signature boundary, but are not coerced into an ordinary scalar call. The
+ordinary evaluator replaces the old branches; there is no legacy fallback.
+
 The function probe catalog records the family and its probe recipe. Its gate
 refuses a missing family, a changed recipe, a missing argument position, and a
 missing legal or illegal boundary. The live gate compares three type answers

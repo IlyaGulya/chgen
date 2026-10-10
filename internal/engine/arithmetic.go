@@ -1233,6 +1233,13 @@ func functionWrapperFlags(class functionWrapperClass, name string, args []clickh
 // applyWrapperTransport. Every decision about which wrappers survive
 // lives in the transport, not here. See wrapper_transport.go.
 func applyFunctionWrappers(result CHType, class functionWrapperClass, name string, args []clickhouse.Expr, argTypes []CHType, scope queryScope) CHType {
+	transport, call := functionWrapperTransport(class, name, args, argTypes, scope)
+	return applyWrapperTransport(result, transport, call)
+}
+
+// functionWrapperTransport resolves expression-dependent wrapper facts. The
+// evaluator and dedicated expression routes use the same transport builder.
+func functionWrapperTransport(class functionWrapperClass, name string, args []clickhouse.Expr, argTypes []CHType, scope queryScope) (wrapperTransport, wrapperCall) {
 	nullable, lowCardinality := functionWrapperFlags(class, name, args, argTypes, scope)
 	transport := transportForFunction(name, class)
 	if class != wrapperAggregate {
@@ -1274,7 +1281,7 @@ func applyFunctionWrappers(result CHType, class functionWrapperClass, name strin
 	// "Has a measured argument domain" is the proxy for "computes from
 	// the value", and an explicit transport on the spec or in the legacy
 	// override table marks the measured exception. This is the same test that the
-	// argsFirstOnly path in inferFunctionType applies, so that the two
+	// first-value evaluation plan applies, so that the two
 	// paths cannot disagree.
 	// A FIXED rule answers the same type for every argument, thus it
 	// computes a new value and cannot carry the marker either
@@ -1289,19 +1296,15 @@ func applyFunctionWrappers(result CHType, class functionWrapperClass, name strin
 			firstStack.simpleAggregate = nil
 		}
 	}
-	return applyWrapperTransport(
-		result,
-		transport,
-		wrapperCall{
-			base: base,
-			stacks: []wrapperStack{{
-				lowCardinality:  lowCardinality,
-				nullable:        nullable,
-				simpleAggregate: firstStack.simpleAggregate,
-			}},
-			argCount: len(argTypes),
-		},
-	)
+	return transport, wrapperCall{
+		base: base,
+		stacks: []wrapperStack{{
+			lowCardinality:  lowCardinality,
+			nullable:        nullable,
+			simpleAggregate: firstStack.simpleAggregate,
+		}},
+		argCount: len(argTypes),
+	}
 }
 
 // firstArgTypeOrZero gives the first argument type, or the zero CHType

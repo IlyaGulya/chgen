@@ -370,15 +370,6 @@ func functionStrategyFor(name string) argumentStrategy {
 	return functionRegistry[name].strategy
 }
 
-// functionComparesArgPairFor reports whether a function compares its
-// first two arguments against each other and therefore needs the
-// shared comparability check. An unknown name gives false, which is
-// the safe default: the check runs only where a measurement marked
-// the spec.
-func functionComparesArgPairFor(name string) bool {
-	return functionRegistry[name].facts&functionFactComparesArgPair != 0
-}
-
 // functionDynamicForcesNullableFor reports whether a Dynamic argument
 // puts a Nullable wrapper on the fixed result of this function. An
 // unmarked function answers false, which is the safe default: the
