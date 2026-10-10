@@ -92,7 +92,7 @@ The golden is REGENERATED from the server, never edited by hand:
 ```
 go test -tags fuzzoracle ./internal/engine -run TestWrapperGrid \
     -chgen-grid-url http://localhost:18123 -chgen-grid-regenerate \
-    -chgen-grid-i-measured-this 25.8.29.51
+    -chgen-grid-i-measured-this=25.8.29.51
 ```
 
 Without `-chgen-grid-regenerate` the same command COMPARES and fails on
