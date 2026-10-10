@@ -44,19 +44,23 @@ func digest(value any) string {
 	return hex.EncodeToString(hash[:])
 }
 
-func identity(report Report) Identity {
+func planDigest(report Report) string {
 	var plans []Cell
 	for _, function := range report.Functions {
 		for _, cell := range function.Cells {
 			plans = append(plans, Cell{ID: cell.ID, Input: cell.Input, Expression: cell.Expression, Values: cell.Values})
 		}
 	}
-	semantic := report
-	semantic.Source.BuildID = ""
-	return Identity{Version: SemanticsVersion, PlanDigest: digest(struct {
+	return digest(struct {
 		Version, Profile string
 		Plan             []Cell
-	}{SemanticsVersion, report.Profile, plans}), SemanticDigest: digest(struct {
+	}{SemanticsVersion, report.Profile, plans})
+}
+
+func identity(report Report) Identity {
+	semantic := report
+	semantic.Source.BuildID = ""
+	return Identity{Version: SemanticsVersion, PlanDigest: planDigest(report), SemanticDigest: digest(struct {
 		Version string
 		Report  Report
 	}{SemanticsVersion, semantic}), Source: report.Source}

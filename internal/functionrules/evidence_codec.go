@@ -67,15 +67,11 @@ type compactEvidence struct {
 // witnesses. A checksum detects corruption; it is not a signature or proof that
 // the measurements came from a trusted server.
 func EncodeCompact(report Report) ([]byte, error) {
-	expanded, err := json.Marshal(report)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := decodeExpanded(expanded); err != nil {
+	if err := validateReport(report); err != nil {
 		return nil, err
 	}
 	payload := compactPayload{Format: 2, Profile: report.Profile, Source: report.Source,
-		PlanVersion: evidencePlanVersion, PlanDigest: identity(report).PlanDigest}
+		PlanVersion: evidencePlanVersion, PlanDigest: planDigest(report)}
 	indexes := make(map[measurementOutcome]int)
 	for _, function := range report.Functions {
 		entry := compactFunction{Name: function.Name, CaseInsensitive: function.CaseInsensitive}
@@ -141,7 +137,7 @@ func decodeCompact(data []byte) (Report, error) {
 		}
 		report.Functions = append(report.Functions, entry)
 	}
-	if saved.PlanDigest != identity(report).PlanDigest {
+	if saved.PlanDigest != planDigest(report) {
 		return Report{}, fmt.Errorf("compact evidence measurement plan digest mismatch; the saved plan cannot be reinterpreted")
 	}
 	unique := make(map[measurementOutcome]bool)
@@ -151,9 +147,5 @@ func decodeCompact(data []byte) (Report, error) {
 		}
 		unique[outcome] = true
 	}
-	expanded, err := json.Marshal(report)
-	if err != nil {
-		return Report{}, err
-	}
-	return decodeExpanded(expanded)
+	return report, validateReport(report)
 }

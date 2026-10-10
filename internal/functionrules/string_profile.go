@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"sync"
 )
 
 // StringProfile identifies the bounded unary String-result recipe family.
@@ -24,7 +25,28 @@ func profileNames(profile string) ([]string, error) {
 	}
 }
 
+// Recipes are immutable and the cache is bounded by the safe allowlists, never
+// by names or profiles supplied in evidence. Consumers must not mutate probes.
+var recipePlans = sync.OnceValue(func() map[string]map[string][]probe {
+	result := make(map[string]map[string][]probe)
+	for _, profile := range []string{Profile, StringProfile} {
+		allowed, _ := profileNames(profile)
+		result[profile] = make(map[string][]probe, len(allowed))
+		for _, name := range allowed {
+			result[profile][name] = buildProfilePlan(profile, name)
+		}
+	}
+	return result
+})
+
 func profilePlan(profile, name string) []probe {
+	if probes, found := recipePlans()[profile][name]; found {
+		return probes
+	}
+	return buildProfilePlan(profile, name)
+}
+
+func buildProfilePlan(profile, name string) []probe {
 	if profile == StringProfile {
 		return stringPlan(name)
 	}

@@ -39,34 +39,38 @@ func decodeExpanded(data []byte) (Report, error) {
 	if err := decoder.Decode(new(any)); err != io.EOF {
 		return report, fmt.Errorf("evidence must contain exactly one JSON document")
 	}
+	return report, validateReport(report)
+}
+
+func validateReport(report Report) error {
 	allowed, profileErr := profileNames(report.Profile)
 	if profileErr != nil || report.Format != 1 || report.Source.Version != Version || report.Source.Revision == 0 || report.Source.BuildID == "" || len(report.Functions) == 0 {
-		return report, fmt.Errorf("incomplete or incompatible measurement provenance")
+		return fmt.Errorf("incomplete or incompatible measurement provenance")
 	}
 	seen := make(map[string]bool)
 	for _, function := range report.Functions {
 		if !slices.Contains(allowed, function.Name) || seen[function.Name] {
-			return report, fmt.Errorf("unknown or duplicate function recipe %q", function.Name)
+			return fmt.Errorf("unknown or duplicate function recipe %q", function.Name)
 		}
 		seen[function.Name] = true
 		probes := profilePlan(report.Profile, function.Name)
 		if len(function.Cells) != len(probes) {
-			return report, fmt.Errorf("%s has an incomplete probe matrix", function.Name)
+			return fmt.Errorf("%s has an incomplete probe matrix", function.Name)
 		}
 		for i, cell := range function.Cells {
 			probe := probes[i]
 			if cell.ID != probe.id || cell.Input != probe.input || cell.Expression != probe.expression || !slices.Equal(cell.Values, probe.values) {
-				return report, fmt.Errorf("%s has a foreign or reordered probe %s", function.Name, cell.ID)
+				return fmt.Errorf("%s has a foreign or reordered probe %s", function.Name, cell.ID)
 			}
 			if (cell.Analysis == "") != (cell.AnalysisCode > 0) || (cell.Execution == "") != (cell.ExecutionCode > 0) || cell.AnalysisCode < 0 || cell.ExecutionCode < 0 {
-				return report, fmt.Errorf("%s has missing analysis or execution evidence", function.Name)
+				return fmt.Errorf("%s has missing analysis or execution evidence", function.Name)
 			}
 			if (cell.ExecutionCode == 0 && cell.ExecutionRows != len(probe.values)) || (cell.ExecutionCode != 0 && cell.ExecutionRows != 0) {
-				return report, fmt.Errorf("%s has missing execution row witnesses", function.Name)
+				return fmt.Errorf("%s has missing execution row witnesses", function.Name)
 			}
 		}
 	}
-	return report, nil
+	return nil
 }
 
 func expectedWrapper(input, result string) string {

@@ -283,19 +283,6 @@ func TestVerifierCompilesSupportedPairWithTheRequestedCompiler(t *testing.T) {
 		t.Fatal(err)
 	}
 	command := exec.CommandContext(t.Context(), binary, "-root", root, "-suite", "compatibility", "-go", "1.24.0", "-driver", "v2.42.0", "-report", report)
-	// A fresh module cache forces Go's real toolchain download notice onto
-	// stderr, as on a cold CI worker. It must never become part of GOROOT.
-	cache := filepath.Join(t.TempDir(), "modules")
-	command.Env = append(os.Environ(), "GOMODCACHE="+cache)
-	t.Cleanup(func() {
-		// Go owns read-only files in this isolated cache; use its cleanup
-		// command before TempDir cleanup. No shared cache is touched.
-		cleanup := exec.Command("go", "clean", "-modcache")
-		cleanup.Env = append(os.Environ(), "GOMODCACHE="+cache)
-		if data, err := cleanup.CombinedOutput(); err != nil {
-			t.Errorf("clean isolated module cache: %v\n%s", err, data)
-		}
-	})
 	if data, err := command.CombinedOutput(); err != nil {
 		entries, _ := os.ReadDir(report)
 		for _, entry := range entries {
@@ -305,6 +292,65 @@ func TestVerifierCompilesSupportedPairWithTheRequestedCompiler(t *testing.T) {
 			}
 		}
 		t.Fatalf("supported pair should compile: %v\n%s", err, data)
+	}
+	data, err := os.ReadFile(filepath.Join(report, "compatibility-go1.24.0-driverv2.42.0.log"))
+	if err != nil || !strings.Contains(string(data), "Generated code compiles with Go 1.24.0 and clickhouse-go v2.42.0.") {
+		t.Fatalf("real supported compiler/driver check did not complete: %v\n%s", err, data)
+	}
+}
+
+func TestVerifierKeepsCompilerDownloadNoticeOutOfTheCompilerPath(t *testing.T) {
+	// Simulate only the external Go command's download notice. The separate
+	// supported-pair test above still compiles every golden with the real Go.
+	directory := t.TempDir()
+	root, err := filepath.Abs("../../../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	goCommand, err := exec.LookPath("go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	compilerRoot := filepath.Join(directory, "compiler with spaces")
+	for _, path := range []string{filepath.Join(compilerRoot, "bin"), filepath.Join(directory, "commands")} {
+		if err := os.MkdirAll(path, 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeFile(t, filepath.Join(compilerRoot, "bin", "go"), "#!/bin/sh\nexit 1\n")
+	if err := os.Chmod(filepath.Join(compilerRoot, "bin", "go"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	shim := filepath.Join(directory, "commands", "go")
+	writeFile(t, shim, `#!/bin/sh
+if [ "$1" = env ] && [ "$2" = GOROOT ]; then
+  printf '%s\n' 'go: downloading go1.24.0 (test download notice)' >&2
+  printf '%s\n' "$COMPAT_TEST_GOROOT"
+  exit 0
+fi
+exec "$COMPAT_TEST_GO" "$@"
+`)
+	if err := os.Chmod(shim, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	report := filepath.Join(directory, "report")
+	command := exec.CommandContext(t.Context(), binary, "-root", root, "-suite", "compatibility", "-go", "1.24.0", "-driver", "v2.42.0", "-report", report)
+	command.Env = append(os.Environ(), "PATH="+filepath.Dir(shim)+string(os.PathListSeparator)+os.Getenv("PATH"), "COMPAT_TEST_GOROOT="+compilerRoot, "COMPAT_TEST_GO="+goCommand)
+	data, err := command.CombinedOutput()
+	if exit, ok := err.(*exec.ExitError); !ok || exit.ExitCode() != 1 {
+		t.Fatalf("the deliberately failing compiler must fail the suite: %v\n%s", err, data)
+	}
+	data, err = os.ReadFile(filepath.Join(report, "compatibility-go1.24.0-driverv2.42.0-goroot.txt"))
+	if err != nil || strings.TrimSpace(string(data)) != compilerRoot {
+		t.Fatalf("compiler path contains stderr or lost spaces: %v\n%s", err, data)
+	}
+	data, err = os.ReadFile(filepath.Join(report, "compatibility-go1.24.0-driverv2.42.0-compiler.log"))
+	if err != nil || !strings.Contains(string(data), "test download notice") {
+		t.Fatalf("compiler download diagnostic was lost: %v\n%s", err, data)
+	}
+	data, err = os.ReadFile(filepath.Join(report, "compatibility-go1.24.0-driverv2.42.0.log"))
+	if err != nil || !strings.Contains(string(data), "read Go version: exit status 1") {
+		t.Fatalf("compiler execution failure was not preserved: %v\n%s", err, data)
 	}
 }
 
