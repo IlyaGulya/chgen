@@ -25,9 +25,11 @@ func (r *runner) types(o options) {
 		name := "function-measurements.json"
 		r.gate("function-measurements", tool, "-url", o.http, "-check", "-evidence", "testdata/clickhouse-function-rules.json", "-report", filepath.Join(r.out, name))
 		r.artifact(name)
+		r.artifact(name + ".diff.json")
 		name = "string-function-measurements.json"
 		r.gate("string-function-measurements", tool, "-url", o.http, "-check", "-evidence", "testdata/clickhouse-string-function-rules.json", "-report", filepath.Join(r.out, name))
 		r.artifact(name)
+		r.artifact(name + ".diff.json")
 		r.output("function-gaps", "function-gaps.json", nil, tool, "-gaps", "-url", o.http)
 	}
 	r.test("function-rules-runtime", env, "", "^TestFunctionRulesGeneratedRuntime$", "./internal/functionrules")

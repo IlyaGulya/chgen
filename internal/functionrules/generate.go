@@ -3,8 +3,6 @@ package functionrules
 import (
 	"bytes"
 	"cmp"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"go/ast"
@@ -70,6 +68,10 @@ func expectedWrapper(input, result string) string {
 }
 
 func specification(function Function, digest string) (string, error) {
+	excluded, err := nonPortableInputs(function)
+	if err != nil {
+		return "", err
+	}
 	byID := make(map[string]Cell)
 	for _, cell := range function.Cells {
 		byID[cell.ID] = cell
@@ -102,6 +104,12 @@ func specification(function Function, digest string) (string, error) {
 	var accepted []string
 	for _, base := range numericCases() {
 		cell := byID[base]
+		if slices.Contains(excluded, base) {
+			// This is a legal server argument, not a negative-domain witness.
+			// Its build-dependent result is refused by the full-input guard.
+			accepted = append(accepted, strings.ToLower(base))
+			continue
+		}
 		if cell.AnalysisCode != 0 {
 			if strings.HasPrefix(base, "Decimal") {
 				return "", fmt.Errorf("incomplete Decimal domain at %s", base)
@@ -128,6 +136,9 @@ func specification(function Function, digest string) (string, error) {
 		}
 		for _, input := range wrappers(base) {
 			wrapper := byID[input]
+			if excludedCell(function.Name, wrapper) {
+				continue
+			}
 			want := expectedWrapper(input, result)
 			if wrapper.Analysis != want || wrapper.Execution != want || wrapper.AnalysisCode != 0 || wrapper.ExecutionCode != 0 {
 				return "", fmt.Errorf("wrapper transport is not proved for %s", input)
@@ -149,7 +160,15 @@ func specification(function Function, digest string) (string, error) {
 if len(value.Params) != 0 { return false }
 switch value.normalizedName() { case %s: return true }
 return false`, strings.Join(quoted, ", "))
-	return renderSpecification(function, digest, Profile, result, domain, strings.Join(accepted, ", ")+", Decimal", ""), nil
+	text := renderSpecification(function, digest, Profile, result, domain, strings.Join(accepted, ", ")+", Decimal", "")
+	if len(excluded) != 0 {
+		var quoted []string
+		for _, input := range excluded {
+			quoted = append(quoted, strconv.Quote(input))
+		}
+		text = strings.Replace(text, "strategy: argsIndependent,", "strategy: argsIndependent,\nnonPortableInputs: []string{"+strings.Join(quoted, ",")+"},", 1)
+	}
+	return text, nil
 }
 
 func profileSpecification(profile string, function Function, digest string) (string, error) {
@@ -235,8 +254,28 @@ func Generate(source []byte, report Report) ([]byte, []string, error) {
 	if _, err := Decode(encoded); err != nil {
 		return nil, nil, err
 	}
-	hash := sha256.Sum256(encoded)
-	digest := hex.EncodeToString(hash[:])
+	// Semantic identity excludes build IDs; actual witnesses retain provenance.
+	// The restriction policy is part of the generated contract as well.
+	portable := report
+	portable.Functions = make([]Function, len(report.Functions))
+	for i, function := range report.Functions {
+		portable.Functions[i] = Function{Name: function.Name, CaseInsensitive: function.CaseInsensitive}
+		for _, cell := range function.Cells {
+			if report.Profile != Profile || !excludedCell(function.Name, cell) {
+				portable.Functions[i].Cells = append(portable.Functions[i].Cells, cell)
+			}
+		}
+	}
+	semanticDigest := identity(portable).SemanticDigest
+	witness, err := buildVariants()
+	if err != nil {
+		return nil, nil, err
+	}
+	policyDigest := digest(struct {
+		Version, Profile, Plan string
+		Cells                  []CellDifference
+	}{SemanticsVersion, witness.Profile, witness.Expected.PlanDigest, witness.Cells})
+	digest := digest(struct{ Semantics, Policy string }{semanticDigest, policyDigest})
 	files := token.NewFileSet()
 	file, err := parser.ParseFile(files, "registry.go", source, parser.ParseComments)
 	if err != nil {

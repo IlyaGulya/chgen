@@ -62,7 +62,8 @@ batch error to every expression. Negative domains, arity, aggregate parameter
 syntax and window placement are also measured.
 
 Only uniform Float64 or Int8 results with the measured wrapper behavior become
-fixed-result rules. The profile generates all 22 rules, including an exact
+fixed-result rules. Build-dependent input products are excluded rather than
+assigned a type from one build. The profile generates all 22 rules, including an exact
 spelling contract for its nine case-sensitive names. Names declared
 case-insensitive by ClickHouse keep accepting case variants. Other function
 families need their own bounded recipes and signature contracts; discovery
@@ -119,6 +120,61 @@ go run ./internal/tooling/cmd/functionrules \
 The live report path must be new. Live comparison does not overwrite pinned
 measurements. It compares the version, revision and measured behavior while
 retaining the actual architecture-specific build ID in the report.
+
+### Build dependent math inputs
+
+ClickHouse 25.8.29.51 has two implementations of `exp`, `log` and `tanh`.
+The [FastOps build configuration](https://github.com/ClickHouse/ClickHouse/blob/v25.8.29.51-lts/contrib/fastops-cmake/CMakeLists.txt)
+enables that library on supported x86 builds, not ARM. The
+[unary math implementation](https://github.com/ClickHouse/ClickHouse/blob/v25.8.29.51-lts/src/Functions/FunctionMathUnary.h)
+can preserve floating input types; the fallback always returns Float64.
+Both DESCRIBE and execution witnessed seven differing products per function:
+Float32 with its six measured wrapper forms, and a non-nullable
+SimpleAggregateFunction marker over Float64.
+
+The original ARM measurements remain unchanged. The exact 21-cell difference
+from [the x86 CI run](https://github.com/IlyaGulya/chgen/actions/runs/38044757394)
+is retained in `internal/functionrules/evidence/build-variants-v1.json`, with
+both build IDs, semantic digests and the measurement plan digest. The generated
+contract rejects Float32 through wrappers and non-nullable Float64 aggregate
+markers, including aggregate names other than the fixture's anyLast. Integer,
+Decimal, bare Float64 and the measured nullable Float64 forms remain supported.
+An explicit input cast supplies a portable form:
+
+```sql
+SELECT exp(CAST(float32_column AS Float64));
+SELECT log(CAST(aggregate_float64_column AS Float64));
+SELECT tanh(CAST(nullable_float32_column AS Nullable(Float64)));
+```
+
+SQL is never rewritten automatically. Server-assisted generation remains an
+option when the result must follow the particular server's type semantics.
+This is evidence across the observed builds, not a universal guarantee for
+every custom build sharing the same version number.
+
+### Cell diagnostics and provenance
+
+Live checks write both the actual measurement report and
+`<report>.diff.json`. Logs enumerate each changed function and input, analysis
+and execution types, error codes and row witnesses. Semantic identity is
+versioned separately from build provenance: identical behavior on a different
+build has the same semantic digest. The plan digest includes SQL and row values.
+Generated contract identity also includes the exclusion policy.
+
+Captured reports can be compared without a server:
+
+```bash
+go run ./internal/tooling/cmd/functionrules -check \
+  -evidence testdata/clickhouse-function-rules.json \
+  -compare /tmp/function-measurements.json \
+  -report /tmp/comparison
+```
+
+The two recorded complete semantic variants pass with an explicit
+`excluded-build-dependent-inputs-v1` policy; all 21 cells remain visible.
+Any additional change, partial variant, metadata change or unexplained outcome
+still fails. The checker does not waive wrong types on supported inputs, update
+pinned measurements or expand oracle-baseline allowances.
 
 The unified verification runner checks regeneration offline and remeasurement
 in the live type suite. It also executes generated consumer code against both

@@ -1,0 +1,677 @@
+{
+  "format": 1,
+  "profile": "numeric-unary-v1",
+  "expected": {
+    "semantics_version": "functionrules-semantics-v1",
+    "plan_digest": "b3035ba6c37c0114bfc91d05dcbe955de0360451006bf2db6c5c268272ad368c",
+    "semantic_digest": "919b2632483672ee0b2a6b5469422cbd89a64d62a178a2a0a01c86c8a4f4a6e0",
+    "source": {
+      "version": "25.8.29.51",
+      "revision": 54529,
+      "build_id": "1C050D7415593137F2ED12AF5EF02EABEF3FA872"
+    }
+  },
+  "actual": {
+    "semantics_version": "functionrules-semantics-v1",
+    "plan_digest": "b3035ba6c37c0114bfc91d05dcbe955de0360451006bf2db6c5c268272ad368c",
+    "semantic_digest": "59ad26dec3bbcdbf0e8ca4b1112bef2bb37ad6135a7a675565e8e08819158c69",
+    "source": {
+      "version": "25.8.29.51",
+      "revision": 54529,
+      "build_id": "C345EA4F094C8B6876F0E8BEEFBC0BEB452A3389"
+    }
+  },
+  "cells": [
+    {
+      "function": "exp",
+      "expected": {
+        "id": "Float32",
+        "input": "Float32",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "Float64",
+        "execution": "Float64",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "Float32",
+        "input": "Float32",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "Float32",
+        "execution": "Float32",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "exp",
+      "expected": {
+        "id": "Nullable(Float32)",
+        "input": "Nullable(Float32)",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "Nullable(Float64)",
+        "execution": "Nullable(Float64)",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "Nullable(Float32)",
+        "input": "Nullable(Float32)",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "Nullable(Float32)",
+        "execution": "Nullable(Float32)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "exp",
+      "expected": {
+        "id": "SimpleAggregateFunction(anyLast, Float32)",
+        "input": "SimpleAggregateFunction(anyLast, Float32)",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "Float64",
+        "execution": "Float64",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "SimpleAggregateFunction(anyLast, Float32)",
+        "input": "SimpleAggregateFunction(anyLast, Float32)",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "SimpleAggregateFunction(anyLast, Float32)",
+        "execution": "SimpleAggregateFunction(anyLast, Float32)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "exp",
+      "expected": {
+        "id": "SimpleAggregateFunction(anyLast, Nullable(Float32))",
+        "input": "SimpleAggregateFunction(anyLast, Nullable(Float32))",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "Nullable(Float64)",
+        "execution": "Nullable(Float64)",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "SimpleAggregateFunction(anyLast, Nullable(Float32))",
+        "input": "SimpleAggregateFunction(anyLast, Nullable(Float32))",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "Nullable(Float32)",
+        "execution": "Nullable(Float32)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "exp",
+      "expected": {
+        "id": "LowCardinality(Float32)",
+        "input": "LowCardinality(Float32)",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "LowCardinality(Float64)",
+        "execution": "LowCardinality(Float64)",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "LowCardinality(Float32)",
+        "input": "LowCardinality(Float32)",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "LowCardinality(Float32)",
+        "execution": "LowCardinality(Float32)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "exp",
+      "expected": {
+        "id": "LowCardinality(Nullable(Float32))",
+        "input": "LowCardinality(Nullable(Float32))",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "LowCardinality(Nullable(Float64))",
+        "execution": "LowCardinality(Nullable(Float64))",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "LowCardinality(Nullable(Float32))",
+        "input": "LowCardinality(Nullable(Float32))",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "LowCardinality(Nullable(Float32))",
+        "execution": "LowCardinality(Nullable(Float32))",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "exp",
+      "expected": {
+        "id": "SimpleAggregateFunction(anyLast, Float64)",
+        "input": "SimpleAggregateFunction(anyLast, Float64)",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "Float64",
+        "execution": "Float64",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "SimpleAggregateFunction(anyLast, Float64)",
+        "input": "SimpleAggregateFunction(anyLast, Float64)",
+        "expression": "exp(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "SimpleAggregateFunction(anyLast, Float64)",
+        "execution": "SimpleAggregateFunction(anyLast, Float64)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "log",
+      "expected": {
+        "id": "Float32",
+        "input": "Float32",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "Float64",
+        "execution": "Float64",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "Float32",
+        "input": "Float32",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "Float32",
+        "execution": "Float32",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "log",
+      "expected": {
+        "id": "Nullable(Float32)",
+        "input": "Nullable(Float32)",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "Nullable(Float64)",
+        "execution": "Nullable(Float64)",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "Nullable(Float32)",
+        "input": "Nullable(Float32)",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "Nullable(Float32)",
+        "execution": "Nullable(Float32)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "log",
+      "expected": {
+        "id": "SimpleAggregateFunction(anyLast, Float32)",
+        "input": "SimpleAggregateFunction(anyLast, Float32)",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "Float64",
+        "execution": "Float64",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "SimpleAggregateFunction(anyLast, Float32)",
+        "input": "SimpleAggregateFunction(anyLast, Float32)",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "SimpleAggregateFunction(anyLast, Float32)",
+        "execution": "SimpleAggregateFunction(anyLast, Float32)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "log",
+      "expected": {
+        "id": "SimpleAggregateFunction(anyLast, Nullable(Float32))",
+        "input": "SimpleAggregateFunction(anyLast, Nullable(Float32))",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "Nullable(Float64)",
+        "execution": "Nullable(Float64)",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "SimpleAggregateFunction(anyLast, Nullable(Float32))",
+        "input": "SimpleAggregateFunction(anyLast, Nullable(Float32))",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "Nullable(Float32)",
+        "execution": "Nullable(Float32)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "log",
+      "expected": {
+        "id": "LowCardinality(Float32)",
+        "input": "LowCardinality(Float32)",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "LowCardinality(Float64)",
+        "execution": "LowCardinality(Float64)",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "LowCardinality(Float32)",
+        "input": "LowCardinality(Float32)",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "LowCardinality(Float32)",
+        "execution": "LowCardinality(Float32)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "log",
+      "expected": {
+        "id": "LowCardinality(Nullable(Float32))",
+        "input": "LowCardinality(Nullable(Float32))",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "LowCardinality(Nullable(Float64))",
+        "execution": "LowCardinality(Nullable(Float64))",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "LowCardinality(Nullable(Float32))",
+        "input": "LowCardinality(Nullable(Float32))",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "LowCardinality(Nullable(Float32))",
+        "execution": "LowCardinality(Nullable(Float32))",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "log",
+      "expected": {
+        "id": "SimpleAggregateFunction(anyLast, Float64)",
+        "input": "SimpleAggregateFunction(anyLast, Float64)",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "Float64",
+        "execution": "Float64",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "SimpleAggregateFunction(anyLast, Float64)",
+        "input": "SimpleAggregateFunction(anyLast, Float64)",
+        "expression": "log(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "SimpleAggregateFunction(anyLast, Float64)",
+        "execution": "SimpleAggregateFunction(anyLast, Float64)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "tanh",
+      "expected": {
+        "id": "Float32",
+        "input": "Float32",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "Float64",
+        "execution": "Float64",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "Float32",
+        "input": "Float32",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "Float32",
+        "execution": "Float32",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "tanh",
+      "expected": {
+        "id": "Nullable(Float32)",
+        "input": "Nullable(Float32)",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "Nullable(Float64)",
+        "execution": "Nullable(Float64)",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "Nullable(Float32)",
+        "input": "Nullable(Float32)",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "Nullable(Float32)",
+        "execution": "Nullable(Float32)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "tanh",
+      "expected": {
+        "id": "SimpleAggregateFunction(anyLast, Float32)",
+        "input": "SimpleAggregateFunction(anyLast, Float32)",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "Float64",
+        "execution": "Float64",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "SimpleAggregateFunction(anyLast, Float32)",
+        "input": "SimpleAggregateFunction(anyLast, Float32)",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "SimpleAggregateFunction(anyLast, Float32)",
+        "execution": "SimpleAggregateFunction(anyLast, Float32)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "tanh",
+      "expected": {
+        "id": "SimpleAggregateFunction(anyLast, Nullable(Float32))",
+        "input": "SimpleAggregateFunction(anyLast, Nullable(Float32))",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "Nullable(Float64)",
+        "execution": "Nullable(Float64)",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "SimpleAggregateFunction(anyLast, Nullable(Float32))",
+        "input": "SimpleAggregateFunction(anyLast, Nullable(Float32))",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "Nullable(Float32)",
+        "execution": "Nullable(Float32)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "tanh",
+      "expected": {
+        "id": "LowCardinality(Float32)",
+        "input": "LowCardinality(Float32)",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "LowCardinality(Float64)",
+        "execution": "LowCardinality(Float64)",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "LowCardinality(Float32)",
+        "input": "LowCardinality(Float32)",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "LowCardinality(Float32)",
+        "execution": "LowCardinality(Float32)",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "tanh",
+      "expected": {
+        "id": "LowCardinality(Nullable(Float32))",
+        "input": "LowCardinality(Nullable(Float32))",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "LowCardinality(Nullable(Float64))",
+        "execution": "LowCardinality(Nullable(Float64))",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "LowCardinality(Nullable(Float32))",
+        "input": "LowCardinality(Nullable(Float32))",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "NULL"
+        ],
+        "analysis": "LowCardinality(Nullable(Float32))",
+        "execution": "LowCardinality(Nullable(Float32))",
+        "execution_rows": 4
+      }
+    },
+    {
+      "function": "tanh",
+      "expected": {
+        "id": "SimpleAggregateFunction(anyLast, Float64)",
+        "input": "SimpleAggregateFunction(anyLast, Float64)",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "Float64",
+        "execution": "Float64",
+        "execution_rows": 4
+      },
+      "actual": {
+        "id": "SimpleAggregateFunction(anyLast, Float64)",
+        "input": "SimpleAggregateFunction(anyLast, Float64)",
+        "expression": "tanh(c)",
+        "values": [
+          "1",
+          "0",
+          "2",
+          "0"
+        ],
+        "analysis": "SimpleAggregateFunction(anyLast, Float64)",
+        "execution": "SimpleAggregateFunction(anyLast, Float64)",
+        "execution_rows": 4
+      }
+    }
+  ]
+}

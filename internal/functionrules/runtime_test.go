@@ -20,7 +20,7 @@ func TestFunctionRulesGeneratedRuntime(t *testing.T) {
 	schema := filepath.Join(directory, "schema.sql")
 	sql := filepath.Join(directory, "queries.sql")
 	for path, content := range map[string]string{
-		schema: "CREATE TABLE t (id UInt8, v Nullable(Float64), d Decimal(9, 2), s Nullable(String)) ENGINE=Memory",
+		schema: "CREATE TABLE t (id UInt8, v Nullable(Float64), d Decimal(9, 2), s Nullable(String), f32 Float32, a SimpleAggregateFunction(anyLast, Float64)) ENGINE=Memory",
 		sql:    runtimeQueries,
 	} {
 		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
@@ -76,6 +76,16 @@ const runtimeQueries = `-- name: ReadMath :many
 SELECT cbrt(v) AS cube_root, cos(v) AS cos_value, sign(v) AS sign_value, sin(d) AS decimal_sin
 FROM t WHERE id < 3 ORDER BY id;
 
+-- name: ReadPortableMath :many
+-- result: Exp exp_value
+-- result: Log log_value
+-- result: Tanh tanh_value
+-- result: NullableExp nullable_exp
+SELECT exp(CAST(f32 AS Float64)) AS exp_value,
+ log(CAST(a AS Float64)) AS log_value,
+ tanh(CAST(f32 AS Float64)) AS tanh_value, exp(v) AS nullable_exp
+FROM t WHERE id < 3 ORDER BY id;
+
 -- name: ReadStrings :many
 -- result: Encoded encoded
 -- result: Decoded decoded
@@ -104,6 +114,7 @@ const runtimeConsumer = `package contracts
 import (
  "crypto/rand"
  "encoding/hex"
+ "math"
  "os"
  "testing"
  "github.com/ClickHouse/clickhouse-go/v2"
@@ -125,12 +136,19 @@ func TestMeasuredMath(t *testing.T) {
  conn, err := clickhouse.Open(&clickhouse.Options{Addr: []string{address}, Auth: clickhouse.Auth{Database: database}})
  if err != nil { t.Fatal(err) }
  defer conn.Close()
- if err := conn.Exec(ctx, "CREATE TABLE t (id UInt8, v Nullable(Float64), d Decimal(9, 2), s Nullable(String)) ENGINE=Memory"); err != nil { t.Fatal(err) }
- if err := conn.Exec(ctx, "INSERT INTO t VALUES (1,0,0,'AbC'),(2,NULL,0,NULL),(3,1,0,'Привет café')"); err != nil { t.Fatal(err) }
+ if err := conn.Exec(ctx, "CREATE TABLE t (id UInt8, v Nullable(Float64), d Decimal(9, 2), s Nullable(String), f32 Float32, a SimpleAggregateFunction(anyLast, Float64)) ENGINE=Memory"); err != nil { t.Fatal(err) }
+ if err := conn.Exec(ctx, "INSERT INTO t VALUES (1,0,0,'AbC',1,1),(2,NULL,0,NULL,1,1),(3,1,0,'Привет café',1,1)"); err != nil { t.Fatal(err) }
  rows, err := New(conn).ReadMath(ctx, ReadMathParams{})
  if err != nil { t.Fatal(err) }
  if len(rows)!=2 || rows[0].CubeRoot==nil || *rows[0].CubeRoot!=0 || rows[0].Cos==nil || *rows[0].Cos!=1 || rows[1].CubeRoot!=nil || rows[1].Cos!=nil { t.Fatalf("wrong generated values: %+v", rows) }
  if rows[0].Sign==nil || *rows[0].Sign!=0 || rows[1].Sign!=nil || rows[0].DecimalSin!=0 || rows[1].DecimalSin!=0 { t.Fatalf("wrong generated Int8/Decimal values: %+v", rows) }
+ portable, err := New(conn).ReadPortableMath(ctx, ReadPortableMathParams{})
+ if err != nil { t.Fatal(err) }
+ if len(portable)!=2 { t.Fatalf("wrong portable rows: %+v",portable) }
+ for _, row := range portable {
+  if math.Abs(row.Exp-2.718281828459045)>1e-12 || row.Log!=0 || math.Abs(row.Tanh-0.7615941559557649)>1e-12 { t.Fatalf("wrong portable Float64 values: %+v",row) }
+ }
+ if portable[0].NullableExp==nil || *portable[0].NullableExp!=1 || portable[1].NullableExp!=nil { t.Fatalf("nullable portable values: %+v",portable) }
  strings, err := New(conn).ReadStrings(ctx, ReadStringsParams{})
  if err != nil { t.Fatal(err) }
  if len(strings)!=3 { t.Fatalf("wrong string rows: %+v", strings) }

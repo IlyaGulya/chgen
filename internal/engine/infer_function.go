@@ -3,6 +3,7 @@ package engine
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -157,7 +158,7 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 			// block a fixed result. When an argument cannot be
 			// typed, keep the bare result as before.
 			argTypes := make([]CHType, 0, len(args))
-			for _, arg := range args {
+			for index, arg := range args {
 				if isStarArgument(arg) {
 					continue
 				}
@@ -172,6 +173,13 @@ func inferFunctionTypeAt(function *clickhouse.FunctionExpr, scope queryScope, wi
 						return result, nil
 					}
 					return CHType{}, fmt.Errorf("function %s argument: %w", function.Name.Name, argErr)
+				}
+				// Portability is a result constraint, not a server legality
+				// domain. Check the full type before stripping wrappers, using
+				// the argument already inferred by this path.
+				spec := functionRegistry[name]
+				if len(spec.nonPortableInputs) != 0 && slices.Contains(spec.domainArgs, index) && !portableFunctionInput(inferred, spec.nonPortableInputs) {
+					return CHType{}, fmt.Errorf("function %s has a build-dependent result for %s; explicitly CAST the input AS Float64 (preserving nullability), or use server-assisted generation", function.Name.Name, inferred.String())
 				}
 				argTypes = append(argTypes, inferred)
 			}

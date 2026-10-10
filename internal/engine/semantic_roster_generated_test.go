@@ -2,7 +2,7 @@
 
 package engine
 
-const generatedSemanticDigest = "ec93948f628f35b20a02b0680e6ec06bf55b46e2a737fddb3c2e1c80ef852bba"
+const generatedSemanticDigest = "546709d35a7312d9908b42e80c57c32f6cd278634b7abba28a595bed03e29ba5"
 
 // generatedFunctionAuditRoster lists each static semantic source entry for tests.
 var generatedFunctionAuditRoster = []string{

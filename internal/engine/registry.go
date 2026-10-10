@@ -166,6 +166,9 @@ type functionSpec struct {
 	// A call with fewer arguments than a named index is a REFUSAL and
 	// not a silent skip. See checkArgumentDomainAt.
 	domainArgs []int
+	// nonPortableInputs excludes full input products whose result type differs
+	// across measured builds. Unlike domain, it runs before wrapper stripping.
+	nonPortableInputs []string
 	// gen is the generator recipe: how to spell a call to this function. It
 	// must be set because it also states the kind, arity, and constant
 	// positions.
@@ -1118,7 +1121,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"acos": {
 
@@ -1149,7 +1152,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"asin": {
 
@@ -1180,7 +1183,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"atan": {
 
@@ -1211,7 +1214,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"cos": {
 
@@ -1242,7 +1245,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"exp": {
 
@@ -1250,7 +1253,8 @@ var functionSemanticSpecs = map[string]functionSpec{
 		rule:   fixedFunctionType("Float64"),
 		class:  wrapperTransparent,
 
-		strategy: argsIndependent,
+		strategy:          argsIndependent,
+		nonPortableInputs: []string{"Float32", "SimpleAggregateFunction(anyLast, Float64)"},
 		domain: &argumentDomain{
 			name: "measured argument domain",
 			accepts: func(value CHType) bool {
@@ -1273,7 +1277,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"log": {
 
@@ -1281,7 +1285,8 @@ var functionSemanticSpecs = map[string]functionSpec{
 		rule:   fixedFunctionType("Float64"),
 		class:  wrapperTransparent,
 
-		strategy: argsIndependent,
+		strategy:          argsIndependent,
+		nonPortableInputs: []string{"Float32", "SimpleAggregateFunction(anyLast, Float64)"},
 		domain: &argumentDomain{
 			name: "measured argument domain",
 			accepts: func(value CHType) bool {
@@ -1304,7 +1309,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"log10": {
 
@@ -1335,7 +1340,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"log2": {
 
@@ -1366,7 +1371,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"sign": {
 
@@ -1397,7 +1402,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"sqrt": {
 
@@ -1428,7 +1433,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"tan": {
 
@@ -1459,7 +1464,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"tanh": {
 
@@ -1467,7 +1472,8 @@ var functionSemanticSpecs = map[string]functionSpec{
 		rule:   fixedFunctionType("Float64"),
 		class:  wrapperTransparent,
 
-		strategy: argsIndependent,
+		strategy:          argsIndependent,
+		nonPortableInputs: []string{"Float32", "SimpleAggregateFunction(anyLast, Float64)"},
 		domain: &argumentDomain{
 			name: "measured argument domain",
 			accepts: func(value CHType) bool {
@@ -1490,7 +1496,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"cbrt": {
 		exactSpelling: "cbrt",
@@ -1521,7 +1527,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"cosh": {
 		exactSpelling: "cosh",
@@ -1552,7 +1558,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"erf": {
 		exactSpelling: "erf",
@@ -1583,7 +1589,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"erfc": {
 		exactSpelling: "erfc",
@@ -1614,7 +1620,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"exp10": {
 		exactSpelling: "exp10",
@@ -1645,7 +1651,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"exp2": {
 		exactSpelling: "exp2",
@@ -1676,7 +1682,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"lgamma": {
 		exactSpelling: "lgamma",
@@ -1707,7 +1713,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"sinh": {
 		exactSpelling: "sinh",
@@ -1738,7 +1744,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"tgamma": {
 		exactSpelling: "tgamma",
@@ -1769,7 +1775,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/numeric-unary-v1/6e523c84ae6336e91648746a3f3082306727369a9305da5612e5732c9ac80ddd",
+		evidence:        "functionrules/numeric-unary-v1/6ebdd97fdc37e921063cb5a1e625a71cb39e4e8e393cf5520f2a461c8e96d66d",
 	},
 	"base64encode": {
 		exactSpelling: "base64Encode",
@@ -1790,7 +1796,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+		evidence:        "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	},
 	"decodeurlcomponent": {
 		exactSpelling: "decodeURLComponent",
@@ -1811,7 +1817,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+		evidence:        "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	},
 	"encodeurlcomponent": {
 		exactSpelling: "encodeURLComponent",
@@ -1832,7 +1838,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+		evidence:        "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	},
 	"lowerutf8": {
 		exactSpelling: "lowerUTF8",
@@ -1853,7 +1859,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+		evidence:        "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	},
 	"normalizeutf8nfc": {
 		exactSpelling: "normalizeUTF8NFC",
@@ -1874,7 +1880,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+		evidence:        "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	},
 	"normalizeutf8nfd": {
 		exactSpelling: "normalizeUTF8NFD",
@@ -1895,7 +1901,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+		evidence:        "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	},
 	"normalizeutf8nfkc": {
 		exactSpelling: "normalizeUTF8NFKC",
@@ -1916,7 +1922,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+		evidence:        "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	},
 	"normalizeutf8nfkd": {
 		exactSpelling: "normalizeUTF8NFKD",
@@ -1937,7 +1943,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+		evidence:        "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	},
 	"regexpquotemeta": {
 		exactSpelling: "regexpQuoteMeta",
@@ -1958,7 +1964,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+		evidence:        "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	},
 	"reverseutf8": {
 		exactSpelling: "reverseUTF8",
@@ -1979,7 +1985,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+		evidence:        "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	},
 	"soundex": {
 
@@ -2000,7 +2006,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+		evidence:        "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	},
 	"trybase64decode": {
 		exactSpelling: "tryBase64Decode",
@@ -2021,7 +2027,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+		evidence:        "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	},
 	"upperutf8": {
 		exactSpelling: "upperUTF8",
@@ -2042,7 +2048,7 @@ var functionSemanticSpecs = map[string]functionSpec{
 		domainMode:      argumentDomainRestricted,
 		domainArgs:      []int{0},
 		parameterPolicy: parameterResultCurated,
-		evidence:        "functionrules/string-unary-v1/c670d162a91f9a002991af0e84f502b84ab0cfd281f0fd4d4788c97ad0a483d4",
+		evidence:        "functionrules/string-unary-v1/b5e105c4643cecdbc3863f408040fa50e14b5b81e42c762688087bd51c3fcbf8",
 	},
 }
 

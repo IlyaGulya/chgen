@@ -7,6 +7,34 @@ import (
 	"github.com/IlyaGulya/chgen"
 )
 
+func TestBuildDependentMathInputsAreRefusedWithoutLosingPortableCalls(t *testing.T) {
+	ddl := `CREATE TABLE t (i Int32, f Float64, f32 Float32, n Nullable(Float32),
+		lc LowCardinality(Float32), lcn LowCardinality(Nullable(Float32)),
+		a32 SimpleAggregateFunction(anyLast, Float32), an32 SimpleAggregateFunction(anyLast, Nullable(Float32)),
+		a SimpleAggregateFunction(anyLast, Float64),
+		s SimpleAggregateFunction(sum, Float64), an SimpleAggregateFunction(anyLast, Nullable(Float64))) ENGINE=Memory`
+	for _, name := range []string{"exp", "log", "tanh"} {
+		for _, column := range []string{"f32", "n", "lc", "lcn", "a32", "an32", "a", "s"} {
+			_, err := chgen.InferExpressionType(ddl, "t", name+"("+column+")")
+			if err == nil || !strings.Contains(err.Error(), "build-dependent") || !strings.Contains(err.Error(), "Float64") {
+				t.Errorf("%s(%s) must explain build-dependent type and explicit cast: %v", name, column, err)
+			}
+		}
+		for _, expression := range []string{name + "(i)", name + "(f)", name + "(?)", name + "(CAST(f32 AS Float64))", name + "(CAST(a AS Float64))"} {
+			got, err := chgen.InferExpressionType(ddl, "t", expression)
+			if err != nil || got.String() != "Float64" {
+				t.Errorf("portable %s: %s, %v", expression, got.String(), err)
+			}
+		}
+		for _, expression := range []string{name + "(an)", name + "(CAST(n AS Nullable(Float64)))"} {
+			got, err := chgen.InferExpressionType(ddl, "t", expression)
+			if err != nil || got.String() != "Nullable(Float64)" {
+				t.Errorf("portable nullable %s: %s, %v", expression, got.String(), err)
+			}
+		}
+	}
+}
+
 func TestMeasuredScalarSpelling(t *testing.T) {
 	ddl := "CREATE TABLE t (i Int32) ENGINE=Memory"
 	for _, name := range []string{"cbrt", "cosh", "erf", "erfc", "exp10", "exp2", "lgamma", "sinh", "tgamma"} {

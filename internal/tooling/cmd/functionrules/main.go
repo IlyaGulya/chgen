@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"reflect"
 	"slices"
 	"strings"
 	"syscall"
@@ -29,12 +28,36 @@ func main() {
 	output := flag.String("out", "", "candidate registry output path (generation mode)")
 	check := flag.Bool("check", false, "check generated rules, or re-measure saved evidence with -url")
 	reportPath := flag.String("report", "", "fresh live-check artifact path (never overwrites pinned evidence)")
+	comparePath := flag.String("compare", "", "compare captured measurements offline (with -check -evidence)")
 	gaps := flag.Bool("gaps", false, "report function gaps without executing discovered functions")
 	inventoryPath := flag.String("inventory", "testdata/clickhouse-api-inventory.json", "pinned discovery inventory for -gaps")
 	manifestPath := flag.String("manifest", "testdata/clickhouse-support-manifest.json", "measured support manifest for -gaps")
 	flag.Parse()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
+	if *comparePath != "" {
+		if !*check || *endpoint != "" || *gaps || *output != "" || *selected != "" {
+			fail(fmt.Errorf("-compare requires only -check -evidence"))
+		}
+		expectedData, err := os.ReadFile(*evidence)
+		if err != nil {
+			fail(err)
+		}
+		actualData, err := os.ReadFile(*comparePath)
+		if err != nil {
+			fail(err)
+		}
+		expected, err := functionrules.Decode(expectedData)
+		if err != nil {
+			fail(err)
+		}
+		actual, err := functionrules.Decode(actualData)
+		if err != nil {
+			fail(err)
+		}
+		checkMeasurements(expected, actual, *reportPath)
+		return
+	}
 	if *gaps {
 		if *evidence != "" || *selected != "" || *output != "" || *check || *reportPath != "" {
 			fail(fmt.Errorf("-gaps is a read-only report; do not combine it with measurement or generation"))
@@ -112,14 +135,7 @@ func main() {
 					fail(closeErr)
 				}
 			}
-			// Preserve actual build provenance in the artifact, but compare the
-			// portable measured behavior across runner architectures.
-			report.Source.BuildID = expected.Source.BuildID
-			if !reflect.DeepEqual(expected, report) {
-				fmt.Fprintln(os.Stderr, "CHANGED measured function behavior; inspect live report before updating rules")
-				os.Exit(1)
-			}
-			fmt.Printf("MATCHED %d measured functions\n", len(report.Functions))
+			checkMeasurements(expected, report, *reportPath)
 			return
 		}
 		if err := os.WriteFile(*evidence, append(data, '\n'), 0o644); err != nil {
@@ -167,3 +183,35 @@ func main() {
 }
 
 func fail(err error) { fmt.Fprintln(os.Stderr, "functionrules:", err); os.Exit(2) }
+
+func checkMeasurements(expected, actual functionrules.Report, reportPath string) {
+	comparison := functionrules.Compare(expected, actual)
+	comparison.Explain(os.Stderr)
+	if reportPath != "" {
+		data, err := json.MarshalIndent(comparison, "", "  ")
+		if err != nil {
+			fail(err)
+		}
+		file, err := os.OpenFile(reportPath+".diff.json", os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+		if err != nil {
+			fail(err)
+		}
+		_, writeErr := file.Write(append(data, '\n'))
+		closeErr := file.Close()
+		if writeErr != nil {
+			fail(writeErr)
+		}
+		if closeErr != nil {
+			fail(closeErr)
+		}
+	}
+	if !comparison.Matched() {
+		fmt.Fprintln(os.Stderr, "CHANGED measured function behavior; inspect cell diff before updating rules")
+		os.Exit(1)
+	}
+	if comparison.Policy != "" {
+		fmt.Printf("PORTABLE contract for %d measured functions; %d build-dependent cells excluded\n", len(actual.Functions), len(comparison.Cells))
+	} else {
+		fmt.Printf("MATCHED %d measured functions\n", len(actual.Functions))
+	}
+}
