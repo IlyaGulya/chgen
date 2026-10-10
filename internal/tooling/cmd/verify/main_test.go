@@ -74,12 +74,21 @@ func TestVerifierListsTheSameSuitesForLocalAndCIUse(t *testing.T) {
 
 func TestVerifierRunsRealFuzzCommandAndReportsItsResult(t *testing.T) {
 	directory := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(directory, "internal/functionrules"), 0o700); err != nil {
+		t.Fatal(err)
+	}
 	writeFile(t, filepath.Join(directory, "go.mod"), "module verificationfixture\n\ngo 1.24.0\n")
 	writeFile(t, filepath.Join(directory, "pipeline_test.go"), `package verificationfixture
 import "testing"
 func FuzzPublicSQLPipeline(f *testing.F) {
  f.Add("SELECT 1")
  f.Fuzz(func(t *testing.T, sql string) {})
+}`)
+	writeFile(t, filepath.Join(directory, "internal/functionrules/evidence_test.go"), `package evidencefixture
+import "testing"
+func FuzzCompactEvidence(f *testing.F) {
+ f.Add([]byte("{}"))
+ f.Fuzz(func(t *testing.T, data []byte) {})
 }`)
 	report := filepath.Join(directory, "report")
 	command := exec.CommandContext(t.Context(), binary, "-root", directory, "-suite", "fuzz", "-fuzz-time", "1x", "-report", report)
@@ -96,6 +105,7 @@ func FuzzPublicSQLPipeline(f *testing.F) {
 			ID     string `json:"id"`
 			Status string `json:"status"`
 			Checks []struct {
+				ID      string   `json:"id"`
 				Status  string   `json:"status"`
 				Command []string `json:"command"`
 				Log     string   `json:"log"`
@@ -109,14 +119,16 @@ func FuzzPublicSQLPipeline(f *testing.F) {
 		t.Fatalf("unexpected summary: %s", data)
 	}
 	checks := summary.Suites[0].Checks
-	if len(checks) != 1 || checks[0].Status != "passed" || len(checks[0].Command) == 0 || checks[0].Command[0] != "go" {
+	if len(checks) != 2 || checks[0].ID != "public-pipeline" || checks[1].ID != "function-evidence" {
 		t.Fatalf("missing executed command: %s", data)
 	}
-	if !slices.Contains(checks[0].Command, "1x") {
-		t.Fatalf("explicit fuzz budget was ignored: %v", checks[0].Command)
-	}
-	if log, err := os.ReadFile(filepath.Join(report, checks[0].Log)); err != nil || len(log) == 0 {
-		t.Fatalf("missing command evidence: %v", err)
+	for _, check := range checks {
+		if check.Status != "passed" || len(check.Command) == 0 || check.Command[0] != "go" || !slices.Contains(check.Command, "1x") {
+			t.Fatalf("explicit fuzz command or budget was ignored: %+v", check)
+		}
+		if log, err := os.ReadFile(filepath.Join(report, check.Log)); err != nil || len(log) == 0 {
+			t.Fatalf("missing command evidence: %v", err)
+		}
 	}
 	if data, err := os.ReadFile(filepath.Join(report, "summary.md")); err != nil || len(data) == 0 {
 		t.Fatalf("missing human summary: %v", err)
@@ -202,12 +214,21 @@ func TestVerifierMergesReportsAndRefusesMissingRequiredSuites(t *testing.T) {
 
 func TestVerifierKeepsFailedCommandEvidenceAndExitStatus(t *testing.T) {
 	directory := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(directory, "internal/functionrules"), 0o700); err != nil {
+		t.Fatal(err)
+	}
 	writeFile(t, filepath.Join(directory, "go.mod"), "module failingfixture\n\ngo 1.24.0\n")
 	writeFile(t, filepath.Join(directory, "pipeline_test.go"), `package failingfixture
 import "testing"
 func FuzzPublicSQLPipeline(f *testing.F) {
  f.Add("known regression")
  f.Fuzz(func(t *testing.T, sql string) { t.Fatal("fixture regression detected") })
+}`)
+	writeFile(t, filepath.Join(directory, "internal/functionrules/evidence_test.go"), `package evidencefixture
+import "testing"
+func FuzzCompactEvidence(f *testing.F) {
+ f.Add([]byte("{}"))
+ f.Fuzz(func(t *testing.T, data []byte) {})
 }`)
 	report := filepath.Join(directory, "report")
 	command := exec.CommandContext(t.Context(), binary, "-root", directory, "-suite", "fuzz", "-fuzz-time", "1x", "-report", report)
@@ -232,7 +253,7 @@ func FuzzPublicSQLPipeline(f *testing.F) {
 	if err := json.Unmarshal(data, &reportData); err != nil {
 		t.Fatal(err)
 	}
-	if reportData.Status != "failed" || len(reportData.Suites) != 1 || len(reportData.Suites[0].Checks) != 1 || reportData.Suites[0].Checks[0].ExitCode != 1 || reportData.Suites[0].Checks[0].Status != "failed" {
+	if reportData.Status != "failed" || len(reportData.Suites) != 1 || len(reportData.Suites[0].Checks) != 2 || reportData.Suites[0].Checks[0].ExitCode != 1 || reportData.Suites[0].Checks[0].Status != "failed" || reportData.Suites[0].Checks[1].Status != "passed" {
 		t.Fatalf("failure was hidden: %s", data)
 	}
 	log, err := os.ReadFile(filepath.Join(report, reportData.Suites[0].Checks[0].Log))

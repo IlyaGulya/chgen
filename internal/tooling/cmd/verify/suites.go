@@ -33,6 +33,7 @@ func (r *runner) types(o options) {
 		r.output("function-gaps", "function-gaps.json", nil, tool, "-gaps", "-url", o.http)
 	}
 	r.test("function-rules-runtime", env, "", "^TestFunctionRulesGeneratedRuntime$", "./internal/functionrules")
+	r.test("function-evidence-codec", map[string]string{"CHGEN_FUNCTION_RULES_URL": o.http}, "", "^TestMeasurementWritesCompactEvidenceButKeepsExpandedLiveDiagnostics$", "./internal/functionrules")
 	r.test("function-spelling", env, "", "^TestMeasuredScalarSpellingAgainstClickHouse$", "./internal/functionrules")
 	r.test("function-regressions", env, "fuzzoracle", "^(TestAggregateGeoAliasesAgainstClickHouse|TestArrayResizeSizeDomainAgainstClickHouse)$", "./internal/engine")
 	if r.sql("flush-system-logs", o.http, "SYSTEM FLUSH LOGS") {

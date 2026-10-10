@@ -17,6 +17,19 @@ import (
 
 // Decode refuses partial or foreign evidence before any source is written.
 func Decode(data []byte) (Report, error) {
+	var header struct {
+		Format int `json:"format"`
+	}
+	if err := json.NewDecoder(bytes.NewReader(data)).Decode(&header); err != nil {
+		return Report{}, err
+	}
+	if header.Format == 2 {
+		return decodeCompact(data)
+	}
+	return decodeExpanded(data)
+}
+
+func decodeExpanded(data []byte) (Report, error) {
 	var report Report
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()

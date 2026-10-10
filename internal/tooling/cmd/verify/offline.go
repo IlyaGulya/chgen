@@ -81,4 +81,5 @@ func (r *runner) compatibility(o options) {
 
 func (r *runner) fuzz(o options) {
 	r.command("public-pipeline", nil, "go", "test", ".", "-run", "^$", "-fuzz", "^FuzzPublicSQLPipeline$", "-fuzztime", o.fuzzTime, "-parallel", "2", "-timeout", "15m")
+	r.command("function-evidence", nil, "go", "test", "./internal/functionrules", "-run", "^$", "-fuzz", "^FuzzCompactEvidence$", "-fuzztime", o.fuzzTime, "-parallel", "2", "-timeout", "15m")
 }

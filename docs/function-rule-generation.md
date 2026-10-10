@@ -45,6 +45,41 @@ their replacement evidence no longer satisfies the signature contract.
 Regenerating an existing registry requires evidence for every rule owned by
 this profile; a partial experiment cannot orphan previously generated rules.
 
+## Compact measurement evidence
+
+New measurements use evidence format 2. Each function stores outcome indexes
+in measurement-plan order. A shared dictionary retains both analysis and
+execution types, both error codes and the executed row count. The decoder
+restores SQL, input types and row values from the versioned profile plan.
+
+The saved plan version and digest must match the current recipes exactly.
+The digest binds the ordered SQL expressions, input types and fixture values.
+A checksum covers provenance, function metadata, outcomes and their indexes.
+Decoding rejects incomplete matrices, invalid or null indexes, unused or
+duplicate outcomes, unknown fields and trailing documents, then applies the
+same witness validation as expanded evidence. The checksum detects corruption;
+it does not authenticate the server or make arbitrary measurements trustworthy.
+
+Both expanded format 1 and compact format 2 remain valid generation inputs.
+Convert without a server, using a new output path:
+
+```bash
+go run ./internal/tooling/cmd/functionrules -compact \
+  -evidence /tmp/expanded-measurements.json -out /tmp/compact-measurements.json
+go run ./internal/tooling/cmd/functionrules -expand \
+  -evidence testdata/clickhouse-function-rules.json -out /tmp/full-measurements.json
+```
+
+Conversion never overwrites an existing output file. The pinned numeric and
+string reports occupy 33,239 and 7,402 bytes in format 2, down from 6,590,463
+and 913,848 bytes. Round-trip tests retain the independent SHA-256 identities
+of the original expanded reports. Every restored measurement is byte-identical.
+Live checks still save expanded reports and cell diffs as CI artifacts.
+
+The shared fuzz suite tests both the public SQL pipeline and the evidence
+codec. Evidence fuzzing also recomputes checksums on mutated documents to reach
+plan, index and witness validation. It does not change the independent oracles.
+
 ## What the first profile proves
 
 The numeric unary profile measures 22 scalar functions. It checks primitive

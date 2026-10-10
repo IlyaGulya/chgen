@@ -112,7 +112,9 @@ jobs:
         if: failure()
         with:
           name: public-sql-minimized-failures
-          path: testdata/fuzz/
+          path: |
+            testdata/fuzz/
+            internal/functionrules/testdata/fuzz/
           if-no-files-found: warn
 
   type-oracle:

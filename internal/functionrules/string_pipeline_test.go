@@ -16,7 +16,7 @@ func TestStringRulesStayRegenerableAndRefuseUnprovedEvidence(t *testing.T) {
 	}
 	for _, mutation := range []string{"missing-function", "inconsistent-result", "unrelated-server-error"} {
 		t.Run(mutation, func(t *testing.T) {
-			data, err := os.ReadFile("../../testdata/clickhouse-string-function-rules.json")
+			data, err := readExpandedEvidence("../../testdata/clickhouse-string-function-rules.json")
 			if err != nil {
 				t.Fatal(err)
 			}

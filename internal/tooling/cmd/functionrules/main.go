@@ -32,9 +32,46 @@ func main() {
 	gaps := flag.Bool("gaps", false, "report function gaps without executing discovered functions")
 	inventoryPath := flag.String("inventory", "testdata/clickhouse-api-inventory.json", "pinned discovery inventory for -gaps")
 	manifestPath := flag.String("manifest", "testdata/clickhouse-support-manifest.json", "measured support manifest for -gaps")
+	compact := flag.Bool("compact", false, "convert saved evidence losslessly to compact v2 with -out")
+	expand := flag.Bool("expand", false, "restore full diagnostic evidence with -out")
 	flag.Parse()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
+	if *compact || *expand {
+		if *compact && *expand || *endpoint != "" || *evidence == "" || *output == "" || *check || *gaps || *comparePath != "" || *selected != "" || *reportPath != "" {
+			fail(fmt.Errorf("choose -compact or -expand with only -evidence and -out"))
+		}
+		data, err := os.ReadFile(*evidence)
+		if err != nil {
+			fail(err)
+		}
+		report, err := functionrules.Decode(data)
+		if err != nil {
+			fail(err)
+		}
+		if *compact {
+			data, err = functionrules.EncodeCompact(report)
+		} else {
+			data, err = json.MarshalIndent(report, "", "  ")
+		}
+		if err != nil {
+			fail(err)
+		}
+		file, err := os.OpenFile(*output, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+		if err != nil {
+			fail(err)
+		}
+		_, writeErr := file.Write(append(data, '\n'))
+		closeErr := file.Close()
+		if writeErr != nil {
+			fail(writeErr)
+		}
+		if closeErr != nil {
+			fail(closeErr)
+		}
+		fmt.Printf("CONVERTED %d functions; %s\n", len(report.Functions), *output)
+		return
+	}
 	if *comparePath != "" {
 		if !*check || *endpoint != "" || *gaps || *output != "" || *selected != "" {
 			fail(fmt.Errorf("-compare requires only -check -evidence"))
@@ -137,6 +174,10 @@ func main() {
 			}
 			checkMeasurements(expected, report, *reportPath)
 			return
+		}
+		data, err = functionrules.EncodeCompact(report)
+		if err != nil {
+			fail(err)
 		}
 		if err := os.WriteFile(*evidence, append(data, '\n'), 0o644); err != nil {
 			fail(err)

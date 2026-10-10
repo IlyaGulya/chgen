@@ -76,7 +76,7 @@ func TestMeasuredFunctionsGenerateRegistryCandidates(t *testing.T) {
 	if data, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("measure real column calls: %v\n%s", err, data)
 	}
-	data, err := os.ReadFile(evidence)
+	data, err := readExpandedEvidence(evidence)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +161,7 @@ func TestMeasuredFunctionsMatchPinnedEvidence(t *testing.T) {
 }
 
 func TestGenerationRefusesToRetainAnUnprovedOwnedRule(t *testing.T) {
-	data, err := os.ReadFile("../../testdata/clickhouse-function-rules.json")
+	data, err := readExpandedEvidence("../../testdata/clickhouse-function-rules.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,7 +208,7 @@ func TestGenerationRejectsTrailingEvidenceDocuments(t *testing.T) {
 }
 
 func TestGenerationRejectsAnAcceptedOutsideDomain(t *testing.T) {
-	data, err := os.ReadFile("../../testdata/clickhouse-function-rules.json")
+	data, err := readExpandedEvidence("../../testdata/clickhouse-function-rules.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -244,7 +244,7 @@ func TestGenerationRejectsAnAcceptedOutsideDomain(t *testing.T) {
 }
 
 func TestEvidenceKeepsActualFixtureValues(t *testing.T) {
-	data, err := os.ReadFile("../../testdata/clickhouse-function-rules.json")
+	data, err := readExpandedEvidence("../../testdata/clickhouse-function-rules.json")
 	if err != nil {
 		t.Fatal(err)
 	}
