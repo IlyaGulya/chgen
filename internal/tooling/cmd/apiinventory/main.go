@@ -56,7 +56,7 @@ func checkInventory(path string, candidate apiinventory.Inventory) {
 		fmt.Fprintf(os.Stderr, "apiinventory: read %s: %v\n", path, err)
 		os.Exit(2)
 	}
-	difference, err := apiinventory.Compare(reference, candidate)
+	difference, err := apiinventory.CompareAPI(reference, candidate)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "apiinventory: compare inventories: %v\n", err)
 		os.Exit(2)

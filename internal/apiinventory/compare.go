@@ -3,7 +3,9 @@ package apiinventory
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -25,6 +27,37 @@ type SectionChange struct {
 // Identical reports whether the two inventories have the same source and API.
 func (d Difference) Identical() bool {
 	return d.ReferenceSource == d.CandidateSource && len(d.Sections) == 0
+}
+
+// CompareAPI compares the portable API while retaining strict version and
+// revision checks. Build IDs vary across architectures; the four automatic
+// thread defaults vary with CPU resources. Raw inventories retain these facts
+// and Compare still compares them strictly.
+func CompareAPI(before, after Inventory) (Difference, error) {
+	if err := before.Validate(); err != nil {
+		return Difference{}, fmt.Errorf("validate reference inventory: %w", err)
+	}
+	if err := after.Validate(); err != nil {
+		return Difference{}, fmt.Errorf("validate candidate inventory: %w", err)
+	}
+	portable := func(inventory Inventory) Inventory {
+		inventory.Source.BuildID = before.Source.BuildID
+		inventory.Settings = slices.Clone(inventory.Settings)
+		for i := range inventory.Settings {
+			switch inventory.Settings[i].Name {
+			case "max_threads", "max_alter_threads", "max_final_threads", "max_parsing_threads":
+				value, prefix := strings.CutPrefix(inventory.Settings[i].Default, "'auto(")
+				value, suffix := strings.CutSuffix(value, ")'")
+				threads, err := strconv.ParseUint(value, 10, 64)
+				if prefix && suffix && err == nil && threads > 0 {
+					inventory.Settings[i].Default = "'auto'"
+				}
+			}
+		}
+		return inventory
+	}
+	difference, err := Compare(portable(before), portable(after))
+	return difference, err
 }
 
 // Compare returns a name-based difference for every inventory class.

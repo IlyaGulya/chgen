@@ -82,7 +82,7 @@ func mergeReports(input, output, expect string) int {
 			prefix := filepath.Join("runs", strconv.Itoa(i))
 			for j, check := range result.Checks {
 				if check.Log != "" {
-					copied, err := copyEvidence(filepath.Dir(path), out, prefix, check.Log)
+					copied, err := copyEvidence(filepath.Dir(path), out, prefix, check.Log, true)
 					if err != nil {
 						r.refuse("evidence", "missing or unsafe command log")
 						continue
@@ -92,7 +92,7 @@ func mergeReports(input, output, expect string) int {
 			}
 			r.current.Artifacts = nil
 			for _, artifact := range result.Artifacts {
-				copied, err := copyEvidence(filepath.Dir(path), out, prefix, artifact)
+				copied, err := copyEvidence(filepath.Dir(path), out, prefix, artifact, false)
 				if err != nil {
 					r.refuse("evidence", "missing or unsafe required artifact")
 					continue
@@ -160,14 +160,16 @@ func (r *runner) mergeRefusal(id, message string) {
 	r.refuse("report", message)
 }
 
-func copyEvidence(source, out, prefix, name string) (string, error) {
+func copyEvidence(source, out, prefix, name string, allowEmpty bool) (string, error) {
 	if !filepath.IsLocal(name) {
 		return "", fmt.Errorf("evidence path must be relative")
 	}
 	path := filepath.Join(source, name)
 	info, err := os.Lstat(path)
-	if err != nil || !info.Mode().IsRegular() || info.Size() == 0 {
-		return "", fmt.Errorf("evidence must be a nonempty regular file")
+	// A successful compiler can be silent. Required data artifacts, unlike
+	// command logs, must still contain evidence.
+	if err != nil || !info.Mode().IsRegular() || (!allowEmpty && info.Size() == 0) {
+		return "", fmt.Errorf("evidence must be a regular file with the required content")
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {

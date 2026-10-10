@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"testing"
 
 	"github.com/IlyaGulya/chgen"
@@ -19,6 +20,62 @@ var pinnedAPIInventoryPath = func() string {
 	}
 	return filepath.Join(filepath.Dir(file), "..", "..", "testdata", "clickhouse-api-inventory.json")
 }()
+
+func TestPortableAPIComparisonRetainsSemanticDifferences(t *testing.T) {
+	reference, err := apiinventory.Load(pinnedAPIInventoryPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	candidate := reference
+	candidate.Source.BuildID = "different-architecture"
+	candidate.Settings = slices.Clone(reference.Settings)
+	for i := range candidate.Settings {
+		switch candidate.Settings[i].Name {
+		case "max_threads", "max_alter_threads", "max_final_threads", "max_parsing_threads":
+			candidate.Settings[i].Default = "'auto(128)'"
+		}
+	}
+	difference, err := apiinventory.CompareAPI(reference, candidate)
+	if err != nil || !difference.Identical() {
+		t.Fatalf("same API on different hardware was refused: %v\n%s", err, difference.String())
+	}
+	strict, err := apiinventory.Compare(reference, candidate)
+	if err != nil || strict.Identical() {
+		t.Fatalf("strict provenance comparison lost differences: %v", err)
+	}
+	for _, field := range []string{"version", "revision", "type", "semantic-default", "explicit-thread-default", "alias"} {
+		t.Run(field, func(t *testing.T) {
+			changed := candidate
+			changed.Settings = slices.Clone(candidate.Settings)
+			switch field {
+			case "version":
+				changed.Source.Version = "25.8.29.52"
+			case "revision":
+				changed.Source.Revision++
+			case "type":
+				changed.Settings[0].Type = "different-type"
+			case "semantic-default":
+				for i := range changed.Settings {
+					if changed.Settings[i].Name == "join_use_nulls" {
+						changed.Settings[i].Default = "1"
+					}
+				}
+			case "explicit-thread-default":
+				for i := range changed.Settings {
+					if changed.Settings[i].Name == "max_threads" {
+						changed.Settings[i].Default = "1"
+					}
+				}
+			case "alias":
+				changed.Settings[0].AliasFor = "different_target"
+			}
+			difference, err := apiinventory.CompareAPI(reference, changed)
+			if err == nil && difference.Identical() {
+				t.Fatal("semantic difference was hidden")
+			}
+		})
+	}
+}
 
 func TestPinnedClickHouseAPIInventory(t *testing.T) {
 	inventory, err := apiinventory.Load(pinnedAPIInventoryPath)
@@ -79,7 +136,7 @@ func TestClickHouseAPIInventoryMatchesServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	difference, err := apiinventory.Compare(reference, candidate)
+	difference, err := apiinventory.CompareAPI(reference, candidate)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -59,10 +59,11 @@ func (r *runner) compatibility(o options) {
 		id := "go" + cell.MinimumGo + "-driver" + cell.DriverVersion
 		// drivercompat deliberately disables implicit toolchain switching.
 		// Resolve the requested compiler first and pass its actual executable.
-		if !r.command(id+"-compiler", env, "go", "env", "GOROOT") {
+		compilerRoot := "compatibility-" + id + "-goroot.txt"
+		if !r.output(id+"-compiler", compilerRoot, env, "go", "env", "GOROOT") {
 			continue
 		}
-		data, err := os.ReadFile(filepath.Join(r.out, "compatibility-"+id+"-compiler.log"))
+		data, err := os.ReadFile(filepath.Join(r.out, compilerRoot))
 		if err != nil || !filepath.IsAbs(strings.TrimSpace(string(data))) {
 			r.refuse(id, "cannot resolve requested Go compiler")
 			continue

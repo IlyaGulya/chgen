@@ -13,6 +13,25 @@ import (
 
 var binary string
 
+func TestVerifierMergesSilentSuccessfulCommands(t *testing.T) {
+	directory := t.TempDir()
+	input := filepath.Join(directory, "input")
+	if err := os.MkdirAll(input, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(input, "silent.log"), "")
+	writeFile(t, filepath.Join(input, "summary.json"), `{"version":1,"profile":"full","status":"passed","suites":[{"id":"offline","status":"passed","checks":[{"id":"build","status":"passed","command":["go","build"],"exit_code":0,"log":"silent.log"}]}]}`)
+	output := filepath.Join(directory, "merged")
+	command := exec.CommandContext(t.Context(), binary, "-merge", input, "-expect", "offline", "-report", output)
+	if data, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("silent successful command must merge: %v\n%s", err, data)
+	}
+	data, err := os.ReadFile(filepath.Join(output, "runs", "0", "silent.log"))
+	if err != nil || len(data) != 0 {
+		t.Fatalf("empty log was not preserved: %v, %q", err, data)
+	}
+}
+
 func TestMain(m *testing.M) {
 	directory, err := os.MkdirTemp("", "chgen-verify-test-")
 	if err != nil {
@@ -243,6 +262,19 @@ func TestVerifierCompilesSupportedPairWithTheRequestedCompiler(t *testing.T) {
 		t.Fatal(err)
 	}
 	command := exec.CommandContext(t.Context(), binary, "-root", root, "-suite", "compatibility", "-go", "1.24.0", "-driver", "v2.42.0", "-report", report)
+	// A fresh module cache forces Go's real toolchain download notice onto
+	// stderr, as on a cold CI worker. It must never become part of GOROOT.
+	cache := filepath.Join(t.TempDir(), "modules")
+	command.Env = append(os.Environ(), "GOMODCACHE="+cache)
+	t.Cleanup(func() {
+		// Go owns read-only files in this isolated cache; use its cleanup
+		// command before TempDir cleanup. No shared cache is touched.
+		cleanup := exec.Command("go", "clean", "-modcache")
+		cleanup.Env = append(os.Environ(), "GOMODCACHE="+cache)
+		if data, err := cleanup.CombinedOutput(); err != nil {
+			t.Errorf("clean isolated module cache: %v\n%s", err, data)
+		}
+	})
 	if data, err := command.CombinedOutput(); err != nil {
 		entries, _ := os.ReadDir(report)
 		for _, entry := range entries {
