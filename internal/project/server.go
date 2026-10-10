@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/IlyaGulya/chgen/internal/describe"
+	"github.com/IlyaGulya/chgen/internal/diagnostic"
 	"github.com/IlyaGulya/chgen/internal/engine"
 )
 
@@ -80,9 +81,13 @@ func runServer(ctx context.Context, configPath string, options describe.Options,
 					}
 				}
 				seenExamples[exampleKey] = true
+				context := diagnostic.Detail{Stage: "analysis", File: input.File, Line: input.Line, Query: input.Name}
+				if err := validateServerExamples(input, packageName+"."+input.Name, examples[exampleKey]); err != nil {
+					return nil, diagnostic.With(fmt.Errorf("query %s: %w", input.Name, err), context)
+				}
 				query, err := analyzeServerQuery(ctx, options, input, examples[exampleKey], &version, store.describe)
 				if err != nil {
-					return nil, fmt.Errorf("query %s: %w", input.Name, err)
+					return nil, diagnostic.With(fmt.Errorf("query %s: %w", input.Name, err), context)
 				}
 				queries = append(queries, query)
 			}

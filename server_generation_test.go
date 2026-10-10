@@ -20,6 +20,267 @@ import (
 	"github.com/IlyaGulya/chgen"
 )
 
+func TestSimpleServerWorkflowCapturesAndReplaysContracts(t *testing.T) {
+	cli := buildPublicCLI(t)
+	config, output := writeCheckProject(t, "", "-- name: Read :one\nSELECT jaroSimilarity('abc', 'abc') AS similarity;")
+	contracts := filepath.Join(filepath.Dir(config), "contracts.json")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("readonly") != "1" {
+			t.Error("analysis was not readonly")
+		}
+		body, _ := io.ReadAll(r.Body)
+		if strings.Contains(string(body), "SELECT version()") {
+			io.WriteString(w, `{"data":[{"version":"25.8.29.51"}]}`)
+		} else {
+			io.WriteString(w, `{"data":[{"name":"similarity","type":"Float64"}]}`)
+		}
+	}))
+	t.Cleanup(server.Close)
+	run := func(args ...string) []byte {
+		t.Helper()
+		out, err := exec.CommandContext(t.Context(), cli, args...).CombinedOutput()
+		if err != nil {
+			t.Fatalf("%v: %v\n%s", args, err, out)
+		}
+		return out
+	}
+	run("-f", config, "-server", server.URL, "-contracts", contracts)
+	before, err := os.ReadFile(output)
+	if err != nil || !bytes.Contains(before, []byte("Similarity float64")) {
+		t.Fatalf("generated result: %v\n%s", err, before)
+	}
+	if _, err := os.Stat(contracts); err != nil {
+		t.Fatalf("contracts not saved: %v", err)
+	}
+	server.Close()
+	if err := os.Remove(output); err != nil {
+		t.Fatal(err)
+	}
+	run("-f", config, "-contracts", contracts)
+	run("check", "-f", config, "-contracts", contracts)
+	after, err := os.ReadFile(output)
+	if err != nil || !bytes.Equal(before, after) {
+		t.Fatalf("offline replay changed code: %v", err)
+	}
+}
+
+func TestServerMissingExamplesExplainExactlyWhatToSupply(t *testing.T) {
+	config, output := writeCheckProject(t, "", "-- name: Read :one\nSELECT {Limit:UInt64} AS value;")
+	err := chgen.RunServer(t.Context(), config, chgen.ServerOptions{Server: "http://127.0.0.1:1"})
+	d := chgen.ExplainError(err)
+	if err == nil || d.Code != "server-parameter-examples-missing" || d.Query != "Read" || d.Package != "queries" || d.Line != 1 || filepath.Base(d.File) != "queries.sql" {
+		t.Fatalf("missing parameter has no actionable location: %+v; %v", d, err)
+	}
+	if !strings.Contains(d.Hint, `"queries.Read"`) || !strings.Contains(d.Hint, `"Limit":"<UInt64>"`) || !strings.Contains(d.Hint, "-params") {
+		t.Fatalf("missing examples have no JSON recipe: %+v", d)
+	}
+	if _, err := os.Stat(filepath.Dir(output)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("missing examples created outputs: %v", err)
+	}
+	cli := buildPublicCLI(t)
+	out, err := exec.CommandContext(t.Context(), cli, "-f", config, "-server", "http://127.0.0.1:1").CombinedOutput()
+	if err == nil || !strings.Contains(string(out), d.Hint) {
+		t.Fatalf("CLI hid the same recovery recipe: %v\n%s", err, out)
+	}
+}
+
+func TestOfflineCoverageGapsPointToExplicitServerWorkflow(t *testing.T) {
+	cli := buildPublicCLI(t)
+	for _, sql := range []string{
+		"SELECT jaroSimilarity('abc', 'abc') AS similarity",
+		"SELECT 1 AS value QUALIFY row_number() OVER () > 1",
+	} {
+		t.Run(sql, func(t *testing.T) {
+			config, output := writeCheckProject(t, "", "-- name: Read :one\n"+sql+";")
+			out, err := exec.CommandContext(t.Context(), cli, "-f", config).CombinedOutput()
+			if err == nil || !strings.Contains(string(out), "-server URL") || !strings.Contains(string(out), "-contracts contracts.json") {
+				t.Fatalf("coverage gap has no explicit server next step: %v\n%s", err, out)
+			}
+			if _, err := os.Stat(filepath.Dir(output)); !errors.Is(err, os.ErrNotExist) {
+				t.Fatalf("offline refusal created output: %v", err)
+			}
+		})
+	}
+}
+
+func TestServerRefusalsGiveSafeSpecificRecoveryHints(t *testing.T) {
+	for _, tc := range []struct {
+		name, serverCode, diagnosticCode, hint string
+		status                                 int
+	}{
+		{"authentication", "516", "server-access-denied", "CHGEN_DESCRIBE_USER", http.StatusUnauthorized},
+		{"permission", "497", "server-access-denied", "permissions", http.StatusInternalServerError},
+		{"missing table", "60", "server-schema-missing", "-database", http.StatusInternalServerError},
+		{"syntax", "62", "server-sql-refused", "syntax", http.StatusInternalServerError},
+		{"function", "46", "server-function-unavailable", "version", http.StatusInternalServerError},
+		{"timeout", "159", "server-analysis-timeout", "time limit", http.StatusInternalServerError},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			config, output := writeCheckProject(t, "", "-- name: Read :one\nSELECT 1 AS value;")
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("X-ClickHouse-Exception-Code", tc.serverCode)
+				w.WriteHeader(tc.status)
+				io.WriteString(w, "sensitive server SQL and data must not be printed")
+			}))
+			t.Cleanup(server.Close)
+			err := chgen.RunServer(t.Context(), config, chgen.ServerOptions{Server: server.URL, User: "reader", Password: "sensitive-password"})
+			d := chgen.ExplainError(err)
+			if err == nil || d.Code != tc.diagnosticCode || d.Query != "Read" || d.Package != "queries" || d.Line != 1 || !strings.Contains(d.Hint, tc.hint) {
+				t.Fatalf("not actionable: %+v; %v", d, err)
+			}
+			if strings.Contains(d.Message+d.Hint, "sensitive") || strings.Contains(d.Message+d.Hint, server.URL) {
+				t.Fatalf("diagnostic exposed server details: %+v", d)
+			}
+			if _, err := os.Stat(filepath.Dir(output)); !errors.Is(err, os.ErrNotExist) {
+				t.Fatalf("refusal wrote outputs: %v", err)
+			}
+		})
+	}
+}
+
+func TestSimpleWorkflowExplainsStaleContractsAndPreservesFiles(t *testing.T) {
+	cli := buildPublicCLI(t)
+	config, output := writeCheckProject(t, "", "-- name: Read :one\nSELECT 1 AS value;")
+	contracts := filepath.Join(filepath.Dir(config), "contracts.json")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		if strings.Contains(string(body), "SELECT version()") {
+			io.WriteString(w, `{"data":[{"version":"25.8.29.51"}]}`)
+		} else {
+			io.WriteString(w, `{"data":[{"name":"value","type":"UInt8"}]}`)
+		}
+	}))
+	t.Cleanup(server.Close)
+	if out, err := exec.CommandContext(t.Context(), cli, "-f", config, "-server", server.URL, "-contracts", contracts).CombinedOutput(); err != nil {
+		t.Fatalf("capture: %v\n%s", err, out)
+	}
+	before, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	contractBefore, err := os.ReadFile(contracts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server.Close()
+	if err := os.WriteFile(filepath.Join(filepath.Dir(config), "queries.sql"), []byte("-- name: Read :one\nSELECT 2 AS value;"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"-f", config, "-contracts", contracts},
+		{"check", "-f", config, "-contracts", contracts},
+	} {
+		out, err := exec.CommandContext(t.Context(), cli, args...).CombinedOutput()
+		if err == nil || !strings.Contains(string(out), "server-contracts-stale") || !strings.Contains(string(out), "-server URL") || !strings.Contains(string(out), "No files were changed") {
+			t.Fatalf("stale contracts have no recovery recipe: %v\n%s", err, out)
+		}
+	}
+	after, err := os.ReadFile(output)
+	if err != nil || !bytes.Equal(before, after) {
+		t.Fatalf("failed replay overwrote code: %v", err)
+	}
+	contractAfter, err := os.ReadFile(contracts)
+	if err != nil || !bytes.Equal(contractBefore, contractAfter) {
+		t.Fatalf("failed replay overwrote contracts: %v", err)
+	}
+}
+
+func TestSimpleServerCheckJSONIdentifiesSavedContractVerification(t *testing.T) {
+	cli := buildPublicCLI(t)
+	config, output := writeCheckProject(t, "", "-- name: Read :one\nSELECT 1 AS value;")
+	contracts := filepath.Join(filepath.Dir(config), "contracts.json")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		if strings.Contains(string(body), "SELECT version()") {
+			io.WriteString(w, `{"data":[{"version":"25.8.29.51"}]}`)
+		} else {
+			io.WriteString(w, `{"data":[{"name":"value","type":"UInt8"}]}`)
+		}
+	}))
+	t.Cleanup(server.Close)
+	if out, err := exec.CommandContext(t.Context(), cli, "-f", config, "-server", server.URL, "-contracts", contracts).CombinedOutput(); err != nil {
+		t.Fatalf("capture: %v\n%s", err, out)
+	}
+	server.Close()
+	before, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.CommandContext(t.Context(), cli, "check", "-f", config, "-contracts", contracts, "-json").Output()
+	if err != nil {
+		t.Fatalf("JSON contract check: %v\n%s", err, out)
+	}
+	var report struct {
+		Status, Analysis, ContractSource string
+		CanGenerate, FilesChanged        bool
+		Diagnostics                      []chgen.Diagnostic
+	}
+	if err := json.Unmarshal(out, &report); err != nil || report.Status != "confirmed" || !report.CanGenerate || report.Analysis != "server" || report.ContractSource != "saved" || report.FilesChanged || len(report.Diagnostics) != 0 {
+		t.Fatalf("misleading JSON provenance: %+v; %v\n%s", report, err, out)
+	}
+	if err := os.WriteFile(filepath.Join(filepath.Dir(config), "queries.sql"), []byte("-- name: Read :one\nSELECT 2 AS value;"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, err = exec.CommandContext(t.Context(), cli, "check", "-f", config, "-contracts", contracts, "-json").Output()
+	if err == nil {
+		t.Fatal("JSON check accepted stale inputs")
+	}
+	if err := json.Unmarshal(out, &report); err != nil || report.CanGenerate || len(report.Diagnostics) != 1 || report.Diagnostics[0].Code != "server-contracts-stale" {
+		t.Fatalf("JSON check hid refusal: %+v; %v\n%s", report, err, out)
+	}
+	after, err := os.ReadFile(output)
+	if err != nil || !bytes.Equal(before, after) {
+		t.Fatalf("JSON check overwrote output: %v", err)
+	}
+}
+
+func TestServerConnectionFailuresExplainEndpointAndKeepCancellation(t *testing.T) {
+	config, _ := writeCheckProject(t, "", "-- name: Read :one\nSELECT 1 AS value;")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("closed server was contacted")
+	}))
+	server.Close()
+	err := chgen.RunServer(t.Context(), config, chgen.ServerOptions{Server: server.URL})
+	d := chgen.ExplainError(err)
+	if err == nil || d.Code != "server-connection-failed" || !strings.Contains(d.Hint, "HTTP(S)") || !strings.Contains(d.Hint, "network") {
+		t.Fatalf("connection error has no recovery hint: %+v; %v", d, err)
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if err := chgen.RunServer(ctx, config, chgen.ServerOptions{Server: server.URL}); !errors.Is(err, context.Canceled) {
+		t.Fatalf("diagnostics lost cancellation: %v", err)
+	}
+}
+
+func TestSimpleServerFlagsNeverSilentlyChangeCheckOrConnect(t *testing.T) {
+	cli := buildPublicCLI(t)
+	config, output := writeCheckProject(t, "", "-- name: Read :one\nSELECT 1 AS value;")
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		http.Error(w, "unexpected analysis", http.StatusInternalServerError)
+	}))
+	t.Cleanup(server.Close)
+	for _, args := range [][]string{
+		{"-f", config, "-database", "fixture"},
+		{"-f", config, "-params", "missing.json"},
+		{"check", "-f", config, "-server", server.URL, "-contracts", "contracts.json"},
+		{"check", "-f", config, "-server", server.URL, "-require-confirmed"},
+		{"-f", config, "-server", server.URL + "?password=private"},
+	} {
+		out, err := exec.CommandContext(t.Context(), cli, args...).CombinedOutput()
+		if err == nil || bytes.Contains(out, []byte("private")) {
+			t.Fatalf("invalid options were accepted or exposed: %v\n%s", err, out)
+		}
+	}
+	if requests.Load() != 0 {
+		t.Fatalf("invalid workflow contacted server: %d", requests.Load())
+	}
+	if _, err := os.Stat(filepath.Dir(output)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("invalid options created output: %v", err)
+	}
+}
+
 func TestLoadConfigPreservesExplicitAnalysisBackend(t *testing.T) {
 	config, _ := writeCheckProject(t, "", "-- name: Read :one\nSELECT 1 AS value;")
 	data, err := os.ReadFile(config)
@@ -841,13 +1102,27 @@ SELECT {B:Bool} AS b, {I8:Int8} AS i8, {I16:Int16} AS i16,
 	if err := os.WriteFile(samples, []byte(`{"Read":{"Limit":"3","Text":"quote '\\ tab\t newline\n null\u0000"},"Drift":{"Width":"2"},"EmptyDrift":{"Width":"2"},"ParenthesizedSet":{"Start":"0"},"Comparison":{"Left":"abc","Right":"abc"},"Scalars":{"B":"true","I8":"-1","I16":"-1","I32":"-1","I64":"-1","U8":"1","U16":"1","U32":"1","U64":"1","F32":"1.25","F64":"2.5"}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	output, err := exec.CommandContext(t.Context(), cli, "generate-server", "-f", config, "-server", endpoint, "-params", samples).CombinedOutput()
+	contracts := filepath.Join(filepath.Dir(config), "contracts.json")
+	output, err := exec.CommandContext(t.Context(), cli, "-f", config, "-server", endpoint, "-params", samples, "-contracts", contracts).CombinedOutput()
 	if err != nil {
 		t.Fatalf("server generation: %v\n%s", err, output)
 	}
 	generated, err := os.ReadFile(outputPath)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if err := os.Remove(outputPath); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := exec.CommandContext(t.Context(), cli, "-f", config, "-params", samples, "-contracts", contracts).CombinedOutput(); err != nil {
+		t.Fatalf("simple offline replay: %v\n%s", err, out)
+	}
+	replayed, err := os.ReadFile(outputPath)
+	if err != nil || !bytes.Equal(generated, replayed) {
+		t.Fatalf("simple workflow changed code: %v", err)
+	}
+	if out, err := exec.CommandContext(t.Context(), cli, "check", "-f", config, "-params", samples, "-contracts", contracts).CombinedOutput(); err != nil {
+		t.Fatalf("simple offline check: %v\n%s", err, out)
 	}
 	fixture, err := os.ReadFile("testdata/serverqueries/runtime_test.go")
 	if err != nil {

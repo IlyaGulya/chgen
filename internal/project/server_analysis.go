@@ -1,15 +1,62 @@
 package project
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/IlyaGulya/chgen/internal/describe"
+	"github.com/IlyaGulya/chgen/internal/diagnostic"
 	"github.com/IlyaGulya/chgen/internal/engine"
 )
 
 type serverDescribe func(context.Context, describe.Options, string) (describe.Report, error)
+
+// Parameter examples are deliberately supplied by the caller: inventing values
+// can select a different result type or change the validity of a query.
+func validateServerExamples(input engine.Query, key string, examples map[string]string) error {
+	queries := []engine.Query{input}
+	if input.Composition != nil {
+		queries = input.Composition.Variants
+	}
+	required := make(map[string]string)
+	missing := false
+	for _, query := range queries {
+		_, parameters, err := engine.PrepareServerSelect(query.SQL)
+		if err != nil {
+			return err
+		}
+		for _, param := range parameters {
+			required[param.Name] = "<" + param.Type.String() + ">"
+			if _, supplied := examples[param.Name]; !supplied {
+				missing = true
+			}
+		}
+	}
+	if missing {
+		var buffer bytes.Buffer
+		encoder := json.NewEncoder(&buffer)
+		encoder.SetEscapeHTML(false)
+		if err := encoder.Encode(map[string]map[string]string{key: required}); err != nil {
+			return err
+		}
+		return diagnostic.With(fmt.Errorf("parameter examples are missing for query %s", input.Name), diagnostic.Detail{
+			Code: "server-parameter-examples-missing", Status: diagnostic.Unknown, Stage: "analysis",
+			Hint: "Create examples.json with " + strings.TrimSpace(buffer.String()) + ". Replace each <ClickHouseType> with a representative value, then pass -params examples.json. Examples are sent to your test server; they are not stored in generated code or contracts.",
+		})
+	}
+	for name := range examples {
+		if _, used := required[name]; !used {
+			return diagnostic.With(fmt.Errorf("unused example for native parameter %s", name), diagnostic.Detail{
+				Code: "server-parameter-example-unused", Status: diagnostic.Invalid, Stage: "analysis",
+				Hint: "Remove unused entries from this query's examples. Supply exactly one value for each declared parameter.",
+			})
+		}
+	}
+	return nil
+}
 
 func analyzeServerQuery(ctx context.Context, options describe.Options, input engine.Query, examples map[string]string, version *string, analyze serverDescribe) (engine.Query, error) {
 	if input.Composition != nil {

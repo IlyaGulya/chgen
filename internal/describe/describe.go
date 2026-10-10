@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/IlyaGulya/chgen/internal/diagnostic"
 	"github.com/IlyaGulya/chgen/internal/engine"
 )
 
@@ -56,6 +57,33 @@ type ServerRefusal struct {
 
 func (e *ServerRefusal) Error() string {
 	return fmt.Sprintf("server analysis refused: HTTP %d, ClickHouse code %q (server prose omitted; inspect server logs)", e.HTTPStatus, e.Code)
+}
+
+// Diagnostic uses protocol status and exception codes, never server prose: messages may
+// contain query text, parameter examples, or server paths.
+func (e *ServerRefusal) Diagnostic() diagnostic.Detail {
+	d := diagnostic.Detail{Code: "server-analysis-refused", Status: diagnostic.Unknown, Stage: "analysis",
+		Hint: "ClickHouse refused analysis. Inspect its server logs for details; server prose is omitted to avoid exposing SQL and values. No generated files were changed."}
+	if e.HTTPStatus == http.StatusUnauthorized || e.HTTPStatus == http.StatusForbidden || e.Code == "516" || e.Code == "497" {
+		d.Code = "server-access-denied"
+		d.Hint = "Check CHGEN_DESCRIBE_USER and CHGEN_DESCRIBE_PASSWORD and the account's read permissions on your test database. Do not put credentials in -server URL."
+		return d
+	}
+	switch e.Code {
+	case "60", "81":
+		d.Code = "server-schema-missing"
+		d.Hint = "Check -database and prepare the test database with the required tables and migrations. chgen does not execute schema inputs on the server."
+	case "62":
+		d.Code, d.Status = "server-sql-refused", diagnostic.Invalid
+		d.Hint = "Check SQL syntax against the selected ClickHouse version. The server itself rejected parsing; a result-type annotation cannot repair it."
+	case "46":
+		d.Code = "server-function-unavailable"
+		d.Hint = "Check the function spelling and whether it exists in your test ClickHouse version. Server analysis cannot add functions to ClickHouse."
+	case "159":
+		d.Code = "server-analysis-timeout"
+		d.Hint = "Analysis exceeded the server time limit. Check test-server load and expensive constant expressions or table functions; do not switch to production merely to obtain a contract."
+	}
+	return d
 }
 
 func Query(ctx context.Context, options Options, sql string) (Report, error) {
@@ -146,7 +174,10 @@ func queryPrepared(ctx context.Context, options Options, sql, statement string) 
 			if errors.As(err, &urlErr) {
 				err = urlErr.Err
 			}
-			return fmt.Errorf("server analysis request: %w", err)
+			return diagnostic.With(fmt.Errorf("server analysis request: %w", err), diagnostic.Detail{
+				Code: "server-connection-failed", Status: diagnostic.Unknown, Stage: "analysis",
+				Hint: "Check the test ClickHouse HTTP(S) endpoint, network access, TLS, and server availability. The native driver port is not an HTTP endpoint. Cancellation or a client deadline can also stop analysis; no fallback connection is made.",
+			})
 		}
 		defer response.Body.Close()
 		data, err := io.ReadAll(io.LimitReader(response.Body, maxResponseBytes+1))

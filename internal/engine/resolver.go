@@ -282,7 +282,7 @@ func parseChgenStatements(sql string, command Command) ([]clickhouse.Expr, error
 	statements, err := parseChgenStatementsWithAdapters(sql, command)
 	return statements, diagnostic.With(err, diagnostic.Detail{
 		Code: "query-parser-refusal", Status: diagnostic.Unknown, Stage: "parser",
-		Hint: "Check SQL syntax against your ClickHouse version. If ClickHouse accepts it, this is a chgen parser coverage gap; a type annotation cannot repair parsing.",
+		Hint: "Check SQL syntax against your ClickHouse version. If your test ClickHouse accepts the SELECT, use chgen -server URL -contracts contracts.json (add -database and -params when needed), then chgen -contracts contracts.json offline. A type annotation cannot repair parsing. Server analysis does not apply migrations and accepts only :one/:many SELECT queries.",
 	})
 }
 

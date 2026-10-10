@@ -5,8 +5,20 @@ Generate type-safe ClickHouse queries for Go from SQL and DDL.
 For SQL outside the offline frontend, [explicit server generation](docs/server-generation.md)
 uses a prepared test ClickHouse database to discover result contracts. It supports
 typed parameters and external tables, checks runtime result metadata before Scan,
-and provides a non-writing `check-server` command. Saved contracts also permit
+and provides non-writing contract checks. Saved contracts also permit
 reproducible generation without a server. Offline generation remains the default.
+
+```sh
+# Analyze on your prepared test database and save the contract.
+go tool chgen -server http://localhost:8123 -database test_schema -contracts contracts.json
+# Generate and check in CI without a server.
+go tool chgen -database test_schema -contracts contracts.json
+go tool chgen check -database test_schema -contracts contracts.json
+```
+
+Add `-params examples.json` to all three commands when queries have parameters.
+Missing examples produce a JSON template. Commit contracts alongside SQL;
+chgen never runs your migrations or connects automatically after an offline error.
 
 The [SQL compatibility corpus](docs/compatibility-coverage.md) measures parsing,
 type resolution, generation, and optional server analysis separately.

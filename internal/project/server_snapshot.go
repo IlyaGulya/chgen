@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 
 	"github.com/IlyaGulya/chgen/internal/describe"
+	"github.com/IlyaGulya/chgen/internal/diagnostic"
 )
 
 // ServerSnapshotOptions selects capture or replay, never both. These files
@@ -36,7 +37,10 @@ func openServerSnapshot(options ServerSnapshotOptions, check bool) (*serverSnaps
 	}
 	file, err := os.Open(options.Input)
 	if err != nil {
-		return nil, fmt.Errorf("read snapshot: %w", err)
+		return nil, diagnostic.With(fmt.Errorf("read snapshot: %w", err), diagnostic.Detail{
+			Code: "server-contracts-unreadable", Status: diagnostic.Unknown, Stage: "analysis",
+			Hint: "Check the -contracts path. To create contracts, run chgen -server URL -contracts contracts.json against a prepared test database. No files were changed.",
+		})
 	}
 	defer file.Close()
 	data, err := io.ReadAll(io.LimitReader(file, (16<<20)+1))
@@ -70,7 +74,7 @@ func (s *serverSnapshot) describe(ctx context.Context, options describe.Options,
 		report, exists := s.Reports[key]
 		hash := sha256.Sum256([]byte(sql))
 		if !exists || report.Provenance != "server-analysis" || report.QuerySHA256 != hex.EncodeToString(hash[:]) || report.ServerVersion == "" || len(report.Columns) == 0 {
-			return describe.Report{}, fmt.Errorf("snapshot has no matching valid contract; recapture after SQL, database, parameter examples or external structure changes")
+			return describe.Report{}, staleServerContracts(fmt.Errorf("snapshot has no matching valid contract; recapture after SQL, database, parameter examples or external structure changes"))
 		}
 		s.used[key] = true
 		return report, nil
@@ -105,7 +109,7 @@ func (s *serverSnapshot) finish(plan *executionPlan, configPath, examplesPath st
 	}
 	digest := snapshotHash(content)
 	if s.options.Input != "" && (s.Inputs != digest || len(s.used) != len(s.Reports)) {
-		return fmt.Errorf("snapshot inputs are stale; recapture server analysis")
+		return staleServerContracts(fmt.Errorf("snapshot inputs are stale; recapture server analysis"))
 	}
 	if examplesPath != "" {
 		inputs = append(inputs, examplesPath)
@@ -163,4 +167,11 @@ func (s *serverSnapshot) finish(plan *executionPlan, configPath, examplesPath st
 	plan.packages = append(plan.packages, plannedPackage{name: "server snapshot", output: path, canonicalOutput: canonical, outputKey: key,
 		outputDirectory: directory, directoryKey: portableCollisionKey(directory), mode: 0o600, outputInfo: info, generated: data})
 	return nil
+}
+
+func staleServerContracts(err error) error {
+	return diagnostic.With(err, diagnostic.Detail{
+		Code: "server-contracts-stale", Status: diagnostic.Unknown, Stage: "analysis",
+		Hint: "Saved contracts no longer match the inputs. Refresh with chgen -server URL -contracts contracts.json using the same -database and -params options, then commit the contracts alongside SQL. No files were changed; replay never connects automatically.",
+	})
 }

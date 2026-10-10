@@ -1332,7 +1332,7 @@ func TestGenerateCLIExplainsTheUnknownRuleEscapeHatch(t *testing.T) {
 	cli := buildPublicCLI(t)
 	config, _ := writeCheckProject(t, "CREATE TABLE events (id UInt64) ENGINE=Memory", "-- name: Read :many\nSELECT clientFunction(id) AS value FROM events")
 	output, err := exec.CommandContext(t.Context(), cli, "-f", config).CombinedOutput()
-	if err == nil || !strings.Contains(string(output), "[unknown/function-rule-missing]") || !strings.Contains(string(output), "chgen describe") {
+	if err == nil || !strings.Contains(string(output), "[unknown/function-rule-missing]") || !strings.Contains(string(output), "chgen -server URL -contracts contracts.json") {
 		t.Fatalf("generation did not explain the escape hatch: %v\n%s", err, output)
 	}
 }

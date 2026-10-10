@@ -48,6 +48,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 	flags.SetOutput(stderr)
 	flags.Usage = func() {
 		_, _ = fmt.Fprintln(stderr, "Usage: chgen [-f chgen.yaml]")
+		_, _ = fmt.Fprintln(stderr, "       chgen -server URL [-database fixture] [-params examples.json] [-contracts contracts.json]")
+		_, _ = fmt.Fprintln(stderr, "       chgen -contracts contracts.json [-database fixture] [-params examples.json]")
 		_, _ = fmt.Fprintln(stderr, "       chgen -version")
 		_, _ = fmt.Fprintln(stderr, "       chgen coverage -corpus corpus.json [-server URL] [-database fixture]")
 		_, _ = fmt.Fprintln(stderr, "       chgen init")
@@ -61,6 +63,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 	configPath := flags.String("f", "chgen.yaml", "path to the chgen.yaml configuration file")
 	showVersion := flags.Bool("version", false, "print the chgen version and exit")
+	var serverOptions serverWorkflowFlags
+	serverOptions.register(flags)
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
@@ -77,6 +81,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 	if flags.NArg() > 0 {
 		_, _ = fmt.Fprintf(stderr, "chgen: unexpected argument %q; chgen takes no positional arguments\n", flags.Arg(0))
 		return 1
+	}
+	if serverOptions.selected() {
+		return serverOptions.run(*configPath, stderr, false, nil)
 	}
 	if err := chgen.Run(*configPath); err != nil {
 		_, _ = fmt.Fprintf(stderr, "chgen: %v\n", err)

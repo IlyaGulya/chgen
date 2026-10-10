@@ -51,7 +51,7 @@ func (e *unregisteredFunctionError) Error() string {
 func (e *unregisteredFunctionError) Diagnostic() diagnostic.Detail {
 	return diagnostic.Detail{
 		Code: "function-rule-missing", Status: diagnostic.Unknown, Stage: "inference",
-		Hint: "chgen has no type rule for this function. Use chgen describe with a concrete SELECT on a test server to discover types. After verification, put chgen.assumeType(call, 'ClickHouseType') on each unknown call to supply its type within a CTE or a larger expression. A direct outer SELECT call can also use -- result-chtype: Alias ClickHouseType. Contracts do not override known errors; -- result: only changes Go mapping.",
+		Hint: "chgen has no local type rule for this function; this does not mean ClickHouse rejects it. Analyze the SELECT on your prepared test database with chgen -server URL -contracts contracts.json (add -database and -params when needed). Then generate offline with chgen -contracts contracts.json. No automatic server connection is made. For an explicit local type assertion, use chgen.assumeType or -- result-chtype; -- result: only changes Go mapping.",
 	}
 }
 

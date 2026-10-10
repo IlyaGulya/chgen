@@ -1,18 +1,32 @@
 # Explicit server generation
 
+Use your test ClickHouse to analyze SELECT queries that the offline frontend
+does not yet understand. This is a mode of chgen, not a hosted service. Keep the
+usual `chgen.yaml`; no support package or hand-written result types are needed.
+
 ## Reproducible generation without a server
 
 Capture result contracts once against a prepared test database, then commit
 the snapshot with the query sources:
 
 ```sh
-chgen generate-server -f chgen.yaml -server http://localhost:8123 \
-  -database test_schema -params examples.json -snapshot-out contracts.json
-chgen generate-server -f chgen.yaml -database test_schema \
-  -params examples.json -snapshot-in contracts.json
-chgen check-server -f chgen.yaml -database test_schema \
-  -params examples.json -snapshot-in contracts.json
+chgen -server http://localhost:8123 -database test_schema \
+  -params examples.json -contracts contracts.json
+chgen -database test_schema -params examples.json -contracts contracts.json
+chgen check -database test_schema -params examples.json -contracts contracts.json
 ```
+
+`-server` chooses live analysis explicitly. With it, `-contracts` saves the
+result contract; without it, `-contracts` reads that file and makes no network
+requests. Omit `-params` for queries without parameters. Commit the contract
+alongside SQL and representative, non-secret examples; use the last command in
+CI. Paths supplied as CLI flags are relative to the working directory.
+
+Before live analysis, prepare a test database with your migrations and use a
+restricted read account. chgen does **not** create or migrate the database.
+Set `CHGEN_DESCRIBE_USER` and `CHGEN_DESCRIBE_PASSWORD` if authentication is
+required; do not put credentials in the endpoint URL. Use the HTTP port, not
+the driver's native port.
 
 Replay makes no network requests, supports all finite composition variants,
 and produces the same generated code. Supply the same database and parameter
@@ -27,15 +41,38 @@ or raw parameter values. Treat them as trusted, reviewable build inputs, not
 signed proof. They are **result-contract snapshots**, not complete database
 schema snapshots: replay cannot discover changes on a live server or certify
 SQL value semantics. Refresh with `-server` after database, server or settings
-changes. `-server` and `-snapshot-in` are mutually exclusive; `check-server`
-never writes a snapshot.
+changes. `chgen check -contracts` never writes files. Use `chgen check -server
+URL` for a live non-writing check; combining `check -server` with `-contracts`
+is refused because checking cannot capture contracts. Add `-json` to either
+check for a structured report identifying live or saved analysis. Confirmation
+means matching result contracts and files, not proof of execution or values.
+`-require-confirmed` remains an offline inference option.
+
+The older `generate-server` and `check-server` commands remain supported.
+Their `-snapshot-out` and `-snapshot-in` flags select the same capture and replay
+implementation; they are not required for the common workflow.
+
+## Recovering from errors
+
+- A local missing type rule or parser refusal points to `-server`; it never
+  connects automatically or treats a coverage gap as proof of invalid SQL.
+- Missing parameter examples report the package, query and source line and
+  supply a JSON template. Replace the type placeholders with representative
+  values; chgen does not invent them.
+- Stale contracts require fresh analysis with the same database and examples.
+  Until that succeeds, the existing generated files and contracts are preserved.
+- Access errors point to authentication and read permissions. Missing schema
+  errors point to `-database` and test-database preparation. Connection failures
+  identify network, TLS and HTTP-port checks. Server prose is not printed because
+  it can contain SQL, values and private paths.
 
 ## Live analysis
 
-`generate-server` is an opt-in alternative to offline generation. It asks an
+`chgen -server` is an opt-in alternative to offline generation. It asks an
 existing ClickHouse test database for result metadata, then generates the same
 typed Go methods with metadata checks before Scan. It never falls back to this
-mode after an offline error. Ordinary `chgen` and `chgen check` remain offline.
+mode after an offline error. Without `-server` or `-contracts`, ordinary `chgen`
+and `chgen check` remain offline.
 
 ```sql
 -- name: Read :many
@@ -53,8 +90,8 @@ parameter examples in a separate JSON fixture, not type overrides in config:
 ```
 
 ```sh
-chgen generate-server -f chgen.yaml \
-  -server http://localhost:8123 -database test_schema -params examples.json
+chgen -server http://localhost:8123 -database test_schema \
+  -params examples.json -contracts contracts.json
 ```
 
 Keys are `package.Query`. A bare query name also works if unambiguous across

@@ -16,6 +16,8 @@ func runCheck(args []string, stdout, stderr io.Writer) int {
 	config := flags.String("f", "chgen.yaml", "configuration file to validate without writing outputs")
 	jsonOutput := flags.Bool("json", false, "print a structured report")
 	strict := flags.Bool("require-confirmed", false, "fail on client-asserted result types and unchecked settings")
+	var serverOptions serverWorkflowFlags
+	serverOptions.register(flags)
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
@@ -25,6 +27,17 @@ func runCheck(args []string, stdout, stderr io.Writer) int {
 	if flags.NArg() != 0 {
 		_, _ = fmt.Fprintln(stderr, "chgen check takes no positional arguments")
 		return 2
+	}
+	if serverOptions.selected() {
+		if *strict {
+			_, _ = fmt.Fprintln(stderr, "chgen: -require-confirmed applies only to offline inference and client assertions; omit it for server-contract verification, which is not proof of query execution")
+			return 2
+		}
+		var report io.Writer
+		if *jsonOutput {
+			report = stdout
+		}
+		return serverOptions.run(*config, stderr, true, report)
 	}
 	report, checkErr := chgen.Check(*config)
 	if err := writeCheckReport(stdout, report, *jsonOutput); err != nil {
