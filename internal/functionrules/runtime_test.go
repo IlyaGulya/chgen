@@ -230,10 +230,13 @@ func TestMeasuredMath(t *testing.T) {
  if err != nil { t.Fatal(err) }
  if aggregates.Sum==nil || *aggregates.Sum!=1 || aggregates.ArraySum==nil || *aggregates.ArraySum!=1 || aggregates.NullableSum==nil || *aggregates.NullableSum!=1 || aggregates.Average==nil || *aggregates.Average!=0.5 || aggregates.Unique!=2 { t.Fatalf("wrong generated aggregate values: %+v",aggregates) }
  if err := conn.Exec(ctx, "CREATE TABLE sorted_runs (bucket UInt8, event_id UInt64, run_id UInt64, version UInt64) ENGINE=ReplacingMergeTree(version) ORDER BY (bucket,event_id)"); err != nil { t.Fatal(err) }
+ if err := conn.Exec(ctx, "SYSTEM STOP MERGES sorted_runs"); err != nil { t.Fatal(err) }
  if err := conn.Exec(ctx, "INSERT INTO sorted_runs VALUES (1,1,9,1),(1,2,3,1),(1,3,3,1),(2,1,5,1),(2,2,4,1),(2,3,3,1),(2,4,2,1),(2,5,1,1),(2,6,1,1),(3,1,0,1),(3,2,1,1),(3,3,2,1),(3,4,3,1),(3,5,4,1),(3,6,5,1),(3,7,6,1),(3,8,1,1)"); err != nil { t.Fatal(err) }
- // A separate part ensures FINAL, not an accidental prior background merge,
- // supplies the latest version and excludes obsolete run id zero.
+ // Merges are stopped, so only FINAL can exclude obsolete run id zero.
  if err := conn.Exec(ctx, "INSERT INTO sorted_runs VALUES (3,1,7,2)"); err != nil { t.Fatal(err) }
+ var oldVersions uint64
+ if err := conn.QueryRow(ctx, "SELECT count() FROM sorted_runs WHERE bucket=3 AND run_id=0").Scan(&oldVersions); err != nil { t.Fatal(err) }
+ if oldVersions!=1 { t.Fatal("fixture must retain the obsolete row without FINAL") }
  distinct, err := New(conn).ReadDistinctSortedRuns(ctx, ReadDistinctSortedRunsParams{})
  if err != nil { t.Fatal(err) }
  preUnique, err := New(conn).ReadPreUniqueSortedRuns(ctx, ReadPreUniqueSortedRunsParams{})
@@ -252,7 +255,11 @@ func TestMeasuredMath(t *testing.T) {
   var bucket uint8
   var runs []uint64
   if err := old.Scan(&bucket, &runs); err != nil { t.Fatal(err) }
-  if i>=3 || bucket!=uint8(i+1) || distinct[i].Bucket!=bucket || preUnique[i].Bucket!=bucket || !slices.Equal(runs,want[i]) || !slices.Equal(distinct[i].Runs,want[i]) || !slices.Equal(preUnique[i].Runs,want[i]) || !slices.Equal(duplicates[i].Runs,wantDuplicates[i]) { t.Fatalf("sorted group %d differs: %v",bucket,runs) }
+  if i>=3 || bucket!=uint8(i+1) { t.Fatalf("unexpected witness bucket %d",bucket) }
+  if !slices.Equal(runs,want[i]) { t.Fatalf("old query bucket %d: %v",bucket,runs) }
+  if distinct[i].Bucket!=bucket || !slices.Equal(distinct[i].Runs,want[i]) { t.Fatalf("Distinct bucket %d: %+v",bucket,distinct[i]) }
+  if preUnique[i].Bucket!=bucket || !slices.Equal(preUnique[i].Runs,want[i]) { t.Fatalf("pre-unique bucket %d: %+v",bucket,preUnique[i]) }
+  if duplicates[i].Bucket!=bucket || !slices.Equal(duplicates[i].Runs,wantDuplicates[i]) { t.Fatalf("duplicate-preserving bucket %d: %+v",bucket,duplicates[i]) }
   i++
  }
  if err := old.Err(); err != nil { t.Fatal(err) }
