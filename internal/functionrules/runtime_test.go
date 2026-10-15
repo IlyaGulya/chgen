@@ -20,7 +20,7 @@ func TestFunctionRulesGeneratedRuntime(t *testing.T) {
 	schema := filepath.Join(directory, "schema.sql")
 	sql := filepath.Join(directory, "queries.sql")
 	for path, content := range map[string]string{
-		schema: "CREATE TABLE t (id UInt8, v Nullable(Float64), d Decimal(9, 2), s Nullable(String), f32 Float32, a SimpleAggregateFunction(anyLast, Float64)) ENGINE=Memory",
+		schema: "CREATE TABLE t (id UInt8, v Nullable(Float64), d Decimal(9, 2), s Nullable(String), f32 Float32, a SimpleAggregateFunction(anyLast, Float64)) ENGINE=Memory; CREATE TABLE sorted_runs (bucket UInt8, event_id UInt64, run_id UInt64, version UInt64) ENGINE=ReplacingMergeTree(version) ORDER BY (bucket, event_id)",
 		sql:    runtimeQueries,
 	} {
 		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
@@ -121,6 +121,33 @@ SELECT sumIf(v, id > 0) AS sum_value,
  avgIf(v, id > 0) AS average_value,
  uniqExactIf(v, id > 0) AS unique_value
 FROM t;
+
+-- name: ReadDistinctSortedRuns :many
+-- result: Bucket bucket
+-- result: Runs runs
+SELECT bucket, groupArraySortedDistinct(5)(run_id) AS runs
+FROM sorted_runs FINAL GROUP BY bucket ORDER BY bucket;
+
+-- name: ReadPreUniqueSortedRuns :many
+-- result: Bucket bucket
+-- result: Runs runs
+SELECT bucket, groupArraySorted(5)(run_id) AS runs
+FROM (SELECT DISTINCT bucket, run_id FROM sorted_runs FINAL)
+GROUP BY bucket ORDER BY bucket;
+
+-- name: ReadSortedRunsWithDuplicates :many
+-- result: Bucket bucket
+-- result: Runs runs
+SELECT bucket, groupArraySorted(5)(run_id) AS runs
+FROM sorted_runs FINAL GROUP BY bucket ORDER BY bucket;
+
+-- name: ReadEmptySortedRuns :one
+-- result: Runs runs
+SELECT groupArraySorted(5)(run_id) AS runs FROM sorted_runs FINAL WHERE bucket = 99;
+
+-- name: ReadSortedStrings :one
+-- result: Values values
+SELECT groupArraySorted(5)(s) AS values FROM t;
 `
 
 const runtimeConsumer = `package contracts
@@ -128,6 +155,7 @@ import (
  "crypto/rand"
  "encoding/hex"
  "os"
+ "slices"
  "testing"
  "github.com/ClickHouse/clickhouse-go/v2"
 )
@@ -201,5 +229,37 @@ func TestMeasuredMath(t *testing.T) {
  aggregates, err := New(conn).ReadAggregates(ctx, ReadAggregatesParams{})
  if err != nil { t.Fatal(err) }
  if aggregates.Sum==nil || *aggregates.Sum!=1 || aggregates.ArraySum==nil || *aggregates.ArraySum!=1 || aggregates.NullableSum==nil || *aggregates.NullableSum!=1 || aggregates.Average==nil || *aggregates.Average!=0.5 || aggregates.Unique!=2 { t.Fatalf("wrong generated aggregate values: %+v",aggregates) }
+ if err := conn.Exec(ctx, "CREATE TABLE sorted_runs (bucket UInt8, event_id UInt64, run_id UInt64, version UInt64) ENGINE=ReplacingMergeTree(version) ORDER BY (bucket,event_id)"); err != nil { t.Fatal(err) }
+ if err := conn.Exec(ctx, "INSERT INTO sorted_runs VALUES (1,1,9,1),(1,2,3,1),(1,3,3,1),(2,1,5,1),(2,2,4,1),(2,3,3,1),(2,4,2,1),(2,5,1,1),(2,6,1,1),(3,1,0,1),(3,2,1,1),(3,3,2,1),(3,4,3,1),(3,5,4,1),(3,6,5,1),(3,7,6,1),(3,8,1,1)"); err != nil { t.Fatal(err) }
+ // A separate part ensures FINAL, not an accidental prior background merge,
+ // supplies the latest version and excludes obsolete run id zero.
+ if err := conn.Exec(ctx, "INSERT INTO sorted_runs VALUES (3,1,7,2)"); err != nil { t.Fatal(err) }
+ distinct, err := New(conn).ReadDistinctSortedRuns(ctx, ReadDistinctSortedRunsParams{})
+ if err != nil { t.Fatal(err) }
+ preUnique, err := New(conn).ReadPreUniqueSortedRuns(ctx, ReadPreUniqueSortedRunsParams{})
+ if err != nil { t.Fatal(err) }
+ duplicates, err := New(conn).ReadSortedRunsWithDuplicates(ctx, ReadSortedRunsWithDuplicatesParams{})
+ if err != nil { t.Fatal(err) }
+ want := [][]uint64{{3,9},{1,2,3,4,5},{1,2,3,4,5}}
+ wantDuplicates := [][]uint64{{3,3,9},{1,1,2,3,4},{1,1,2,3,4}}
+ if len(distinct)!=3 || len(preUnique)!=3 || len(duplicates)!=3 { t.Fatal("sorted aggregation lost a group") }
+ // Independent pre-existing formulation, used only as a runtime witness.
+ old, err := conn.Query(ctx, "SELECT bucket, arraySlice(arraySort(groupUniqArray(run_id)),1,5) FROM sorted_runs FINAL GROUP BY bucket ORDER BY bucket")
+ if err != nil { t.Fatal(err) }
+ defer old.Close()
+ i := 0
+ for old.Next() {
+  var bucket uint8
+  var runs []uint64
+  if err := old.Scan(&bucket, &runs); err != nil { t.Fatal(err) }
+  if i>=3 || bucket!=uint8(i+1) || distinct[i].Bucket!=bucket || preUnique[i].Bucket!=bucket || !slices.Equal(runs,want[i]) || !slices.Equal(distinct[i].Runs,want[i]) || !slices.Equal(preUnique[i].Runs,want[i]) || !slices.Equal(duplicates[i].Runs,wantDuplicates[i]) { t.Fatalf("sorted group %d differs: %v",bucket,runs) }
+  i++
+ }
+ if err := old.Err(); err != nil { t.Fatal(err) }
+ if i!=3 { t.Fatal("old query lost a group") }
+ empty, err := New(conn).ReadEmptySortedRuns(ctx, ReadEmptySortedRunsParams{})
+ if err != nil || len(empty.Runs)!=0 { t.Fatalf("empty aggregate: %+v, %v",empty,err) }
+ sortedStrings, err := New(conn).ReadSortedStrings(ctx, ReadSortedStringsParams{})
+ if err != nil || !slices.Equal(sortedStrings.Values, []string{"AbC","Привет café"}) { t.Fatalf("nullable String aggregation: %+v, %v",sortedStrings,err) }
 }
 `

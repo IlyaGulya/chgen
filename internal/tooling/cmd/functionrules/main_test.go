@@ -26,7 +26,7 @@ func TestArgumentCoverageCLIReportsBothProfilesAndWrapperGrid(t *testing.T) {
 	if err := json.Unmarshal(data, &report); err != nil {
 		t.Fatal(err)
 	}
-	if len(report.Evidence) != 2 || report.WrapperGrid == nil || report.WrapperGrid.Total != 10629 || report.Counts["build_dependent_refusal"] != 21 {
+	if len(report.Evidence) != 2 || report.WrapperGrid == nil || report.WrapperGrid.Total != 10716 || report.Counts["build_dependent_refusal"] != 21 {
 		t.Fatalf("incomplete product report")
 	}
 	command = exec.CommandContext(t.Context(), binary, "-argument-coverage", "-wrapper-grid", "missing-grid")

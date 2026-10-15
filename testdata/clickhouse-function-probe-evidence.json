@@ -1,16 +1,16 @@
 {
   "format_version": 2,
-  "catalog_sha256": "8568b10c62ddfba8083e0b91f1ec4689301f4cef54e8148d159091c6c2521f0a",
+  "catalog_sha256": "efe13a0ad25e177a582c4ba8cc7991b6b713ade91e1e29ac31b83f309fc09468",
   "report": {
     "metadata": {
       "server": {
         "version": "25.8.29.51",
-        "server_run": 1791631004,
-        "server_uptime_s": 562
+        "server_run": 1792047405,
+        "server_uptime_s": 702
       },
       "fixture_hash": "d2452f830bd8ef51541c93d4f2f881ee76d4b1f6d2f951dc17cc8d8133c052d2",
       "seed_hash": "92d8066c8fa76055871158c665f36ddd75e6c6512d8f05ec38a720cbe014c7d9",
-      "matrix_hash": "8a7696b559ecebdb79758a7f2ac6f1ae1543f8b217aa558357b6ae522c9f5647",
+      "matrix_hash": "3184d1c656ed113b6585e3d81ad1684e2eb7e996054afeec756dc1dc802ca2ad",
       "fixture_columns": [
         {
           "table": "t",
@@ -18966,6 +18966,990 @@
       {
         "id": "grouparrayif/legal_result/a2/p-1",
         "expression": "groupArrayIf(i8, i32 \u003e 1)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorted/illegal_arity/a0/p-1",
+        "expression": "groupArraySorted()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function groupArraySorted rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorted/illegal_arity/a2/p-1",
+        "expression": "groupArraySorted(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function groupArraySorted rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorted/illegal_parameter_domain/a1/p-1",
+        "expression": "groupArraySorted(i8)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function groupArraySorted parameter argument 1 needs a constant integer; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 36
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 36
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorted/illegal_parameter_value/a1/p-1",
+        "expression": "groupArraySorted(0)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function groupArraySorted parameter 1 must be from 1 through 1.6777215e+07; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 36
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 36
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorted/legal/a1/p0",
+        "expression": "groupArraySorted(5)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorted/legal_parameter/a1/p-1",
+        "expression": "groupArraySorted(1)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorted/legal_parameters/a1/p-1",
+        "expression": "groupArraySorted(5)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorted/legal_placement/a1/p-1",
+        "expression": "groupArraySorted(5)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorted/legal_result/a1/p-1",
+        "expression": "groupArraySorted(5)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinct/illegal_arity/a0/p-1",
+        "expression": "groupArraySortedDistinct()",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function groupArraySortedDistinct rejects argument position 1: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinct/illegal_arity/a2/p-1",
+        "expression": "groupArraySortedDistinct(i8, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function groupArraySortedDistinct rejects argument position 3: it accepts 1 argument; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 42
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinct/illegal_parameter_domain/a1/p-1",
+        "expression": "groupArraySortedDistinct(i8)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function groupArraySortedDistinct parameter argument 1 needs a constant integer; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 36
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 36
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinct/illegal_parameter_value/a1/p-1",
+        "expression": "groupArraySortedDistinct(0)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function groupArraySortedDistinct parameter 1 must be from 1 through 1.6777215e+07; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 36
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 36
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinct/legal/a1/p0",
+        "expression": "groupArraySortedDistinct(5)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinct/legal_parameter/a1/p-1",
+        "expression": "groupArraySortedDistinct(1)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinct/legal_parameters/a1/p-1",
+        "expression": "groupArraySortedDistinct(5)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinct/legal_placement/a1/p-1",
+        "expression": "groupArraySortedDistinct(5)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinct/legal_result/a1/p-1",
+        "expression": "groupArraySortedDistinct(5)(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinctif/illegal_arity/a1/p-1",
+        "expression": "groupArraySortedDistinctIf(i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function groupArraySortedDistinctIf rejects argument position 2: it accepts these argument counts: 2; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinctif/illegal_arity/a3/p-1",
+        "expression": "groupArraySortedDistinctIf(i8, i32 \u003e 1, i8)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function groupArraySortedDistinctIf takes the last argument as the -If condition, and the server needs a UInt8 there, but the argument is Int8; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 43
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinctif/illegal_parameter_domain/a1/p-1",
+        "expression": "groupArraySortedDistinctIf(i8)(i8, i32 \u003e 1)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function groupArraySortedDistinctIf parameter argument 1 needs a constant integer; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 36
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 36
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinctif/illegal_parameter_value/a1/p-1",
+        "expression": "groupArraySortedDistinctIf(0)(i8, i32 \u003e 1)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "illegal",
+        "chgen": {
+          "error": "function groupArraySortedDistinctIf parameter 1 must be from 1 through 1.6777215e+07; use a supported expression or add a measured type rule; -- result: changes Go mapping, not ClickHouse type inference"
+        },
+        "server_analysis": {
+          "refusal_class": "clickhouse_refused",
+          "error_code": 36
+        },
+        "server_execution": {
+          "ran": false,
+          "refusal_class": "clickhouse_refused",
+          "error_code": 36
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinctif/legal/a2/p0",
+        "expression": "groupArraySortedDistinctIf(5)(i8, i32 \u003e 1)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinctif/legal/a2/p1",
+        "expression": "groupArraySortedDistinctIf(5)(i8, i32 \u003e 1)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinctif/legal_parameter/a1/p-1",
+        "expression": "groupArraySortedDistinctIf(1)(i8, i32 \u003e 1)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinctif/legal_parameters/a2/p-1",
+        "expression": "groupArraySortedDistinctIf(5)(i8, i32 \u003e 1)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinctif/legal_placement/a2/p-1",
+        "expression": "groupArraySortedDistinctIf(5)(i8, i32 \u003e 1)",
+        "table": "t",
+        "fixture": "current-fixture",
+        "expectation": "legal",
+        "chgen": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_analysis": {
+          "raw": "Array(Int8)",
+          "canonical": {
+            "Name": "Array",
+            "Args": [
+              {
+                "Label": "",
+                "Type": {
+                  "Name": "Int8",
+                  "Args": null
+                },
+                "Literal": ""
+              }
+            ]
+          }
+        },
+        "server_execution": {
+          "ran": true
+        },
+        "native": {
+          "supported": false
+        }
+      },
+      {
+        "id": "grouparraysorteddistinctif/legal_result/a2/p-1",
+        "expression": "groupArraySortedDistinctIf(5)(i8, i32 \u003e 1)",
         "table": "t",
         "fixture": "current-fixture",
         "expectation": "legal",
@@ -51602,6 +52586,22 @@
     "grouparrayif/legal_parameters/a2/p-1": "Array(Int8)",
     "grouparrayif/legal_placement/a2/p-1": "Array(Int8)",
     "grouparrayif/legal_result/a2/p-1": "Array(Int8)",
+    "grouparraysorted/legal/a1/p0": "Array(Int8)",
+    "grouparraysorted/legal_parameter/a1/p-1": "Array(Int8)",
+    "grouparraysorted/legal_parameters/a1/p-1": "Array(Int8)",
+    "grouparraysorted/legal_placement/a1/p-1": "Array(Int8)",
+    "grouparraysorted/legal_result/a1/p-1": "Array(Int8)",
+    "grouparraysorteddistinct/legal/a1/p0": "Array(Int8)",
+    "grouparraysorteddistinct/legal_parameter/a1/p-1": "Array(Int8)",
+    "grouparraysorteddistinct/legal_parameters/a1/p-1": "Array(Int8)",
+    "grouparraysorteddistinct/legal_placement/a1/p-1": "Array(Int8)",
+    "grouparraysorteddistinct/legal_result/a1/p-1": "Array(Int8)",
+    "grouparraysorteddistinctif/legal/a2/p0": "Array(Int8)",
+    "grouparraysorteddistinctif/legal/a2/p1": "Array(Int8)",
+    "grouparraysorteddistinctif/legal_parameter/a1/p-1": "Array(Int8)",
+    "grouparraysorteddistinctif/legal_parameters/a2/p-1": "Array(Int8)",
+    "grouparraysorteddistinctif/legal_placement/a2/p-1": "Array(Int8)",
+    "grouparraysorteddistinctif/legal_result/a2/p-1": "Array(Int8)",
     "groupbitand/legal/a1/p0": "Int8",
     "groupbitand/legal_placement/a1/p-1": "Int8",
     "groupbitand/legal_result/a1/p-1": "Int8",

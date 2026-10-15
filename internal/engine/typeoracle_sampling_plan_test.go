@@ -64,6 +64,12 @@ var currentWindowSamplingExpansion = []string{
 	"last_value_respect_nulls", "lastvaluerespectnulls",
 }
 
+// These required-limit aggregates are measured by the function probe catalog,
+// wrapper grid and generated-code runtime tests; the original baseline stays frozen.
+var currentAggregateSamplingExpansion = []string{
+	"grouparraysorted", "grouparraysorteddistinct", "grouparraysorteddistinctif",
+}
+
 var requiredSamplingSemanticFamilies = []string{
 	"common-supertype-scalar", "context-dependent-scalar", "conversion-scalar",
 	"dedicated-aggregate", "dedicated-lambda", "dedicated-parametric-aggregate",
@@ -97,7 +103,7 @@ func expectedCurrentSamplingRegistryShape(t *testing.T) samplingRegistryShape {
 	return samplingRegistryShape{
 		// currentDatabase is a zero-argument measured scalar with no argument domain.
 		Scalar:           samplingRegistryBaseline.Scalar + len(currentScalarSamplingExpansion) + measured + 1,
-		Aggregate:        samplingRegistryBaseline.Aggregate,
+		Aggregate:        samplingRegistryBaseline.Aggregate + len(currentAggregateSamplingExpansion),
 		Window:           samplingRegistryBaseline.Window + len(currentWindowSamplingExpansion),
 		IllegalScalar:    samplingRegistryBaseline.IllegalScalar + len(currentScalarSamplingExpansion) + measured + 1,
 		IllegalAggregate: samplingRegistryBaseline.IllegalAggregate,
@@ -726,6 +732,19 @@ func TestCurrentSamplingExpansionIsIntendedAndReachable(t *testing.T) {
 		}
 		if call, rendered := candidate.renderCall(samplingLaneRand(42, "expansion:"+name), -1); !rendered || call == "" {
 			t.Errorf("scalar expansion %s cannot render a legal call", name)
+		}
+	}
+	for _, name := range currentAggregateSamplingExpansion {
+		candidate, present := source.drawIndex[name]
+		if !present || candidate.spec.place != placementAggregate || !candidate.writable() {
+			t.Errorf("aggregate expansion %s is not a writable aggregate candidate", name)
+			continue
+		}
+		if generatedFunctionSemanticFamilies[name] != "dedicated-parametric-aggregate" {
+			t.Errorf("aggregate expansion %s lost its measured family", name)
+		}
+		if call, rendered := candidate.renderCall(samplingLaneRand(42, "expansion:"+name), -1); !rendered || !strings.Contains(call, "(5)(") {
+			t.Errorf("aggregate expansion %s cannot render its required parameter: %s", name, call)
 		}
 	}
 	for _, name := range currentWindowSamplingExpansion {

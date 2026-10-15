@@ -634,7 +634,7 @@ func TestCombinableBaseAggregatesHaveARule(t *testing.T) {
 	bases := []string{
 		"sum", "min", "max", "any", "anylast", "avg",
 		"argmin", "argmax", "count", "uniq", "uniqexact", "uniqcombined",
-		"quantile", "median", "grouparray", "groupuniqarray",
+		"quantile", "median", "grouparray", "groupuniqarray", "grouparraysorted",
 		"groupbitand", "groupbitor", "groupbitxor",
 	}
 	for _, base := range bases {

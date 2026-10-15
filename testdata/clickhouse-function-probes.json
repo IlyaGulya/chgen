@@ -8971,6 +8971,387 @@
       ]
     },
     {
+      "name": "grouparraysorted",
+      "family": "dedicated-parametric-aggregate",
+      "probe_recipe": "aggregate-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type",
+        "placement",
+        "parameters"
+      ],
+      "spelling": "groupArraySorted",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {
+            "prefix": [
+              "constant_integer"
+            ]
+          }
+        ],
+        "constant_ranges": [
+          {
+            "parameter": true,
+            "position": 0,
+            "minimum": 1,
+            "maximum": 16777215
+          }
+        ],
+        "placement": "aggregate",
+        "allow_bare": true,
+        "allow_over": true,
+        "evidence": "clickhouse-25.8.29.51/registry-real-columns"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "grouparraysorted/legal/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "grouparraysorted/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySorted(5)(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorted/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "groupArraySorted(5)(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorted/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "groupArraySorted()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "grouparraysorted/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "groupArraySorted(i8, i8)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "grouparraysorted/legal_placement/a1/p-1",
+          "kind": "legal_placement",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySorted(5)(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorted/legal_parameters/a1/p-1",
+          "kind": "legal_parameters",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySorted(5)(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorted/legal_parameter/a1/p-1",
+          "kind": "legal_parameter",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySorted(1)(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorted/illegal_parameter_domain/a1/p-1",
+          "kind": "illegal_parameter_domain",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySorted(i8)(i8)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "grouparraysorted/illegal_parameter_value/a1/p-1",
+          "kind": "illegal_parameter_value",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySorted(0)(i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
+      "name": "grouparraysorteddistinct",
+      "family": "dedicated-parametric-aggregate",
+      "probe_recipe": "aggregate-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type",
+        "placement",
+        "parameters"
+      ],
+      "spelling": "groupArraySortedDistinct",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {
+            "prefix": [
+              "constant_integer"
+            ]
+          }
+        ],
+        "constant_ranges": [
+          {
+            "parameter": true,
+            "position": 0,
+            "minimum": 1,
+            "maximum": 16777215
+          }
+        ],
+        "placement": "aggregate",
+        "allow_bare": true,
+        "allow_over": true,
+        "evidence": "clickhouse-25.8.29.51/registry-real-columns"
+      },
+      "positions": [
+        {
+          "arity": 1,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "grouparraysorteddistinct/legal/a1/p0"
+        }
+      ],
+      "probes": [
+        {
+          "id": "grouparraysorteddistinct/legal_result/a1/p-1",
+          "kind": "legal_result",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySortedDistinct(5)(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorteddistinct/legal/a1/p0",
+          "kind": "legal_domain",
+          "arity": 1,
+          "sql": "groupArraySortedDistinct(5)(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorteddistinct/illegal_arity/a0/p-1",
+          "kind": "illegal_arity",
+          "arity": 0,
+          "position": -1,
+          "sql": "groupArraySortedDistinct()",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "grouparraysorteddistinct/illegal_arity/a2/p-1",
+          "kind": "illegal_arity",
+          "arity": 2,
+          "position": -1,
+          "sql": "groupArraySortedDistinct(i8, i8)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "grouparraysorteddistinct/legal_placement/a1/p-1",
+          "kind": "legal_placement",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySortedDistinct(5)(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorteddistinct/legal_parameters/a1/p-1",
+          "kind": "legal_parameters",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySortedDistinct(5)(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorteddistinct/legal_parameter/a1/p-1",
+          "kind": "legal_parameter",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySortedDistinct(1)(i8)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorteddistinct/illegal_parameter_domain/a1/p-1",
+          "kind": "illegal_parameter_domain",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySortedDistinct(i8)(i8)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "grouparraysorteddistinct/illegal_parameter_value/a1/p-1",
+          "kind": "illegal_parameter_value",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySortedDistinct(0)(i8)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
+      "name": "grouparraysorteddistinctif",
+      "family": "dedicated-parametric-aggregate",
+      "probe_recipe": "aggregate-signature",
+      "required_axes": [
+        "arity",
+        "argument_domain",
+        "result_type",
+        "placement",
+        "parameters"
+      ],
+      "spelling": "groupArraySortedDistinctIf",
+      "signature": {
+        "forms": [
+          {
+            "prefix": [
+              "value",
+              "predicate"
+            ]
+          }
+        ],
+        "parameter_forms": [
+          {
+            "prefix": [
+              "constant_integer"
+            ]
+          }
+        ],
+        "constant_ranges": [
+          {
+            "parameter": true,
+            "position": 0,
+            "minimum": 1,
+            "maximum": 16777215
+          }
+        ],
+        "placement": "aggregate",
+        "allow_bare": true,
+        "allow_over": true,
+        "evidence": "clickhouse-25.8.29.51/registry-real-columns"
+      },
+      "positions": [
+        {
+          "arity": 2,
+          "position": 0,
+          "sort": "value",
+          "legal_probe_id": "grouparraysorteddistinctif/legal/a2/p0"
+        },
+        {
+          "arity": 2,
+          "position": 1,
+          "sort": "predicate",
+          "legal_probe_id": "grouparraysorteddistinctif/legal/a2/p1"
+        }
+      ],
+      "probes": [
+        {
+          "id": "grouparraysorteddistinctif/legal_result/a2/p-1",
+          "kind": "legal_result",
+          "arity": 2,
+          "position": -1,
+          "sql": "groupArraySortedDistinctIf(5)(i8, i32 \u003e 1)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorteddistinctif/legal/a2/p0",
+          "kind": "legal_domain",
+          "arity": 2,
+          "sql": "groupArraySortedDistinctIf(5)(i8, i32 \u003e 1)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorteddistinctif/legal/a2/p1",
+          "kind": "legal_domain",
+          "arity": 2,
+          "position": 1,
+          "sql": "groupArraySortedDistinctIf(5)(i8, i32 \u003e 1)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorteddistinctif/illegal_arity/a1/p-1",
+          "kind": "illegal_arity",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySortedDistinctIf(i8)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "grouparraysorteddistinctif/illegal_arity/a3/p-1",
+          "kind": "illegal_arity",
+          "arity": 3,
+          "position": -1,
+          "sql": "groupArraySortedDistinctIf(i8, i32 \u003e 1, i8)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "grouparraysorteddistinctif/legal_placement/a2/p-1",
+          "kind": "legal_placement",
+          "arity": 2,
+          "position": -1,
+          "sql": "groupArraySortedDistinctIf(5)(i8, i32 \u003e 1)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorteddistinctif/legal_parameters/a2/p-1",
+          "kind": "legal_parameters",
+          "arity": 2,
+          "position": -1,
+          "sql": "groupArraySortedDistinctIf(5)(i8, i32 \u003e 1)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorteddistinctif/legal_parameter/a1/p-1",
+          "kind": "legal_parameter",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySortedDistinctIf(1)(i8, i32 \u003e 1)",
+          "expected_chgen": "accept"
+        },
+        {
+          "id": "grouparraysorteddistinctif/illegal_parameter_domain/a1/p-1",
+          "kind": "illegal_parameter_domain",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySortedDistinctIf(i8)(i8, i32 \u003e 1)",
+          "expected_chgen": "refuse"
+        },
+        {
+          "id": "grouparraysorteddistinctif/illegal_parameter_value/a1/p-1",
+          "kind": "illegal_parameter_value",
+          "arity": 1,
+          "position": -1,
+          "sql": "groupArraySortedDistinctIf(0)(i8, i32 \u003e 1)",
+          "expected_chgen": "refuse"
+        }
+      ]
+    },
+    {
       "name": "groupbitand",
       "family": "dedicated-aggregate",
       "probe_recipe": "aggregate-signature",

@@ -735,6 +735,7 @@ func combinatorBaseSpellings() []string {
 		"argMin", "argMax", "count", "uniq", "uniqExact", "uniqCombined",
 		"quantile", "median", "groupArray", "groupUniqArray",
 		"groupBitAnd", "groupBitOr", "groupBitXor",
+		"groupArraySorted",
 	}
 }
 
@@ -797,6 +798,27 @@ func renderCombinatorForm(base, suffix, argument, arrayArgument string) (combina
 		return combinatorForm{}, false
 	}
 	name := base + spelling
+	parameter := ""
+	if signature, found := functionSignatureFor(strings.ToLower(base)); found {
+		parameters := functionSignature{forms: signature.parameterForms}
+		if _, acceptsEmpty := parameters.sortsForArity(0); !acceptsEmpty {
+			fixture, found := combGridBaseFixtureFor(base)
+			if !found || fixture.parameter == "" {
+				return combinatorForm{}, false
+			}
+			parameter = fixture.parameter
+		}
+	}
+	call := func(arguments string) string {
+		if parameter != "" {
+			return name + "(" + parameter + ")(" + arguments + ")"
+		}
+		return name + "(" + arguments + ")"
+	}
+	resampleParameters := "0, 10, 1"
+	if parameter != "" {
+		resampleParameters = parameter + ", " + resampleParameters
+	}
 	switch suffix {
 	case "merge", "mergestate":
 		// The state column of the fixture carries uniq, thus uniq is
@@ -808,7 +830,7 @@ func renderCombinatorForm(base, suffix, argument, arrayArgument string) (combina
 		}
 		return combinatorForm{
 			kind: "registry-comb-" + name,
-			sql:  fmt.Sprintf("%s(agg)", name),
+			sql:  call("agg"),
 		}, true
 	case "ifmerge", "ifmergestate":
 		// -IfMerge and -IfMergeState read a state that an -If form
@@ -825,7 +847,7 @@ func renderCombinatorForm(base, suffix, argument, arrayArgument string) (combina
 		}
 		return combinatorForm{
 			kind: "registry-comb-" + name,
-			sql:  fmt.Sprintf("%s(aggif)", name),
+			sql:  call("aggif"),
 		}, true
 	case "array":
 		if arrayArgument == "" {
@@ -833,7 +855,7 @@ func renderCombinatorForm(base, suffix, argument, arrayArgument string) (combina
 		}
 		return combinatorForm{
 			kind: "registry-comb-" + name,
-			sql:  fmt.Sprintf("%s(%s)", name, arrayArgument),
+			sql:  call(arrayArgument),
 		}, true
 	case "arrayif":
 		// -ArrayIf is the CHAIN Array + If: the base aggregate reads the
@@ -845,12 +867,12 @@ func renderCombinatorForm(base, suffix, argument, arrayArgument string) (combina
 		}
 		return combinatorForm{
 			kind: "registry-comb-" + name,
-			sql:  fmt.Sprintf("%s(%s, i32 > 1)", name, arrayArgument),
+			sql:  call(arrayArgument + ", i32 > 1"),
 		}, true
 	case "resample":
 		return combinatorForm{
 			kind: "registry-comb-" + name,
-			sql:  fmt.Sprintf("%s(0, 10, 1)(%s, i8)", name, argument),
+			sql:  fmt.Sprintf("%s(%s)(%s, i8)", name, resampleParameters, argument),
 		}, true
 	case "resampleif":
 		// -ResampleIf is the CHAIN Resample + If: the resample key comes
@@ -859,7 +881,7 @@ func renderCombinatorForm(base, suffix, argument, arrayArgument string) (combina
 		// Array(Int64). See the regression.
 		return combinatorForm{
 			kind: "registry-comb-" + name,
-			sql:  fmt.Sprintf("%s(0, 10, 1)(%s, i8, i32 > 1)", name, argument),
+			sql:  fmt.Sprintf("%s(%s)(%s, i8, i32 > 1)", name, resampleParameters, argument),
 		}, true
 	case "if", "stateif", "ifstate", "ifornull", "ifordefault":
 		// -StateIf and -IfState take the same trailing condition
@@ -882,12 +904,12 @@ func renderCombinatorForm(base, suffix, argument, arrayArgument string) (combina
 		// -IfOrNull and -IfOrDefault are new for the regression.
 		return combinatorForm{
 			kind: "registry-comb-" + name,
-			sql:  fmt.Sprintf("%s(%s, i32 > 1)", name, argument),
+			sql:  call(argument + ", i32 > 1"),
 		}, true
 	default:
 		return combinatorForm{
 			kind: "registry-comb-" + name,
-			sql:  fmt.Sprintf("%s(%s)", name, argument),
+			sql:  call(argument),
 		}, true
 	}
 }
@@ -993,9 +1015,9 @@ func TestCombinatorLaneSpellsTheProduct(t *testing.T) {
 	if spelled == 0 {
 		t.Fatal("the lane spelled no cell at all")
 	}
-	// The lane spells fourteen non-state-limited suffixes for all nineteen
+	// The lane spells fourteen non-state-limited suffixes for all twenty
 	// bases. Its four Merge forms each reach one fixture state.
-	const wantSpelled = 270
+	const wantSpelled = 284
 	if spelled != wantSpelled {
 		t.Errorf("the lane spells %d cells, want the measured %d; "+
 			"a change moved the product and the docstring above needs a fresh measurement",

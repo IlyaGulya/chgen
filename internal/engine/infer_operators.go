@@ -419,6 +419,7 @@ func isAggregateFunctionName(name string) bool {
 	case "count", "countif", "uniq", "uniqexact", "uniqexactif",
 		"uniqcombined", "countdistinct",
 		"grouparray", "grouparrayif", "groupuniqarray", "groupuniqarrayif",
+		"grouparraysorted", "grouparraysorteddistinct", "grouparraysorteddistinctif",
 		"quantilestate", "quantilestateif":
 		return true
 	}

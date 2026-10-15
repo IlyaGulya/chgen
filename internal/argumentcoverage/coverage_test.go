@@ -66,14 +66,14 @@ func TestWrapperCoverageKeepsMeasuredCoordinatesAndRejectsCorruption(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	if report.Total != 10629 || report.Counts["CHGEN_REFUSES_SERVER_ACCEPTS"] != 819 {
+	if report.Total != 10716 || report.Counts["CHGEN_REFUSES_SERVER_ACCEPTS"] != 819 {
 		t.Fatalf("lost cells: %+v", report.Counts)
 	}
 	if report.EntryCounts["fn/reverse"]["AGREE"] == 0 {
 		t.Fatal("grid per-function coverage missing")
 	}
 	for _, mutation := range []string{
-		strings.Replace(string(data), "# cells\t10629", "# cells\t1", 1),
+		strings.Replace(string(data), "# cells\t10716", "# cells\t1", 1),
 		strings.Replace(string(data), "fn/abs/bare/arr\tBOTH_REFUSE", "fn/abs/bare/arr\tUNKNOWN", 1),
 		strings.Replace(string(data), "BOTH_REFUSE\t<refused>\t43\t<refused>", "BOTH_REFUSE\tFloat64\t43\t<refused>", 1),
 		string(data) + "fn/abs/bare/arr\tBOTH_REFUSE\t<refused>\t43\t<refused>\tabs(c_bare_arr)\n",

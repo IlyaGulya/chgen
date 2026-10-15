@@ -460,7 +460,7 @@ func buildParameterVerdicts() map[parameterVerdictKey]parameterVerdict {
 	// about is familyArrayElement. The element carries its own parameters
 	// and groupArrayElementType builds it, so one KEEP row covers the
 	// shape.
-	for _, name := range []string{"grouparray", "grouparrayif"} {
+	for _, name := range []string{"grouparray", "grouparrayif", "grouparraysorted", "grouparraysorteddistinct", "grouparraysorteddistinctif"} {
 		table[parameterVerdictKey{rule: name, family: familyArrayElement}] = verdictKeep
 	}
 

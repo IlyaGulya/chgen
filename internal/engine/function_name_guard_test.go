@@ -94,6 +94,8 @@ var serverFunctionNamesLowered = []string{
 // instead of Code: 46, for example countIf(1, 1=1) is UInt64 and
 // quantileState(1) is AggregateFunction(quantile, UInt8).
 var serverCombinatorNamesLowered = []string{
+	"grouparraysorteddistinct",
+	"grouparraysorteddistinctif",
 	"argmaxif", "argminif", "avgif", "countdistinct", "countif",
 	"grouparrayif", "groupuniqarrayif", "maxif", "medianif", "minif",
 	"quantileif", "quantilestate", "quantilestateif", "sumif",

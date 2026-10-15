@@ -7,26 +7,26 @@
 # chgen. A hand-written value is a second copy of a rule and it drifts.
 # Fields: id, verdict, server_type, server_code, chgen_type, sql
 # clickhouse_version	25.8.29.51
-# cells	10629
-# family	fn	7464
+# cells	10716
+# family	fn	7551
 # family	hof	405
 # family	op	561
 # family	simplestate	128
 # family	sized	1711
 # family	var	360
-# verdict	AGREE	4920
+# verdict	AGREE	5007
 # verdict	BOTH_REFUSE	4760
 # verdict	CHGEN_REFUSES_SERVER_ACCEPTS	819
 # verdict	EXCLUDED	130
 # wrapper	(no single wrapper)	173
-# wrapper	bare	2742
-# wrapper	lc	715
-# wrapper	lcn	715
-# wrapper	n	720
-# wrapper	saf	2145
-# wrapper	safarr	1984
-# wrapper	saflc	715
-# wrapper	safn	720
+# wrapper	bare	2763
+# wrapper	lc	721
+# wrapper	lcn	721
+# wrapper	n	726
+# wrapper	saf	2163
+# wrapper	safarr	2002
+# wrapper	saflc	721
+# wrapper	safn	726
 # legal_but_unenumerated	0
 fn/abs/bare/arr	BOTH_REFUSE	<refused>	43	<refused>	abs(c_bare_arr)
 fn/abs/bare/i32	AGREE	UInt32		UInt32	abs(c_bare_i32)
@@ -2440,6 +2440,93 @@ fn/grouparrayif/saflc/i32	AGREE	Array(Int32)		Array(Int32)	groupArrayIf(c_saflc_
 fn/grouparrayif/saflc/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArrayIf(c_saflc_u64, c_bare_i32 > 1)
 fn/grouparrayif/safn/i32	AGREE	Array(Int32)		Array(Int32)	groupArrayIf(c_safn_i32, c_bare_i32 > 1)
 fn/grouparrayif/safn/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArrayIf(c_safn_u64, c_bare_i32 > 1)
+fn/grouparraysorted/bare/arr	AGREE	Array(Array(Int32))		Array(Array(Int32))	groupArraySorted(5)(c_bare_arr)
+fn/grouparraysorted/bare/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySorted(5)(c_bare_i32)
+fn/grouparraysorted/bare/lcarr	AGREE	Array(Array(String))		Array(Array(String))	groupArraySorted(5)(c_bare_lcarr)
+fn/grouparraysorted/bare/map	AGREE	Array(Map(String,Int64))		Array(Map(String,Int64))	groupArraySorted(5)(c_bare_map)
+fn/grouparraysorted/bare/narr	AGREE	Array(Array(Nullable(Int32)))		Array(Array(Nullable(Int32)))	groupArraySorted(5)(c_bare_narr)
+fn/grouparraysorted/bare/tup	AGREE	Array(Tuple(Int32,String))		Array(Tuple(Int32,String))	groupArraySorted(5)(c_bare_tup)
+fn/grouparraysorted/bare/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySorted(5)(c_bare_u64)
+fn/grouparraysorted/lc/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySorted(5)(c_lc_i32)
+fn/grouparraysorted/lc/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySorted(5)(c_lc_u64)
+fn/grouparraysorted/lcn/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySorted(5)(c_lcn_i32)
+fn/grouparraysorted/lcn/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySorted(5)(c_lcn_u64)
+fn/grouparraysorted/n/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySorted(5)(c_n_i32)
+fn/grouparraysorted/n/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySorted(5)(c_n_u64)
+fn/grouparraysorted/saf/arr	AGREE	Array(Array(Int32))		Array(Array(Int32))	groupArraySorted(5)(c_saf_arr)
+fn/grouparraysorted/saf/i32	AGREE	Array(SimpleAggregateFunction(anyLast,Int32))		Array(SimpleAggregateFunction(anyLast,Int32))	groupArraySorted(5)(c_saf_i32)
+fn/grouparraysorted/saf/map	AGREE	Array(Map(String,Int64))		Array(Map(String,Int64))	groupArraySorted(5)(c_saf_map)
+fn/grouparraysorted/saf/narr	AGREE	Array(Array(Nullable(Int32)))		Array(Array(Nullable(Int32)))	groupArraySorted(5)(c_saf_narr)
+fn/grouparraysorted/saf/tup	AGREE	Array(Tuple(Int32,String))		Array(Tuple(Int32,String))	groupArraySorted(5)(c_saf_tup)
+fn/grouparraysorted/saf/u64	AGREE	Array(SimpleAggregateFunction(anyLast,UInt64))		Array(SimpleAggregateFunction(anyLast,UInt64))	groupArraySorted(5)(c_saf_u64)
+fn/grouparraysorted/safarr/arr	AGREE	Array(Array(Array(Int32)))		Array(Array(Array(Int32)))	groupArraySorted(5)(c_safarr_arr)
+fn/grouparraysorted/safarr/i32	AGREE	Array(Array(Int32))		Array(Array(Int32))	groupArraySorted(5)(c_safarr_i32)
+fn/grouparraysorted/safarr/map	AGREE	Array(Array(Map(String,Int64)))		Array(Array(Map(String,Int64)))	groupArraySorted(5)(c_safarr_map)
+fn/grouparraysorted/safarr/narr	AGREE	Array(Array(Array(Nullable(Int32))))		Array(Array(Array(Nullable(Int32))))	groupArraySorted(5)(c_safarr_narr)
+fn/grouparraysorted/safarr/tup	AGREE	Array(Array(Tuple(Int32,String)))		Array(Array(Tuple(Int32,String)))	groupArraySorted(5)(c_safarr_tup)
+fn/grouparraysorted/safarr/u64	AGREE	Array(Array(UInt64))		Array(Array(UInt64))	groupArraySorted(5)(c_safarr_u64)
+fn/grouparraysorted/saflc/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySorted(5)(c_saflc_i32)
+fn/grouparraysorted/saflc/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySorted(5)(c_saflc_u64)
+fn/grouparraysorted/safn/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySorted(5)(c_safn_i32)
+fn/grouparraysorted/safn/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySorted(5)(c_safn_u64)
+fn/grouparraysorteddistinct/bare/arr	AGREE	Array(Array(Int32))		Array(Array(Int32))	groupArraySortedDistinct(5)(c_bare_arr)
+fn/grouparraysorteddistinct/bare/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySortedDistinct(5)(c_bare_i32)
+fn/grouparraysorteddistinct/bare/lcarr	AGREE	Array(Array(String))		Array(Array(String))	groupArraySortedDistinct(5)(c_bare_lcarr)
+fn/grouparraysorteddistinct/bare/map	AGREE	Array(Map(String,Int64))		Array(Map(String,Int64))	groupArraySortedDistinct(5)(c_bare_map)
+fn/grouparraysorteddistinct/bare/narr	AGREE	Array(Array(Nullable(Int32)))		Array(Array(Nullable(Int32)))	groupArraySortedDistinct(5)(c_bare_narr)
+fn/grouparraysorteddistinct/bare/tup	AGREE	Array(Tuple(Int32,String))		Array(Tuple(Int32,String))	groupArraySortedDistinct(5)(c_bare_tup)
+fn/grouparraysorteddistinct/bare/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySortedDistinct(5)(c_bare_u64)
+fn/grouparraysorteddistinct/lc/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySortedDistinct(5)(c_lc_i32)
+fn/grouparraysorteddistinct/lc/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySortedDistinct(5)(c_lc_u64)
+fn/grouparraysorteddistinct/lcn/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySortedDistinct(5)(c_lcn_i32)
+fn/grouparraysorteddistinct/lcn/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySortedDistinct(5)(c_lcn_u64)
+fn/grouparraysorteddistinct/n/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySortedDistinct(5)(c_n_i32)
+fn/grouparraysorteddistinct/n/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySortedDistinct(5)(c_n_u64)
+fn/grouparraysorteddistinct/saf/arr	AGREE	Array(Array(Int32))		Array(Array(Int32))	groupArraySortedDistinct(5)(c_saf_arr)
+fn/grouparraysorteddistinct/saf/i32	AGREE	Array(SimpleAggregateFunction(anyLast,Int32))		Array(SimpleAggregateFunction(anyLast,Int32))	groupArraySortedDistinct(5)(c_saf_i32)
+fn/grouparraysorteddistinct/saf/map	AGREE	Array(Map(String,Int64))		Array(Map(String,Int64))	groupArraySortedDistinct(5)(c_saf_map)
+fn/grouparraysorteddistinct/saf/narr	AGREE	Array(Array(Nullable(Int32)))		Array(Array(Nullable(Int32)))	groupArraySortedDistinct(5)(c_saf_narr)
+fn/grouparraysorteddistinct/saf/tup	AGREE	Array(Tuple(Int32,String))		Array(Tuple(Int32,String))	groupArraySortedDistinct(5)(c_saf_tup)
+fn/grouparraysorteddistinct/saf/u64	AGREE	Array(SimpleAggregateFunction(anyLast,UInt64))		Array(SimpleAggregateFunction(anyLast,UInt64))	groupArraySortedDistinct(5)(c_saf_u64)
+fn/grouparraysorteddistinct/safarr/arr	AGREE	Array(Array(Array(Int32)))		Array(Array(Array(Int32)))	groupArraySortedDistinct(5)(c_safarr_arr)
+fn/grouparraysorteddistinct/safarr/i32	AGREE	Array(Array(Int32))		Array(Array(Int32))	groupArraySortedDistinct(5)(c_safarr_i32)
+fn/grouparraysorteddistinct/safarr/map	AGREE	Array(Array(Map(String,Int64)))		Array(Array(Map(String,Int64)))	groupArraySortedDistinct(5)(c_safarr_map)
+fn/grouparraysorteddistinct/safarr/narr	AGREE	Array(Array(Array(Nullable(Int32))))		Array(Array(Array(Nullable(Int32))))	groupArraySortedDistinct(5)(c_safarr_narr)
+fn/grouparraysorteddistinct/safarr/tup	AGREE	Array(Array(Tuple(Int32,String)))		Array(Array(Tuple(Int32,String)))	groupArraySortedDistinct(5)(c_safarr_tup)
+fn/grouparraysorteddistinct/safarr/u64	AGREE	Array(Array(UInt64))		Array(Array(UInt64))	groupArraySortedDistinct(5)(c_safarr_u64)
+fn/grouparraysorteddistinct/saflc/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySortedDistinct(5)(c_saflc_i32)
+fn/grouparraysorteddistinct/saflc/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySortedDistinct(5)(c_saflc_u64)
+fn/grouparraysorteddistinct/safn/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySortedDistinct(5)(c_safn_i32)
+fn/grouparraysorteddistinct/safn/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySortedDistinct(5)(c_safn_u64)
+fn/grouparraysorteddistinctif/bare/arr	AGREE	Array(Array(Int32))		Array(Array(Int32))	groupArraySortedDistinctIf(5)(c_bare_arr, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/bare/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySortedDistinctIf(5)(c_bare_i32, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/bare/lcarr	AGREE	Array(Array(String))		Array(Array(String))	groupArraySortedDistinctIf(5)(c_bare_lcarr, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/bare/map	AGREE	Array(Map(String,Int64))		Array(Map(String,Int64))	groupArraySortedDistinctIf(5)(c_bare_map, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/bare/narr	AGREE	Array(Array(Nullable(Int32)))		Array(Array(Nullable(Int32)))	groupArraySortedDistinctIf(5)(c_bare_narr, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/bare/tup	AGREE	Array(Tuple(Int32,String))		Array(Tuple(Int32,String))	groupArraySortedDistinctIf(5)(c_bare_tup, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/bare/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySortedDistinctIf(5)(c_bare_u64, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/lc/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySortedDistinctIf(5)(c_lc_i32, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/lc/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySortedDistinctIf(5)(c_lc_u64, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/lcn/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySortedDistinctIf(5)(c_lcn_i32, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/lcn/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySortedDistinctIf(5)(c_lcn_u64, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/n/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySortedDistinctIf(5)(c_n_i32, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/n/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySortedDistinctIf(5)(c_n_u64, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/saf/arr	AGREE	Array(Array(Int32))		Array(Array(Int32))	groupArraySortedDistinctIf(5)(c_saf_arr, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/saf/i32	AGREE	Array(SimpleAggregateFunction(anyLast,Int32))		Array(SimpleAggregateFunction(anyLast,Int32))	groupArraySortedDistinctIf(5)(c_saf_i32, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/saf/map	AGREE	Array(Map(String,Int64))		Array(Map(String,Int64))	groupArraySortedDistinctIf(5)(c_saf_map, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/saf/narr	AGREE	Array(Array(Nullable(Int32)))		Array(Array(Nullable(Int32)))	groupArraySortedDistinctIf(5)(c_saf_narr, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/saf/tup	AGREE	Array(Tuple(Int32,String))		Array(Tuple(Int32,String))	groupArraySortedDistinctIf(5)(c_saf_tup, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/saf/u64	AGREE	Array(SimpleAggregateFunction(anyLast,UInt64))		Array(SimpleAggregateFunction(anyLast,UInt64))	groupArraySortedDistinctIf(5)(c_saf_u64, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/safarr/arr	AGREE	Array(Array(Array(Int32)))		Array(Array(Array(Int32)))	groupArraySortedDistinctIf(5)(c_safarr_arr, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/safarr/i32	AGREE	Array(Array(Int32))		Array(Array(Int32))	groupArraySortedDistinctIf(5)(c_safarr_i32, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/safarr/map	AGREE	Array(Array(Map(String,Int64)))		Array(Array(Map(String,Int64)))	groupArraySortedDistinctIf(5)(c_safarr_map, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/safarr/narr	AGREE	Array(Array(Array(Nullable(Int32))))		Array(Array(Array(Nullable(Int32))))	groupArraySortedDistinctIf(5)(c_safarr_narr, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/safarr/tup	AGREE	Array(Array(Tuple(Int32,String)))		Array(Array(Tuple(Int32,String)))	groupArraySortedDistinctIf(5)(c_safarr_tup, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/safarr/u64	AGREE	Array(Array(UInt64))		Array(Array(UInt64))	groupArraySortedDistinctIf(5)(c_safarr_u64, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/saflc/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySortedDistinctIf(5)(c_saflc_i32, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/saflc/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySortedDistinctIf(5)(c_saflc_u64, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/safn/i32	AGREE	Array(Int32)		Array(Int32)	groupArraySortedDistinctIf(5)(c_safn_i32, c_bare_i32 > 1)
+fn/grouparraysorteddistinctif/safn/u64	AGREE	Array(UInt64)		Array(UInt64)	groupArraySortedDistinctIf(5)(c_safn_u64, c_bare_i32 > 1)
 fn/groupbitand/bare/arr	BOTH_REFUSE	<refused>	43	<refused>	groupBitAnd(c_bare_arr)
 fn/groupbitand/bare/i32	AGREE	Int32		Int32	groupBitAnd(c_bare_i32)
 fn/groupbitand/bare/lcarr	BOTH_REFUSE	<refused>	43	<refused>	groupBitAnd(c_bare_lcarr)

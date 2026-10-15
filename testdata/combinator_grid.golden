@@ -7,11 +7,11 @@
 # chgen. A hand-written value is a second copy of a rule and it drifts.
 # Fields: id, verdict, analysis_type, analysis_code, execution_ran, execution_code, chgen_type, sql
 # clickhouse_version	25.8.29.51
-# cells	350
+# cells	368
 # family	negative	8
-# family	product	342
-# verdict	AGREE	324
-# verdict	BOTH_REFUSE	26
+# family	product	360
+# verdict	AGREE	338
+# verdict	BOTH_REFUSE	30
 negative/combinator-order/quantile-ifstate	AGREE	AggregateFunction(quantileIf(0.5), Float64, Bool)		true		AggregateFunction(quantileIf(0.5), Float64, Bool)	quantileIfState(0.5)(c_f64, c_bool)
 negative/combinator-order/quantile-stateif	AGREE	AggregateFunction(quantile(0.5), Float64)		true		AggregateFunction(quantile(0.5), Float64)	quantileStateIf(0.5)(c_f64, c_bool)
 negative/merge-alias/median-over-quantile	AGREE	Float64		true		Float64	medianMerge(0.5)(c_state_quantile)
@@ -146,6 +146,24 @@ product/groupArray/SimpleState	BOTH_REFUSE	<refused>	36	false	36	<refused>	group
 product/groupArray/State	AGREE	AggregateFunction(groupArray, Int32)		true		AggregateFunction(groupArray, Int32)	groupArrayState(c_i32)
 product/groupArray/StateIf	AGREE	AggregateFunction(groupArray, Int32)		true		AggregateFunction(groupArray, Int32)	groupArrayStateIf(c_i32, c_bool)
 product/groupArray/StateOrNull	BOTH_REFUSE	<refused>	43	false	43	<refused>	groupArrayStateOrNull(c_i32)
+product/groupArraySorted/Array	AGREE	Array(Int32)		true		Array(Int32)	groupArraySortedArray(5)(c_arr_i32)
+product/groupArraySorted/ArrayIf	AGREE	Array(Int32)		true		Array(Int32)	groupArraySortedArrayIf(5)(c_arr_i32, c_bool)
+product/groupArraySorted/If	AGREE	Array(Int32)		true		Array(Int32)	groupArraySortedIf(5)(c_i32, c_bool)
+product/groupArraySorted/IfMerge	AGREE	Array(Int32)		true		Array(Int32)	groupArraySortedIfMerge(5)(c_state_grouparraysorted_if)
+product/groupArraySorted/IfMergeState	AGREE	AggregateFunction(groupArraySortedIf(5), Int32, UInt8)		true		AggregateFunction(groupArraySortedIf(5), Int32, UInt8)	groupArraySortedIfMergeState(5)(c_state_grouparraysorted_if)
+product/groupArraySorted/IfOrDefault	AGREE	Array(Int32)		true		Array(Int32)	groupArraySortedIfOrDefault(5)(c_i32, c_bool)
+product/groupArraySorted/IfOrNull	BOTH_REFUSE	<refused>	43	false	43	<refused>	groupArraySortedIfOrNull(5)(c_i32, c_bool)
+product/groupArraySorted/IfState	AGREE	AggregateFunction(groupArraySortedIf(5), Int32, Bool)		true		AggregateFunction(groupArraySortedIf(5), Int32, Bool)	groupArraySortedIfState(5)(c_i32, c_bool)
+product/groupArraySorted/Merge	AGREE	Array(Int32)		true		Array(Int32)	groupArraySortedMerge(5)(c_state_grouparraysorted)
+product/groupArraySorted/MergeState	AGREE	AggregateFunction(groupArraySorted(5), Int32)		true		AggregateFunction(groupArraySorted(5), Int32)	groupArraySortedMergeState(5)(c_state_grouparraysorted)
+product/groupArraySorted/OrDefault	AGREE	Array(Int32)		true		Array(Int32)	groupArraySortedOrDefault(5)(c_i32)
+product/groupArraySorted/OrNull	BOTH_REFUSE	<refused>	43	false	43	<refused>	groupArraySortedOrNull(5)(c_i32)
+product/groupArraySorted/Resample	AGREE	Array(Array(Int32))		true		Array(Array(Int32))	groupArraySortedResample(5, 0, 10, 1)(c_i32, c_u8)
+product/groupArraySorted/ResampleIf	AGREE	Array(Array(Int32))		true		Array(Array(Int32))	groupArraySortedResampleIf(5, 0, 10, 1)(c_i32, c_u8, c_bool)
+product/groupArraySorted/SimpleState	BOTH_REFUSE	<refused>	36	false	36	<refused>	groupArraySortedSimpleState(5)(c_i32)
+product/groupArraySorted/State	AGREE	AggregateFunction(groupArraySorted(5), Int32)		true		AggregateFunction(groupArraySorted(5), Int32)	groupArraySortedState(5)(c_i32)
+product/groupArraySorted/StateIf	AGREE	AggregateFunction(groupArraySorted(5), Int32)		true		AggregateFunction(groupArraySorted(5), Int32)	groupArraySortedStateIf(5)(c_i32, c_bool)
+product/groupArraySorted/StateOrNull	BOTH_REFUSE	<refused>	43	false	43	<refused>	groupArraySortedStateOrNull(5)(c_i32)
 product/groupBitAnd/Array	AGREE	Int32		true		Int32	groupBitAndArray(c_arr_i32)
 product/groupBitAnd/ArrayIf	AGREE	Int32		true		Int32	groupBitAndArrayIf(c_arr_i32, c_bool)
 product/groupBitAnd/If	AGREE	Int32		true		Int32	groupBitAndIf(c_i32, c_bool)

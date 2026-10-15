@@ -100,6 +100,14 @@ func combGridBaseFixtures() []combGridBaseFixture {
 	for _, base := range []string{"groupArray", "groupUniqArray", "groupBitAnd", "groupBitOr", "groupBitXor"} {
 		result = append(result, unary(base, strings.ToLower(base), base))
 	}
+	result = append(result, combGridBaseFixture{
+		base: "groupArraySorted", key: "grouparraysorted", parameter: "5",
+		dataArgs: []string{"c_i32"}, arrayArgs: []string{"c_arr_i32"},
+		stateType:    "AggregateFunction(groupArraySorted(5), Int32)",
+		stateBuild:   "groupArraySortedState(5)(toInt32(1))",
+		ifStateType:  "AggregateFunction(groupArraySortedIf(5), Int32, UInt8)",
+		ifStateBuild: "groupArraySortedIfState(5)(toInt32(1), toUInt8(1))",
+	})
 	return result
 }
 

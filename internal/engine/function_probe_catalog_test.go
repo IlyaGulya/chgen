@@ -783,7 +783,15 @@ func callWithFunctionParameters(t *testing.T, candidate genDrawCandidate, parame
 	if !strings.HasPrefix(call, prefix) {
 		t.Fatalf("parameter call for %s has unsupported syntax %s", candidate.name, call)
 	}
-	return candidate.spec.spelling + "(" + strings.Join(parameters, ", ") + ")(" + strings.TrimPrefix(call, prefix)
+	arguments := strings.TrimPrefix(call, prefix)
+	if candidate.spec.template != "" {
+		// A required-parameter recipe already has name(N)(args). Replace
+		// its parameter list instead of producing name(N)(N)(args).
+		if _, tail, found := strings.Cut(arguments, ")("); found {
+			arguments = tail
+		}
+	}
+	return candidate.spec.spelling + "(" + strings.Join(parameters, ", ") + ")(" + arguments
 }
 
 func placeProbe(call string, place placement) string {

@@ -44,8 +44,8 @@ func TestCombGridBasesMatchTheFuzzLane(t *testing.T) {
 }
 
 func TestCombGridCoversAllMeasuredBasesWithoutStateSkips(t *testing.T) {
-	if got := len(combGridBases()); got != 19 {
-		t.Fatalf("combinator base count = %d, want 19", got)
+	if got := len(combGridBases()); got != 20 {
+		t.Fatalf("combinator base count = %d, want 20", got)
 	}
 	if skipped := combGridSkippedProductCells(); len(skipped) != 0 {
 		t.Fatalf("combinator grid still skips %d state cells: %v", len(skipped), skipped)

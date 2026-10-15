@@ -407,7 +407,7 @@ func parseAggregatePrimitiveSuffix(suffix string) ([]aggregatePrimitive, bool) {
 var aggregateBaseNames = []string{
 	"sum", "min", "max", "any", "anylast", "avg",
 	"argmin", "argmax", "count", "uniq", "uniqexact", "uniqcombined",
-	"quantile", "median", "grouparray", "groupuniqarray",
+	"quantile", "median", "grouparray", "groupuniqarray", "grouparraysorted",
 	"groupbitand", "groupbitor", "groupbitxor",
 }
 
@@ -959,6 +959,14 @@ func inferAggregateCombinatorType(name string, function *clickhouse.FunctionExpr
 func validateAggregateCombinatorCall(base string, combinator aggregateCombinator, function *clickhouse.FunctionExpr, call *CallContext) error {
 	args := call.args
 	displayName := function.Name.Name
+	if spelling := functionRegistry[base].exactSpelling; spelling != "" {
+		for _, primitive := range combinator.primitives {
+			spelling += aggregatePrimitiveSpelling(primitive)
+		}
+		if displayName != spelling {
+			return fmt.Errorf("function %s does not match the measured case-sensitive spelling %s; %s", displayName, spelling, pinTypeHint)
+		}
+	}
 	if err := validateAggregateArgumentPlan(combinator); err != nil {
 		return fmt.Errorf("function %s: %w", displayName, err)
 	}
@@ -1197,6 +1205,8 @@ func baseAggregateDisplayName(base string) string {
 		return "uniqCombined"
 	case "grouparray":
 		return "groupArray"
+	case "grouparraysorted":
+		return "groupArraySorted"
 	case "groupuniqarray":
 		return "groupUniqArray"
 	case "groupbitand":

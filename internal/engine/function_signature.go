@@ -316,6 +316,10 @@ func applyFunctionSignatureOverride(name string, signature functionSignature) fu
 	}
 
 	switch {
+	case name == "grouparraysorted" || name == "grouparraysorteddistinct" || name == "grouparraysorteddistinctif":
+		signature.parameterForms = []signatureForm{fixedSignatureForm(integer)}
+		// ClickHouse 25.8.29.51 requires one limit in [1, 0xFFFFFF].
+		signature.constantRanges = []signatureConstantRange{{parameter: true, position: 0, minimum: 1, maximum: 0xFFFFFF}}
 	case strings.Contains(name, "quantile") || strings.HasPrefix(name, "median"):
 		signature.parameterForms = []signatureForm{fixedSignatureForm(), fixedSignatureForm(argSortConstNumber)}
 		signature.constantRanges = []signatureConstantRange{{parameter: true, position: 0, minimum: 0, maximum: 1}}

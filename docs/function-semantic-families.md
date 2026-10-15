@@ -24,6 +24,22 @@ Neither change relaxes the live legal/illegal witness gates.
 
 ## Function evaluation
 
+`groupArraySorted(N)(value)` is supported with a literal integer limit from
+1 to 16,777,215, measured on ClickHouse 25.8.29.51. It returns an ascending
+`Array(T)` of at most N values, removes top-level Nullable/LowCardinality from
+the element type, and preserves leaf parameters such as DateTime timezones.
+An empty input returns an empty array, not NULL.
+
+It does **not** remove duplicates. Use already unique input, or the explicitly
+supported `groupArraySortedDistinct(N)` / `groupArraySortedDistinctIf(N)` forms
+when distinctness is required. A Distinct combinator does not inherit a bounded
+memory guarantee from the sorted result limit. The generator does not rewrite
+SQL or silently add distinctness. Names use their exact ClickHouse spelling.
+
+The base participates in the existing measured aggregate-combinator path,
+including `groupArraySortedIf(N)`. Required parameters are present in wrapper
+and combinator probes, so an omitted limit cannot masquerade as type coverage.
+
 Ordinary registered calls use one evaluator and one `CallContext`. The context
 caches both argument types and failures in the call's lexical scope. Signature
 validation, domain checks, result evaluation and wrapper transport read that
