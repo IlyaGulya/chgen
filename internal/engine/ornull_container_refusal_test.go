@@ -3,7 +3,7 @@ package engine
 import (
 	"testing"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // The -OrNull combinator puts the aggregate result inside Nullable, thus

@@ -1,6 +1,6 @@
 package engine
 
-import clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+import clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 
 // CallContext owns inference results for one call in one lexical scope.
 // Errors are cached too: validation and result inference must see the same

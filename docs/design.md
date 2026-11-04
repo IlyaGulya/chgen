@@ -337,11 +337,12 @@ Inputs:
 Schema and DDL:
 
 - `%s:%d: RENAME COLUMN is not supported; supported ALTER TABLE operations:
-  ADD COLUMN, MODIFY COLUMN, DROP COLUMN; projection operations ADD
-  PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION and
-  index operations ADD INDEX, MATERIALIZE INDEX, DROP INDEX, CLEAR INDEX are
-  ignored` (one message per unsupported clause, named by its SQL keyword,
-  never by its Go AST type)
+  ADD COLUMN, MODIFY COLUMN, DROP COLUMN, MODIFY ORDER BY, REMOVE TTL, MODIFY
+  SETTING, RESET SETTING; projection operations ADD PROJECTION, MATERIALIZE
+  PROJECTION, DROP PROJECTION, CLEAR PROJECTION, index operations ADD INDEX,
+  MATERIALIZE INDEX, DROP INDEX, CLEAR INDEX, and constraint operations ADD
+  CONSTRAINT are ignored` (one message per unsupported clause, named by its
+  SQL keyword, never by its Go AST type)
 - `%s:%d: DROP TABLE %q targets an unknown table; add IF EXISTS if the table
   may be absent`
 - `%s:%d: DROP DICTIONARY is not supported; supported DROP operations: DROP

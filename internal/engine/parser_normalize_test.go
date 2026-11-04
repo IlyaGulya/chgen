@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // These are the six forms that the former parser fork accepted. The added

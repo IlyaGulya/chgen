@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // combinatorSchema carries the columns that the combinator rules need. The

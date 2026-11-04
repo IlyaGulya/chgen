@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // nestedAggregateSchema holds the columns that the Code 184 cells use.

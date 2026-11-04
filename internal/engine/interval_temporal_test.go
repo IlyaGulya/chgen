@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // These tests pin the temporal type rules added for INTERVAL arithmetic,

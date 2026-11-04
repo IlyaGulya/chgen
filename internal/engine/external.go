@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // ExternalParam describes one request-scoped ClickHouse external table used by

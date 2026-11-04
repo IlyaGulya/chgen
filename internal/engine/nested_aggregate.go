@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // ClickHouse always refuses an aggregate function that appears in the

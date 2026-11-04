@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // renderedNumberStandIn stands for the text that ClickHouse prints for a

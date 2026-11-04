@@ -3,7 +3,7 @@ package engine
 import (
 	"testing"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // These tests pin two rules that decide the type of a large unsigned

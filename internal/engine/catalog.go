@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
 	"github.com/IlyaGulya/chgen/internal/diagnostic"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 const externalMarker = "-- chgen:external"
@@ -319,7 +319,7 @@ func applyCatalogRename(catalogs *SchemaCatalogs, path, content string, statemen
 
 const migrationsTableName = "schema_migrations"
 
-var supportedAlterOperations = "supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN, REMOVE TTL, MODIFY SETTING, RESET SETTING; projection operations ADD PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION and index operations ADD INDEX, MATERIALIZE INDEX, DROP INDEX, CLEAR INDEX are ignored"
+var supportedAlterOperations = "supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN, MODIFY ORDER BY, REMOVE TTL, MODIFY SETTING, RESET SETTING; projection operations ADD PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION, index operations ADD INDEX, MATERIALIZE INDEX, DROP INDEX, CLEAR INDEX, and constraint operations ADD CONSTRAINT are ignored"
 
 func applyCatalogAlter(catalogs *SchemaCatalogs, path, content string, line int, statement *clickhouse.AlterTable) error {
 	if statement.TableIdentifier == nil || statement.TableIdentifier.Table == nil {

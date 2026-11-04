@@ -100,9 +100,9 @@ import (
 	"testing"
 	"time"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
 	"github.com/IlyaGulya/chgen/internal/conformance"
 	"github.com/IlyaGulya/chgen/internal/oraclereport"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // fexpr is one generated expression with its derivation tree, kept for

@@ -9,8 +9,8 @@ require (
 )
 
 require (
-	github.com/AfterShip/clickhouse-sql-parser v0.5.7-0.20260821111739-8ee6ab233f70 // indirect
 	github.com/ClickHouse/ch-go v0.73.0 // indirect
+	github.com/IlyaGulya/clickhouse-sql-parser v0.5.7-0.20261104185850-7e861880ecaf // indirect
 	github.com/andybalholm/brotli v1.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/go-faster/city v1.0.1 // indirect

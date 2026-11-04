@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
 	"github.com/IlyaGulya/chgen/internal/diagnostic"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 type seriesTableRule struct {

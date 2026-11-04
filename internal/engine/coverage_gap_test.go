@@ -3,7 +3,7 @@ package engine
 import (
 	"testing"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // These tests pin the inference rules for the constructs that chgen

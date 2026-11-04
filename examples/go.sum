@@ -1,9 +1,9 @@
-github.com/AfterShip/clickhouse-sql-parser v0.5.7-0.20260821111739-8ee6ab233f70 h1:OhIc7Nqak7mSsv7fz8ghZo0D8npd/DWlIGsk/W6KhfI=
-github.com/AfterShip/clickhouse-sql-parser v0.5.7-0.20260821111739-8ee6ab233f70/go.mod h1:Qi3qvPTfZb/aFwI5V4WFOahgjsLJa4MzVijIAfwOhDw=
 github.com/ClickHouse/ch-go v0.73.0 h1:jsHiGRbQ3sz+gekvDFJF29LWDo5dzbJm5s1h8TWVP2M=
 github.com/ClickHouse/ch-go v0.73.0/go.mod h1:wkFIxrqlXeRJ9cn3r5Fz5Qen9jl5aTMPuGZeuJpANNY=
 github.com/ClickHouse/clickhouse-go/v2 v2.47.0 h1:ZDAzrnKSOPTIsm4tdUNfrii2yc8dk4SVRLC77BR7Z5Q=
 github.com/ClickHouse/clickhouse-go/v2 v2.47.0/go.mod h1:sPj7C7UYQ2MWHcfX+4eGN6nwnCqwUKfgO6PcwKpd6K8=
+github.com/IlyaGulya/clickhouse-sql-parser v0.5.7-0.20261104185850-7e861880ecaf h1:DjLXSX5d5DUrhbTP2rYlqz7jiEddjwGmfg8VpU/x3mA=
+github.com/IlyaGulya/clickhouse-sql-parser v0.5.7-0.20261104185850-7e861880ecaf/go.mod h1:/gij8OhQCsKaCT81OMQtqS75rbXQsPH8eLjOrlrFKzA=
 github.com/andybalholm/brotli v1.2.1 h1:R+f5xP285VArJDRgowrfb9DqL18yVK0gKAW/F+eTWro=
 github.com/andybalholm/brotli v1.2.1/go.mod h1:rzTDkvFWvIrjDXZHkuS16NPggd91W3kUSvPlQ1pLaKY=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=

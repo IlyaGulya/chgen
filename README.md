@@ -286,8 +286,10 @@ for tests, and `New` for a native `clickhouse-go/v2` connection.
 
 ### Schema changes in input order
 
-The schema reader supports `ALTER TABLE ... ADD COLUMN`, `MODIFY COLUMN`, and
-`DROP COLUMN`. It applies these changes in configuration order. It skips the
+The schema reader applies `ALTER TABLE ... ADD COLUMN`, `MODIFY COLUMN`,
+`DROP COLUMN`, and `MODIFY ORDER BY` changes in configuration order. It
+ignores projection, data-skipping index, and table constraint operations
+because they do not change the modeled columns or sort key. It skips the
 `schema_migrations` table that `golang-migrate` uses.
 
 ### Request-scoped external tables

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // These tests pin the rule that an argument refusal propagates through
