@@ -3,7 +3,7 @@ package engine
 import (
 	"fmt"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // InferExpressionType infers one expression against one fixture DDL.

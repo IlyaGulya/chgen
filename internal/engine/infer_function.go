@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 func inferFunctionType(function *clickhouse.FunctionExpr, scope queryScope) (CHType, error) {

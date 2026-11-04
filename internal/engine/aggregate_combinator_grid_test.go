@@ -42,7 +42,7 @@ import (
 	"testing"
 	"time"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // combGridRecord is one line of the golden file. The shape mirrors

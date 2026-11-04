@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // inferTestExprType infers the ClickHouse type of one expression over

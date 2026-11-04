@@ -3,7 +3,7 @@ package engine
 import (
 	"testing"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // This file pins the regression: the FUNCTION spelling of and, or and xor now

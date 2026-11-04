@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // arithmeticIntegerClass classifies an integer operand for the widening

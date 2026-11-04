@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 func inferExprType(expression clickhouse.Expr, scope queryScope) (CHType, error) {

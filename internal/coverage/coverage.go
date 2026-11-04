@@ -112,7 +112,7 @@ func Measure(data []byte) (Report, error) {
 }
 
 func frontendIdentity() string {
-	const module = "github.com/AfterShip/clickhouse-sql-parser"
+	const module = "github.com/IlyaGulya/clickhouse-sql-parser"
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, dependency := range info.Deps {
 			if dependency.Path == module && dependency.Replace == nil {

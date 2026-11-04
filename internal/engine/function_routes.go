@@ -3,7 +3,7 @@ package engine
 import (
 	"strings"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // expressionFunctionRoutes is executable dispatch, not a second support

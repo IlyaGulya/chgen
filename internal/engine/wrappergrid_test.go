@@ -46,8 +46,8 @@ import (
 	"testing"
 	"time"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
 	"github.com/IlyaGulya/chgen/internal/conformance"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 var (

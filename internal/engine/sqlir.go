@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
 	"github.com/IlyaGulya/chgen/internal/sqlir"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // The adapter refuses an entire query when any non-position property is not

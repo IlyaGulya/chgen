@@ -291,9 +291,8 @@ func TestParseSchemaCatalogsUnsupportedAlterClause(t *testing.T) {
 ALTER TABLE orders RENAME COLUMN order_id TO id;
 `)
 	_, err := ParseSchemaCatalogs([]string{path})
-	want := path + ":2: RENAME COLUMN is not supported; supported ALTER TABLE operations: ADD COLUMN, MODIFY COLUMN, DROP COLUMN, REMOVE TTL, MODIFY SETTING, RESET SETTING; projection operations ADD PROJECTION, MATERIALIZE PROJECTION, DROP PROJECTION, CLEAR PROJECTION and index operations ADD INDEX, MATERIALIZE INDEX, DROP INDEX, CLEAR INDEX are ignored"
-	if err == nil || err.Error() != want {
-		t.Fatalf("got %v, want %q", err, want)
+	if err == nil || !strings.HasPrefix(err.Error(), path+":2: RENAME COLUMN is not supported; ") {
+		t.Fatalf("got %v, want a RENAME COLUMN refusal at %s:2", err, path)
 	}
 }
 
@@ -412,6 +411,101 @@ func TestParseSchemaCatalogsIndexAltersKeepValidation(t *testing.T) {
 		"MATERIALIZE INDEX idx_b",
 		"DROP INDEX idx_b",
 		"CLEAR INDEX idx_b",
+	} {
+		for _, test := range []struct {
+			name, ddl, want string
+		}{
+			{"unknown table", "ALTER TABLE t " + clause + ";", "ALTER TABLE t targets an unknown table"},
+			{"external table", "-- chgen:external\nCREATE TABLE t (b String);\nALTER TABLE t " + clause + ";", "targets an external schema"},
+			{"unsupported neighbor", "CREATE TABLE t (b String);\nALTER TABLE t " + clause + ", RENAME COLUMN b TO c;", "RENAME COLUMN is not supported"},
+			{"invalid column neighbor", "CREATE TABLE t (b String);\nALTER TABLE t " + clause + ", DROP COLUMN missing;", "DROP COLUMN targets unknown column missing"},
+		} {
+			t.Run(clause+"/"+test.name, func(t *testing.T) {
+				path := writeSchemaFile(t, t.TempDir(), "schema.sql", test.ddl)
+				_, err := ParseSchemaCatalogs([]string{path})
+				if err == nil || !strings.Contains(err.Error(), test.want) {
+					t.Fatalf("error = %v, want %q", err, test.want)
+				}
+			})
+		}
+	}
+}
+
+func TestCatalogIgnoresConstraintDDL(t *testing.T) {
+	dir := t.TempDir()
+	base := writeSchemaFile(t, dir, "001.sql", `CREATE TABLE t (a String, b String, version UInt64) ENGINE = ReplacingMergeTree(version) ORDER BY a;`)
+	constraints := writeSchemaFile(t, dir, "002.sql", `
+ALTER TABLE t ADD CONSTRAINT a_present CHECK a != unhex('00');
+ALTER TABLE t ADD CONSTRAINT IF NOT EXISTS a_present CHECK a != unhex('00');
+`)
+	baseline, err := ParseSchemaCatalogs([]string{base})
+	if err != nil {
+		t.Fatal(err)
+	}
+	catalogs, err := ParseSchemaCatalogs([]string{base, constraints})
+	if err != nil {
+		t.Fatalf("constraint DDL must be ignored, not rejected: %v", err)
+	}
+	if !reflect.DeepEqual(catalogs, baseline) {
+		t.Fatalf("constraint DDL changed the catalog: got %#v, want %#v", catalogs.Physical.Tables["t"], baseline.Physical.Tables["t"])
+	}
+}
+
+func TestParseSchemaCatalogsAppliesColumnAndOrderByBesideConstraint(t *testing.T) {
+	catalogs := catalogsFromDDL(t, `
+CREATE TABLE events (id String, body String) ENGINE = MergeTree ORDER BY id;
+ALTER TABLE events ADD COLUMN source_copy_id FixedString(32), MODIFY ORDER BY (id, source_copy_id), ADD CONSTRAINT source_copy_id_present CHECK source_copy_id != toFixedString('', 32);
+`)
+	table := catalogs.Physical.Tables["events"]
+	column, ok := table.Columns["source_copy_id"]
+	if !ok {
+		t.Fatal("source_copy_id column missing after the mixed ALTER")
+	}
+	if got := column.Type.String(); got != "FixedString(32)" {
+		t.Fatalf("source_copy_id type = %q, want %q", got, "FixedString(32)")
+	}
+	if !column.Insertable {
+		t.Fatal("source_copy_id must stay insertable")
+	}
+	if want := []string{"id", "body", "source_copy_id"}; !slices.Equal(table.ColumnOrder, want) {
+		t.Fatalf("column order = %v, want %v", table.ColumnOrder, want)
+	}
+	if want := []string{"id", "source_copy_id"}; !slices.Equal(table.Engine.OrderBy, want) {
+		t.Fatalf("engine sort key = %v, want %v", table.Engine.OrderBy, want)
+	}
+}
+
+func TestCatalogAppliesModifyOrderBy(t *testing.T) {
+	for _, test := range []struct {
+		name, clause string
+		want         []string
+	}{
+		{"list", "MODIFY ORDER BY (id, source_copy_id)", []string{"id", "source_copy_id"}},
+		{"single term", "MODIFY ORDER BY source_copy_id", []string{"source_copy_id"}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			catalogs := catalogsFromDDL(t,
+				"CREATE TABLE events (id String, body String, source_copy_id FixedString(32)) ENGINE = MergeTree ORDER BY id;\n"+
+					"ALTER TABLE events "+test.clause+";\n")
+			table := catalogs.Physical.Tables["events"]
+			if !slices.Equal(table.Engine.OrderBy, test.want) {
+				t.Fatalf("engine sort key = %v, want %v", table.Engine.OrderBy, test.want)
+			}
+			if want := []string{"id", "body", "source_copy_id"}; !slices.Equal(table.ColumnOrder, want) {
+				t.Fatalf("column order = %v, want %v", table.ColumnOrder, want)
+			}
+			if len(table.Columns) != 3 {
+				t.Fatalf("MODIFY ORDER BY changed the columns: %#v", table.Columns)
+			}
+		})
+	}
+}
+
+func TestParseSchemaCatalogsConstraintAltersKeepValidation(t *testing.T) {
+	for _, clause := range []string{
+		"ADD CONSTRAINT b_present CHECK b != unhex('00')",
+		"ADD CONSTRAINT IF NOT EXISTS b_present CHECK b != unhex('00')",
+		"MODIFY ORDER BY (b)",
 	} {
 		for _, test := range []struct {
 			name, ddl, want string

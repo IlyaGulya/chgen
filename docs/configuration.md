@@ -8,6 +8,11 @@ file. An absolute path stays absolute. A relative input or output path can
 contain `..` and can select a location outside the configuration directory.
 The normal collision and file identity checks still apply to this path.
 
+The SQL front end is the maintained module
+`github.com/IlyaGulya/clickhouse-sql-parser`, pinned in `go.mod`.
+Build evidence records that module and version. No `replace` directive or
+SQL rewrite is required for `ADD CONSTRAINT ... CHECK`.
+
 ## Complete example
 
 ```yaml
@@ -115,6 +120,7 @@ Schema inputs are applied in order. The catalog supports these changes:
 - `ALTER TABLE ... ADD COLUMN`, including `AFTER` placement
 - `ALTER TABLE ... MODIFY COLUMN`
 - `ALTER TABLE ... DROP COLUMN`
+- `ALTER TABLE ... MODIFY ORDER BY`, which replaces the recorded sort key
 - `RENAME TABLE old TO new`, including multiple pairs applied in source order
 - `EXCHANGE TABLES a AND b`, which swaps the full definitions of two tables
 - `CREATE TABLE new AS source`, which copies an existing physical definition
@@ -133,9 +139,10 @@ KEY, and SAMPLE BY replace their source clauses; omitted ones are inherited.
 A different engine such as Memory does not inherit MergeTree keys. A new ENGINE
 does **not** inherit table TTL or SETTINGS, matching ClickHouse 25.8: supply
 those clauses again when needed. Settings metadata contains explicit values,
-not implicit server defaults. REMOVE TTL and MODIFY/RESET SETTING replay this
-descriptive metadata for subsequent copies without changing query column types
-or replacement keys. See [CREATE TABLE](https://clickhouse.com/docs/reference/statements/create/table).
+not implicit server defaults. REMOVE TTL, MODIFY ORDER BY, and MODIFY/RESET
+SETTING replay this descriptive metadata for subsequent copies without
+changing query column types or replacement keys.
+See [CREATE TABLE](https://clickhouse.com/docs/reference/statements/create/table).
 
 RENAME preserves columns, column order, engine metadata, and the original
 CREATE location. Its source must exist and its target must be free at that
@@ -174,13 +181,21 @@ The target table must still exist, and other unsupported ALTER clauses still
 fail. Ignoring index DDL does not validate index definitions or track whether
 an index exists, and does not enable these commands in `:exec` queries.
 
+Table constraint operations (`ADD CONSTRAINT`) are likewise parsed and
+ignored. A constraint does not change the columns or the sort key that the
+catalog models, and a `CREATE TABLE` constraint is already outside the model.
+Column and sort-key changes in the same statement or migration still apply.
+The target table must still exist, and other unsupported ALTER clauses still
+fail.
+
 `DROP VIEW` is also parsed and ignored because views never enter the catalog.
 `DROP DATABASE`, `DROP DICTIONARY`, and `DROP USER` or `DROP ROLE` are rejected.
 
-Engine clauses, engine arguments, and sort keys remain in the catalog. A
-`CREATE TABLE`, `ALTER TABLE`, or `DROP TABLE` whose target is exactly
-`schema_migrations` is ignored. This table belongs to `golang-migrate` and is
-not part of the application schema.
+Engine clauses, engine arguments, and sort keys remain in the catalog.
+`MODIFY ORDER BY` replaces the recorded sort key and leaves the columns
+unchanged. A `CREATE TABLE`, `ALTER TABLE`, or `DROP TABLE` whose target is
+exactly `schema_migrations` is ignored. This table belongs to `golang-migrate`
+and is not part of the application schema.
 
 Schema inputs can also contain `CREATE VIEW`, `CREATE MATERIALIZED VIEW`, and
 `INSERT` seed statements. `chgen` parses and ignores these statements because

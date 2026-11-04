@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // Schema is a catalog of ClickHouse tables.
@@ -248,6 +248,7 @@ const (
 func classifyCatalogAlter(clause clickhouse.AlterTableClause) catalogAlterAction {
 	switch clause.(type) {
 	case *clickhouse.AlterTableAddColumn, *clickhouse.AlterTableModifyColumn, *clickhouse.AlterTableDropColumn,
+		*clickhouse.AlterTableModifyOrderBy,
 		*clickhouse.AlterTableRemoveTTL,
 		*clickhouse.AlterTableModifySetting,
 		*clickhouse.AlterTableResetSetting:
@@ -264,6 +265,12 @@ func classifyCatalogAlter(clause clickhouse.AlterTableClause) catalogAlterAction
 		*clickhouse.AlterTableMaterializeIndex,
 		*clickhouse.AlterTableDropIndex,
 		*clickhouse.AlterTableClearIndex:
+		return catalogAlterIgnore
+	// A table constraint is an understood schema operation whose definition
+	// chgen does not model, the same as a CREATE TABLE constraint. Ignore only
+	// this clause so column and sort-key changes in the same migration still
+	// reach the catalog.
+	case *clickhouse.AlterTableAddConstraint:
 		return catalogAlterIgnore
 	default:
 		return catalogAlterReject
@@ -305,6 +312,10 @@ func applyAlterTable(schema *Schema, alterTable *clickhouse.AlterTable) error {
 				if len(table.Engine.Settings) == 0 {
 					table.Engine.Settings = nil
 				}
+			}
+		case *clickhouse.AlterTableModifyOrderBy:
+			if table.Engine != nil {
+				table.Engine.OrderBy = engineSortKeyTerms(alterExpr.OrderBy)
 			}
 		case *clickhouse.AlterTableAddColumn:
 			addColumn := alterExpr

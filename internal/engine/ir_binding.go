@@ -7,9 +7,9 @@ import (
 	"maps"
 	"slices"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
 	"github.com/IlyaGulya/chgen/internal/diagnostic"
 	"github.com/IlyaGulya/chgen/internal/sqlir"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 type irSelectBinding struct {

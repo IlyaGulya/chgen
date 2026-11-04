@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	clickhouse "github.com/AfterShip/clickhouse-sql-parser/parser"
+	clickhouse "github.com/IlyaGulya/clickhouse-sql-parser/parser"
 )
 
 // ParseServerExternalSchemas reads only marked external declarations. Physical
